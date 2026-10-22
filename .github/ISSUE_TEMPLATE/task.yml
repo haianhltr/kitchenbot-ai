@@ -1,0 +1,55 @@
+name: Task
+description: A scoped piece of engineering work for one owner
+title: "[Mx] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What is missing or wrong, and why it matters for the MVP.
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Implementation tasks
+      description: Checkbox list. Name files and functions where known.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable, with numbers. What the REPORT must show.
+    validations:
+      required: true
+  - type: input
+    id: deps
+    attributes:
+      label: Blocked by
+      description: Issue numbers that must close first, e.g. "#3, #7". Leave empty if none.
+  - type: input
+    id: hours
+    attributes:
+      label: Estimated engineering hours
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      options:
+        - kb-sim
+        - kb-controls
+        - kb-manip
+        - kb-eval
+        - kb-director
+    validations:
+      required: true
+  - type: textarea
+    id: refs
+    attributes:
+      label: References
+      description: Sections of docs/architecture.md, docs/evaluation.md or external links.

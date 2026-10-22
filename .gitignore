@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+env_isaaclab/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Isaac Sim / Isaac Lab
+_isaac_sim
+_isaac_sim/
+*.kit.lock
+kit/
+.thumbs/
+**/.thumbs/
+*.usd.lock
+# generated binary USD and caches; authored text USD (.usda) is tracked
+*.usdc
+*.usdz
+
+# Experiment outputs (never committed; release artifacts go to GitHub Releases)
+logs/
+checkpoints/
+datasets/
+outputs/
+runs/
+wandb/
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.hdf5
+*.h5
+*.npz
+*.npy
+*.mp4
+*.avi
+*.gif
+*.zip
+*.tar
+*.tar.gz
+
+# Third-party assets fetched by scripts/fetch_assets.py
+source/kitchenbot/scene/assets/third_party/
+assets/third_party/
+
+# Secrets and local config
+.env
+*.local.yaml
+.wandb_key
+
+# Editors and OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

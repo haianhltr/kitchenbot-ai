@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package (no Isaac Sim on CI)
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Unit tests (sim tests are skipped without --run-sim)
+        run: pytest -q
+
+      - name: Large file guard (5 MB)
+        run: |
+          limit=$((5 * 1024 * 1024))
+          bad=0
+          while IFS= read -r f; do
+            if [ -f "$f" ] && [ "$(stat -c%s "$f")" -gt "$limit" ]; then
+              echo "::error file=$f::tracked file is over 5 MB"
+              bad=1
+            fi
+          done < <(git ls-files)
+          exit $bad

@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kitchenbot"
+version = "0.1.0"
+description = "Humanoid kitchen manipulation in simulation: Unitree G1 loading a dishwasher on Isaac Lab 3.0"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12,<3.13"
+# Isaac Lab 3.0.0 and Isaac Sim 6.2 are installed separately into the shared virtual environment
+# (docs/setup.md section 3). They are not declared here because their wheels live on
+# pypi.nvidia.com and need the uv overrides file; declaring them would break `pip install -e .`.
+dependencies = [
+    "numpy>=1.26",
+    "pyyaml>=6.0",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[tool.setuptools.packages.find]
+where = ["source"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "sim: needs Isaac Sim and a GPU; skipped unless --run-sim is passed",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["assets", "outputs", "logs", "checkpoints"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["kitchenbot"]

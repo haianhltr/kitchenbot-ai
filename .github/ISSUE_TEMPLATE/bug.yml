@@ -1,0 +1,41 @@
+name: Bug
+description: Something that worked, or should work per the docs, does not
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact command, config file, seed, num_envs.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: Paste the error or the measured number.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      value: |
+        - commit:
+        - OS and NVIDIA driver:
+        - Isaac Lab / Isaac Sim version:
+        - physics preset (must be isaacsim_physx):
+        - GPU and VRAM in use:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log excerpt or path
