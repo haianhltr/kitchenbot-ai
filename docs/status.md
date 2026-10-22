@@ -9,8 +9,8 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
 - Approved architecture, roadmap, setup guide, evaluation protocol, decision log, team protocol.
 - Package skeleton with docstrings naming which issue creates each file.
 - CI: lint, unit tests, 5 MB file guard.
-- GitHub labels, milestones M0 to M6 and the issue plan P01 to P26 (issue numbers in `docs/roadmap.md`
-  once created).
+- GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26, same numbers) and
+  the pinned GPU queue #27. Ready now: #1 and #2.
 
 ## What is running
 
@@ -25,5 +25,5 @@ Nothing. No training run has started.
 
 ## Next critical step
 
-P01: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then P03 and
-P04 (the Windows gate). Everything else waits on them.
+#1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3 and
+#4 (the Windows gate). Everything else waits on them. #2 (scaffolding) can run in parallel.

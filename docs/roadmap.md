@@ -22,8 +22,9 @@ same interface, then imitation learning from the scripted planner.
 
 ## Issue plan
 
-Numbers are planning IDs; GitHub assigns the real ones. `CP` marks the critical path, labelled
-`milestone-blocker`. "After" lists hard dependencies.
+Planning IDs map one to one onto GitHub issue numbers: P01 is #1, P26 is #26, and the pinned GPU
+queue is #27. `CP` marks the critical path, labelled `milestone-blocker`. "After" lists hard
+dependencies, mirrored as "Blocked by" in each issue.
 
 | ID | Milestone | Owner | Title | Hours | After | Flags |
 | --- | --- | --- | --- | --- | --- | --- |
