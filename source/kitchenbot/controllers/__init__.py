@@ -10,7 +10,9 @@ Files, existing and planned (docs/architecture.md sections 7 and 8):
 - ``reachability.py`` and ``data/right_arm_envelope.npz``: ``ReachabilityEnvelope``, the right
   palm's reachable 2 cm voxels in the pelvis frame (waist at zero), sampled with URDF forward
   kinematics by ``scripts/make_reach_envelope.py``. Exist since #48; P16 checks the envelope
-  against the real IK.
+  against the real IK. ``data/right_arm_envelope_waist.npz`` (#56) samples the waist too (pitch 0
+  to +29.79 deg, yaw +-20 deg), for ``scripts/reach_gap_analysis.py`` and
+  ``docs/reach_gap_analysis.md``.
 - ``hand/base.py``: the ``HandController`` interface (open, pre_grasp, close, is_holding, plus
   ``update(dt)`` and the commanded ``posture``) and ``HandPosture``. Exists since #42.
 - ``hand/dex3_postures.py`` and ``hand/dex3_synergy.py``: the Dex3-1 posture table built on the
