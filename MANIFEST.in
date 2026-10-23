@@ -1,0 +1,2 @@
+# Non-Python files the installed package needs at run time.
+recursive-include source/kitchenbot/evaluation *.json

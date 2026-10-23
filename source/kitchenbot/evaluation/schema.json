@@ -1,0 +1,912 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haianhltr/kitchenbot-ai/blob/main/source/kitchenbot/evaluation/schema.json",
+  "title": "KitchenBot evaluation result",
+  "description": "One scripts/evaluate.py run: run metadata, one record per seed, aggregates (docs/evaluation.md sections 3, 4 and 7). The scenario rules in allOf pin which metrics, rates and continuous summaries each scenario carries; they mirror kitchenbot/evaluation/metrics.py and a unit test keeps the two in step.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run",
+    "episodes",
+    "aggregates"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "run": {
+      "$ref": "#/$defs/run"
+    },
+    "episodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/episode"
+      }
+    },
+    "aggregates": {
+      "$ref": "#/$defs/aggregates"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "properties": {
+              "scenario": {
+                "const": "S0"
+              }
+            },
+            "required": [
+              "scenario"
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "then": {
+        "properties": {
+          "episodes": {
+            "items": {
+              "properties": {
+                "metrics": {
+                  "required": [
+                    "fell",
+                    "standing_duration_s",
+                    "torso_orientation_error_deg"
+                  ],
+                  "propertyNames": {
+                    "enum": [
+                      "fell",
+                      "standing_duration_s",
+                      "torso_orientation_error_deg"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "aggregates": {
+            "properties": {
+              "rates": {
+                "required": [
+                  "fall_rate"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "fall_rate"
+                  ]
+                }
+              },
+              "continuous": {
+                "required": [
+                  "standing_duration_s",
+                  "torso_orientation_error_deg"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "standing_duration_s",
+                    "torso_orientation_error_deg"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "properties": {
+              "scenario": {
+                "const": "S1"
+              }
+            },
+            "required": [
+              "scenario"
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "then": {
+        "properties": {
+          "episodes": {
+            "items": {
+              "properties": {
+                "metrics": {
+                  "required": [
+                    "fell",
+                    "torso_orientation_error_deg",
+                    "hand_target_error_cm"
+                  ],
+                  "propertyNames": {
+                    "enum": [
+                      "fell",
+                      "torso_orientation_error_deg",
+                      "hand_target_error_cm"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "aggregates": {
+            "properties": {
+              "rates": {
+                "required": [
+                  "fall_rate",
+                  "hand_target_under_3cm_rate"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "fall_rate",
+                    "hand_target_under_3cm_rate"
+                  ]
+                }
+              },
+              "continuous": {
+                "required": [
+                  "torso_orientation_error_deg",
+                  "hand_target_error_cm"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "torso_orientation_error_deg",
+                    "hand_target_error_cm"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "properties": {
+              "scenario": {
+                "const": "S2"
+              }
+            },
+            "required": [
+              "scenario"
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "then": {
+        "properties": {
+          "episodes": {
+            "items": {
+              "properties": {
+                "metrics": {
+                  "required": [
+                    "fell",
+                    "grasp_success"
+                  ],
+                  "propertyNames": {
+                    "enum": [
+                      "fell",
+                      "grasp_success"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "aggregates": {
+            "properties": {
+              "rates": {
+                "required": [
+                  "fall_rate",
+                  "grasp_success_rate"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "fall_rate",
+                    "grasp_success_rate"
+                  ]
+                }
+              },
+              "continuous": {
+                "required": [],
+                "propertyNames": {
+                  "enum": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "properties": {
+              "scenario": {
+                "const": "S3"
+              }
+            },
+            "required": [
+              "scenario"
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "then": {
+        "properties": {
+          "episodes": {
+            "items": {
+              "properties": {
+                "metrics": {
+                  "required": [
+                    "fell",
+                    "placement_success",
+                    "rack_collision"
+                  ],
+                  "propertyNames": {
+                    "enum": [
+                      "fell",
+                      "placement_success",
+                      "rack_collision"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "aggregates": {
+            "properties": {
+              "rates": {
+                "required": [
+                  "fall_rate",
+                  "placement_success_rate",
+                  "collision_rate"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "fall_rate",
+                    "placement_success_rate",
+                    "collision_rate"
+                  ]
+                }
+              },
+              "continuous": {
+                "required": [],
+                "propertyNames": {
+                  "enum": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "properties": {
+              "scenario": {
+                "const": "S4"
+              }
+            },
+            "required": [
+              "scenario"
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "then": {
+        "properties": {
+          "episodes": {
+            "items": {
+              "properties": {
+                "metrics": {
+                  "required": [
+                    "fell",
+                    "torso_orientation_error_deg",
+                    "grasp_success",
+                    "placement_success",
+                    "rack_collision",
+                    "completion_time_s"
+                  ],
+                  "propertyNames": {
+                    "enum": [
+                      "fell",
+                      "torso_orientation_error_deg",
+                      "grasp_success",
+                      "placement_success",
+                      "rack_collision",
+                      "completion_time_s"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "aggregates": {
+            "properties": {
+              "rates": {
+                "required": [
+                  "fall_rate",
+                  "grasp_success_rate",
+                  "placement_success_rate",
+                  "collision_rate"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "fall_rate",
+                    "grasp_success_rate",
+                    "placement_success_rate",
+                    "collision_rate"
+                  ]
+                }
+              },
+              "continuous": {
+                "required": [
+                  "torso_orientation_error_deg",
+                  "completion_time_s"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "torso_orientation_error_deg",
+                    "completion_time_s"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "properties": {
+              "scenario": {
+                "const": "fake"
+              }
+            },
+            "required": [
+              "scenario"
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "then": {
+        "properties": {
+          "episodes": {
+            "items": {
+              "properties": {
+                "metrics": {
+                  "required": [
+                    "fell",
+                    "torso_orientation_error_deg",
+                    "grasp_success",
+                    "placement_success",
+                    "rack_collision",
+                    "completion_time_s"
+                  ],
+                  "propertyNames": {
+                    "enum": [
+                      "fell",
+                      "torso_orientation_error_deg",
+                      "grasp_success",
+                      "placement_success",
+                      "rack_collision",
+                      "completion_time_s"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "aggregates": {
+            "properties": {
+              "rates": {
+                "required": [
+                  "fall_rate",
+                  "grasp_success_rate",
+                  "placement_success_rate",
+                  "collision_rate"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "fall_rate",
+                    "grasp_success_rate",
+                    "placement_success_rate",
+                    "collision_rate"
+                  ]
+                }
+              },
+              "continuous": {
+                "required": [
+                  "torso_orientation_error_deg",
+                  "completion_time_s"
+                ],
+                "propertyNames": {
+                  "enum": [
+                    "torso_orientation_error_deg",
+                    "completion_time_s"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario",
+        "split",
+        "seeds",
+        "num_envs",
+        "policy",
+        "hand",
+        "base",
+        "headless",
+        "synthetic",
+        "git_commit",
+        "git_dirty",
+        "config_hash",
+        "gpu_name",
+        "host",
+        "started_at",
+        "wall_clock_s",
+        "package_version"
+      ],
+      "properties": {
+        "scenario": {
+          "enum": [
+            "S0",
+            "S1",
+            "S2",
+            "S3",
+            "S4",
+            "fake"
+          ],
+          "description": "S0 to S4, or fake (synthetic, CI only)."
+        },
+        "split": {
+          "enum": [
+            "seen",
+            "unseen"
+          ]
+        },
+        "seeds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Seeds run, in order; one episode per seed."
+        },
+        "num_envs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "policy": {
+          "enum": [
+            "own",
+            "agile"
+          ]
+        },
+        "hand": {
+          "enum": [
+            "kinematic",
+            "dex3",
+            "dex1"
+          ]
+        },
+        "base": {
+          "enum": [
+            "fixed",
+            "floating"
+          ]
+        },
+        "headless": {
+          "type": "boolean"
+        },
+        "synthetic": {
+          "type": "boolean",
+          "description": "True only for the fake scenario; such a file is never a measurement."
+        },
+        "git_commit": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{40}|unknown)$"
+        },
+        "git_dirty": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Uncommitted changes at run time; null when git is unavailable."
+        },
+        "config_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA256 of the canonical JSON of the evaluator options and the resolved scenario config."
+        },
+        "gpu_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "nvidia-smi GPU name, or none."
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1
+        },
+        "started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+          "description": "UTC, ISO 8601."
+        },
+        "wall_clock_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "package_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scenario": {
+                "const": "fake"
+              }
+            },
+            "required": [
+              "scenario"
+            ]
+          },
+          "then": {
+            "properties": {
+              "synthetic": {
+                "const": true
+              },
+              "gpu_name": {
+                "const": "none"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "synthetic": {
+                "const": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Per-episode metrics of docs/evaluation.md section 3. Which keys appear depends on the scenario (allOf at the top level).",
+      "additionalProperties": false,
+      "properties": {
+        "fell": {
+          "type": "boolean"
+        },
+        "standing_duration_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "torso_orientation_error_deg": {
+          "type": "number",
+          "minimum": 0
+        },
+        "hand_target_error_cm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "grasp_success": {
+          "type": "boolean"
+        },
+        "placement_success": {
+          "type": "boolean"
+        },
+        "rack_collision": {
+          "type": "boolean"
+        },
+        "completion_time_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Seconds to stable placement; null unless the trial succeeded."
+        }
+      }
+    },
+    "episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seed",
+        "success",
+        "failure_tag",
+        "duration_s",
+        "metrics"
+      ],
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "failure_tag": {
+          "enum": [
+            "success",
+            "fall",
+            "ik_infeasible",
+            "grasp_miss",
+            "drop",
+            "rack_collision",
+            "misplace",
+            "timeout"
+          ],
+          "description": "success, or exactly one primary cause (docs/evaluation.md section 7)."
+        },
+        "duration_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Simulated episode time in seconds."
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        }
+      },
+      "if": {
+        "properties": {
+          "success": {
+            "const": true
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "then": {
+        "properties": {
+          "failure_tag": {
+            "const": "success"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "failure_tag": {
+            "enum": [
+              "fall",
+              "ik_infeasible",
+              "grasp_miss",
+              "drop",
+              "rack_collision",
+              "misplace",
+              "timeout"
+            ]
+          },
+          "metrics": {
+            "properties": {
+              "completion_time_s": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    },
+    "rate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "n",
+        "rate",
+        "ci_low",
+        "ci_high"
+      ],
+      "description": "count out of n trials with a 95 percent Wilson interval.",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ci_low": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ci_high": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "continuous": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "n",
+        "mean",
+        "std",
+        "median"
+      ],
+      "description": "Over the episodes where the metric is not null. std is the sample standard deviation (n - 1); null when undefined.",
+      "properties": {
+        "n": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mean": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "std": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "median": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "aggregates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "num_episodes",
+        "ci_method",
+        "ci_level",
+        "success",
+        "rates",
+        "continuous",
+        "failure_tag_counts"
+      ],
+      "properties": {
+        "num_episodes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ci_method": {
+          "const": "wilson"
+        },
+        "ci_level": {
+          "const": 0.95
+        },
+        "success": {
+          "$ref": "#/$defs/rate"
+        },
+        "rates": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "fall_rate",
+              "hand_target_under_3cm_rate",
+              "grasp_success_rate",
+              "placement_success_rate",
+              "collision_rate"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/rate"
+          }
+        },
+        "continuous": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "standing_duration_s",
+              "torso_orientation_error_deg",
+              "hand_target_error_cm",
+              "completion_time_s"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/continuous"
+          }
+        },
+        "failure_tag_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fall",
+            "ik_infeasible",
+            "grasp_miss",
+            "drop",
+            "rack_collision",
+            "misplace",
+            "timeout"
+          ],
+          "description": "Failed trials per primary cause; sums to num_episodes minus successes.",
+          "properties": {
+            "fall": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ik_infeasible": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "grasp_miss": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "drop": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "rack_collision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "misplace": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}
