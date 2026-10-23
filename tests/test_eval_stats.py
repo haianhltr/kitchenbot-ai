@@ -1,11 +1,13 @@
 """Wilson intervals and aggregates (docs/evaluation.md section 4, step 3)."""
 
 import math
+import statistics
 
 import pytest
 
 from kitchenbot.evaluation.stats import (
     aggregate_episodes,
+    bootstrap_mean_interval,
     summarize_rate,
     summarize_values,
     wilson_interval,
@@ -190,3 +192,55 @@ def test_aggregate_s4_completion_time_covers_successes_only():
 def test_aggregate_rejects_empty():
     with pytest.raises(ValueError):
         aggregate_episodes("S0", [])
+
+
+# ----------------------------------------------------------------------------- bootstrap
+
+
+def test_bootstrap_constant_input_has_zero_width():
+    assert bootstrap_mean_interval([5.0] * 10) == (5.0, 5.0)
+    assert bootstrap_mean_interval([0.1, 0.1, 0.1]) == (0.1, 0.1)  # no floating point noise
+    assert bootstrap_mean_interval([7.0]) == (7.0, 7.0)
+
+
+def test_bootstrap_two_point_sample_is_hand_checked():
+    """[0, 10]: a resample mean is 0, 5 or 10 with probability 1/4, 1/2, 1/4. About 500 of the
+    2000 means are 0 and about 500 are 10, so ranks 50 and 1950 are 0 and 10."""
+    assert bootstrap_mean_interval([0.0, 10.0]) == (0.0, 10.0)
+
+
+def test_bootstrap_skewed_sample_is_hand_checked():
+    """[0, 0, 0, 10]: P(mean = 0) = (3/4)^4 = 0.32, so the lower end is 0. P(mean >= 7.5) =
+    4 (1/4)^3 (3/4) + (1/4)^4 = 0.051, about 102 of 2000, of which P(mean = 10) = 0.0039, about
+    8, so fewer than 50 means exceed 7.5 and the upper end (rank 1950) is 7.5."""
+    assert bootstrap_mean_interval([0, 0, 0, 10]) == (0, 7.5)
+
+
+def test_bootstrap_matches_the_normal_interval_for_a_larger_sample():
+    values = list(range(1, 101))  # mean 50.5, standard error 2.90, so about 50.5 +- 5.69
+    low, high = bootstrap_mean_interval(values)
+    assert low == pytest.approx(44.95, abs=0.5) and high == pytest.approx(55.78, abs=0.5)
+    assert low < 50.5 < high
+
+
+def test_bootstrap_is_deterministic_and_parameterised():
+    values = [3.0, 1.0, 4.0, 1.0, 5.0, 9.0, 2.0, 6.0]
+    assert bootstrap_mean_interval(values) == bootstrap_mean_interval(values)
+    assert bootstrap_mean_interval(values, seed=0) == bootstrap_mean_interval(values)
+    assert bootstrap_mean_interval(values, resamples=200, seed=3) == bootstrap_mean_interval(
+        values, resamples=200, seed=3
+    )
+    assert bootstrap_mean_interval(values, seed=1) != bootstrap_mean_interval(values, seed=2)
+    narrow = bootstrap_mean_interval(values, level=0.5)
+    wide = bootstrap_mean_interval(values, level=0.95)
+    assert wide[0] <= narrow[0] <= statistics.fmean(values) <= narrow[1] <= wide[1]
+    low, high = bootstrap_mean_interval(values)
+    assert min(values) <= low <= high <= max(values)
+
+
+@pytest.mark.parametrize(
+    "kwargs", [{"values": []}, {"values": [1.0], "resamples": 0}, {"values": [1.0], "level": 1.0}]
+)
+def test_bootstrap_rejects_bad_input(kwargs):
+    with pytest.raises(ValueError):
+        bootstrap_mean_interval(**kwargs)
