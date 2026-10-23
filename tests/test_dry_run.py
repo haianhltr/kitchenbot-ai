@@ -17,11 +17,11 @@ from kitchenbot.evaluation import dry_run
 from kitchenbot.evaluation.cli import main as evaluate_main
 from kitchenbot.evaluation.dry_run import (
     DryRunBackend,
-    dry_run_planner_config,
     read_eval_yaml,
     simulate_episode,
 )
 from kitchenbot.evaluation.failure_tags import FAILURE_TAG_VALUES, FailureTag
+from kitchenbot.evaluation.judges import GRASP_LIFT_HEIGHT_M
 from kitchenbot.evaluation.metrics import metrics_for
 from kitchenbot.evaluation.results import load_results
 from kitchenbot.evaluation.runner import (
@@ -273,36 +273,23 @@ def test_the_dry_run_has_no_torso_so_it_reports_none():
         assert e.result.traces is None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="contract gap found by #60, reported on the PR: the planner's lift state exits within "
-    "2 cm of the 15 cm waypoint and the next waypoint is as high, so the plate never rises 15 cm "
-    "for the grasp judge; the dry run aims 2 cm higher (dry_run_planner_config). When #21 fixes "
-    "the planner this test passes, strict xfail fails, and the override can go.",
-)
-def test_known_gap_the_default_planner_config_lifts_the_plate_15_cm_for_the_judge():
-    spec = sample_episode(0, "seen", "S4")
-    episode = simulate_episode(spec, LAYOUT, gate=False, planner_config=PlannerConfig())
-    assert episode.result.metrics["grasp_success"], episode.grasp_why
-
-
-def test_the_dry_run_planner_config_differs_from_the_default_by_the_lift_only():
-    default, dry = PlannerConfig(), dry_run_planner_config()
-    assert dry.lift_height_m == pytest.approx(default.lift_height_m + default.position_tolerance_m)
-    assert dataclasses.replace(dry, lift_height_m=default.lift_height_m) == default
-
-
-def test_with_the_default_planner_config_the_episode_ends_in_a_drop_not_a_crash():
-    spec = sample_episode(0, "seen", "S4")
-    episode = simulate_episode(spec, LAYOUT, gate=False, planner_config=PlannerConfig())
-    assert episode.state is S.DONE  # the planner is happy
-    assert episode.result.failure_tag is FailureTag.DROP  # the judges are not: held, never grasped
-    assert "lifted at most 0.14" in episode.grasp_why
+def test_with_the_default_planner_config_every_seen_episode_is_grasped_and_placed():
+    # regression for the lift gap the first dry run found (the lift waypoint was aimed at exactly
+    # 15 cm, the exit tolerance left the plate at 14.9 cm and every episode ended in `drop`)
+    episodes = _episodes("seen", False, 50)
+    assert len(episodes) == 50
+    for e in episodes:
+        assert e.result.success and e.state is S.DONE and e.planner_failure is None
+        assert e.result.failure_tag is not FailureTag.DROP
+        assert e.grasp_why.startswith("grasped"), e.grasp_why
+        assert e.result.metrics["grasp_success"] is True
+    assert DryRunBackend(_config("seen", False)).planner_config == PlannerConfig()
+    assert PlannerConfig().lift_height_m == GRASP_LIFT_HEIGHT_M == 0.15  # the protocol number
 
 
 def test_a_budget_the_run_cannot_meet_is_a_timeout():
     spec = sample_episode(0, "seen", "S4")
-    short = dataclasses.replace(dry_run_planner_config(), total_budget_s=6.0)
+    short = dataclasses.replace(PlannerConfig(), total_budget_s=6.0)
     episode = simulate_episode(spec, LAYOUT, gate=False, planner_config=short)
     assert episode.state is S.FAILED and episode.planner_failure is FailureTag.TIMEOUT
     assert episode.result.failure_tag is FailureTag.TIMEOUT and not episode.result.success

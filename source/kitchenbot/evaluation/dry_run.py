@@ -81,7 +81,6 @@ __all__ = [
     "SETTLE_S",
     "DryEpisode",
     "DryRunBackend",
-    "dry_run_planner_config",
     "read_eval_yaml",
     "run_dry_episode",
     "simulate_episode",
@@ -106,24 +105,6 @@ MIRRORABLE_SCENARIOS: tuple[str, ...] = ("S2", "S3", "S4")
 EXTRA_KEYS: tuple[str, ...] = ("reach_gate",)
 
 _DEFAULT_MIRROR = "S4"
-
-
-def dry_run_planner_config() -> PlannerConfig:
-    """The planner configuration of the dry run: the defaults with the lift aimed 2 cm higher.
-
-    **Contract gap found by the dry run, not fixed here** (``plate_to_rack.py`` is not this
-    issue's): the planner's ``lift`` state exits when the palm is within ``position_tolerance_m``
-    (2 cm) of the waypoint ``lift_height_m`` (15 cm) above the grasp, and the next waypoint, the
-    counter edge, is at the same height, so a plate carried on a straight slew never rises above
-    about 14.9 cm; the grasp judge needs 15 cm (``GRASP_LIFT_HEIGHT_M``, the same number read from
-    the same ``PlannerConfig.lift_height_m``). With the defaults every dry-run episode therefore
-    ends in ``drop`` (the plate was held, never judged grasped, then released in the slot).
-    Aiming the waypoint at ``lift_height_m + position_tolerance_m`` removes it. The judges keep
-    reading the default 15 cm, since they take it from a default ``PlannerConfig``. #21 decides
-    the real fix (waypoint margin, or an exit on height) and then this override goes.
-    """
-    base = PlannerConfig()
-    return PlannerConfig(lift_height_m=base.lift_height_m + base.position_tolerance_m)
 
 
 def read_eval_yaml(path: Path | str, split: str) -> tuple[str, RandomizationRanges]:
@@ -199,9 +180,9 @@ def simulate_episode(
     the planner's ``failed``, at the placement judge's success (its 2 s window closed), or
     ``settle_s`` after the planner is ``done``. ``stand_off_m`` moves the pelvis (the reach-gap
     knob); ``envelope`` is only used with ``gate``. ``planner_config`` defaults to
-    :func:`dry_run_planner_config`, not to ``PlannerConfig()`` (see there why).
+    ``PlannerConfig()``.
     """
-    cfg = planner_config if planner_config is not None else dry_run_planner_config()
+    cfg = planner_config if planner_config is not None else PlannerConfig()
     fakes = Fakes.from_episode(spec, layout, gate=gate, envelope=envelope, stand_off_m=stand_off_m)
     planner = PlateToRackPlanner(cfg)
     grasp = GraspJudge()
@@ -328,7 +309,7 @@ class DryRunBackend:
         else:
             self.sampler_scenario = _DEFAULT_MIRROR
             self.ranges = RandomizationRanges.for_split(config.split)
-        self.planner_config = dry_run_planner_config()
+        self.planner_config = PlannerConfig()
         self.envelope = ReachabilityEnvelope.load() if self.gate else None
 
     def resolved_config(self) -> Mapping[str, Any]:

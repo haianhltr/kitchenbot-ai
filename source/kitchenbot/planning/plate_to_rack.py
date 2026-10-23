@@ -119,7 +119,10 @@ class PlannerConfig:
     # Waypoint geometry
     pre_grasp_height_m: float = _src(0.08, ARCH_9, "palm 8 cm above the rim grasp point")
     lift_height_m: float = _src(
-        0.15, ARCH_9, "lift 15 cm; also the grasp-success height in docs/evaluation.md section 3"
+        0.15,
+        ARCH_9,
+        "lift 15 cm; also the grasp-success height in docs/evaluation.md section 3; the waypoint "
+        "is aimed one position tolerance higher so the exit height is at least this",
     )
     counter_edge_clearance_m: float = _src(
         0.15, PROVISIONAL, "height above the counter edge for the first transport waypoint"
@@ -216,10 +219,17 @@ def plan_waypoints(
 
     Until ``align`` the palm keeps the grasp frame's orientation (the plate is carried flat);
     ``aligned`` and ``insertion`` use :func:`plate_vertical_quat` of the slot yaw.
+
+    The ``lift`` waypoint is aimed ``lift_height_m + position_tolerance_m`` above the grasp frame,
+    not ``lift_height_m``: the ``lift`` state exits once the palm is within ``position_tolerance_m``
+    of it, so a palm that stops a full tolerance short still has the plate at least
+    ``lift_height_m`` up, the 15 cm the grasp judge asks for (docs/evaluation.md section 3). The
+    next waypoint, ``counter_edge``, is at least as high as ``lift``, so the plate is carried above
+    that height from then on.
     """
     cfg = config
     grasp = Pose(plate_pose.position, plate_pose.quat_wxyz)
-    lift = grasp.raised(cfg.lift_height_m)
+    lift = grasp.raised(cfg.lift_height_m + cfg.position_tolerance_m)
     edge_z = max(
         float(lift.position[2]), float(counter_edge_pose.position[2]) + cfg.counter_edge_clearance_m
     )

@@ -81,11 +81,12 @@ def test_waypoints_come_from_the_plate_slot_and_counter_edge_poses():
     up = np.array([0.0, 0.0, 1.0])
     np.testing.assert_allclose(wp["pre_grasp"].position, PLATE_GRASP.position + 0.08 * up)
     assert wp["grasp"] == PLATE_GRASP
-    np.testing.assert_allclose(wp["lift"].position, PLATE_GRASP.position + 0.15 * up)
+    # 15 cm plus one 2 cm position tolerance: the lift state exits within the tolerance (#60)
+    np.testing.assert_allclose(wp["lift"].position, PLATE_GRASP.position + (0.15 + 0.02) * up)
     # counter edge: its x, y; high enough for both the lift and the edge clearance
     np.testing.assert_allclose(wp["counter_edge"].position[:2], COUNTER_EDGE.position[:2])
     assert wp["counter_edge"].position[2] == pytest.approx(
-        max(PLATE_GRASP.position[2] + 0.15, COUNTER_EDGE.position[2] + 0.15)
+        max(PLATE_GRASP.position[2] + 0.15 + 0.02, COUNTER_EDGE.position[2] + 0.15)
     )
     np.testing.assert_allclose(wp["above_slot"].position, SLOT_ENTRY.position + 0.25 * up)
     np.testing.assert_allclose(wp["aligned"].position, wp["above_slot"].position)
