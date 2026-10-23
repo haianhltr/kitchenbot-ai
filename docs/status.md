@@ -2,8 +2,8 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35 and #40 merged, Isaac Sim not yet
-installed. Actuals: those eight issues (21 estimated hours) were finished in about two hours of
+**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42 and #43 merged, Isaac Sim not
+yet installed. Actuals: those ten issues (26 estimated hours) were finished in about three hours of
 wall-clock by parallel worker sessions, reviewed and merged by the director.
 
 ## What exists
@@ -28,13 +28,25 @@ wall-clock by parallel worker sessions, reviewed and merged by the director.
   on `unseen`), and a synthetic `fake` scenario that runs on CI (#23). `scripts/plot_results.py`
   (success rates with intervals, failure histograms, torso error over time from optional traces)
   and `scripts/update_experiments.py` (idempotent table rows, synthetic documents refused by
-  default) (#24); continuous metrics get mean, median and a bootstrap interval (#40). 248 unit
-  tests pass.
+  default) (#24); continuous metrics get mean, median and a bootstrap interval (#40).
+- Hand controller interface `controllers/hand/base.py` (`HandController`: open, pre_grasp, close,
+  is_holding, plus `update(dt)` and the commanded `posture`) with `MockHand` for tests; Dex3 joint
+  limits copied from the URDF in `robots/joint_limits.py`; the three Dex3 postures as closing
+  fractions in one table, the two thumb closing directions in one constant marked unverified;
+  `Dex3SynergyHand` logic with sensing injected as callables (#42). #17 adds the kinematic
+  baseline on the same interface, #18 the Isaac Lab wiring and the tuning.
+- Plate-to-rack planner core `planning/plate_to_rack.py`: the section 9 FSM (idle to done, plus
+  failed), observation in, palm pose target and hand verb out, every number sourced or marked
+  provisional, failure tags from the evaluator's taxonomy; `planning/geometry.py` with `Pose` and
+  wxyz quaternion helpers. Tested against a fake arm, hand, plate and rack, and against the #42
+  `MockHand` through the hand verbs (#43). #21 wires it to the simulation, #22 decides on
+  vectorisation. 398 unit tests pass.
 - `scripts/host_check.ps1`: read-only Windows readiness check with a `-Fix` mode for long paths,
   git `core.longpaths` and `uv` (#35). Run on this host on 2026-10-23: GPU, driver 616.92, disk
   and RAM pass; long paths, git option, VS 2022 C++ tools and `uv` fail; a reboot is pending.
 - GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26), the pinned GPU
-  queue #27, and no-simulation issues #28, #29, #30 added so work continues before the install.
+  queue #27, and no-simulation issues #28, #29, #30, #35, #40, #42, #43 added so work continued
+  before the install.
 
 ## What is running
 
