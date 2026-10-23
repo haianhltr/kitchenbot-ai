@@ -72,9 +72,9 @@ class EvalConfig:
     ``extras`` are options only one scenario's loader reads (``dry``: ``reach_gate``, see
     :mod:`kitchenbot.evaluation.dry_run`). They are not part of :meth:`to_dict`, so they are not
     in the ``run`` block and the schema is untouched; a loader that uses one puts it in its
-    ``resolved_config()``, which is how it reaches ``run.config_hash``. The command line has no
-    flag for them (adding a generic one is a few lines in ``cli.py``); a script or a test passes
-    ``extras={...}``.
+    ``resolved_config()``, which is how it reaches ``run.config_hash``. The command line fills
+    them with ``--extra KEY=VALUE``; ``run_evaluation`` rejects keys the scenario does not list in
+    ``ScenarioSpec.extra_keys``.
     """
 
     scenario: str
@@ -178,13 +178,19 @@ Loader = Callable[[EvalConfig], ScenarioBackend]
 
 @dataclass(frozen=True)
 class ScenarioSpec:
-    """A registered scenario. ``uses_gpu`` false records ``gpu_name`` as ``"none"``."""
+    """A registered scenario. ``uses_gpu`` false records ``gpu_name`` as ``"none"``.
+
+    ``extra_keys`` are the :attr:`EvalConfig.extras` keys the scenario's loader reads;
+    ``run_evaluation`` rejects any other key, so an option typed on the command line
+    (``--extra``) never silently does nothing.
+    """
 
     name: str
     title: str
     loader: Loader
     uses_gpu: bool = True
     synthetic: bool = False
+    extra_keys: tuple[str, ...] = ()
 
 
 _REGISTRY: dict[str, ScenarioSpec] = {}
@@ -263,6 +269,7 @@ def _register_builtin() -> None:
             loader=_load_dry,
             uses_gpu=False,
             synthetic=True,
+            extra_keys=("reach_gate",),  # dry_run.EXTRA_KEYS; a test keeps the two equal
         )
     )
 
@@ -368,6 +375,10 @@ def run_evaluation(config: EvalConfig, *, validate: bool = True) -> dict[str, An
     scenario whose loader is still a placeholder.
     """
     spec = get_scenario(config.scenario)
+    unknown = sorted(set(config.extras) - set(spec.extra_keys))
+    if unknown:
+        takes = f"reads {list(spec.extra_keys)}" if spec.extra_keys else "takes no extras"
+        raise ScenarioConfigError(f"unknown extras {unknown}: scenario {spec.name} {takes}")
     config_file: dict[str, str] = {}
     if config.config_path is not None:
         # Hashed before the backend loads, so what is recorded is what the run started with.

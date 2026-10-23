@@ -97,8 +97,9 @@ causes of section 7 occur in one trial, the one listed first there is the primar
 `run.synthetic`: it is never a result. `--scenario dry --config configs/eval/s4_seen.yaml` is the
 same kind of run but chains the real pieces (the sampler for the episode, the planner against test
 doubles of the arm behind the reachability gate, the hand, the plate and the rack, and the judges
-for `success` and the failure tag), so it checks the contracts between them before any simulation
-exists and is the template of the real S3 and S4 backends. A new scenario registers a `ScenarioSpec` with
+for `success` and the failure tag; `--extra reach_gate=false` runs it without the gate), so it checks
+the contracts between them before any simulation exists and is the template of the real S3 and S4
+backends. A new scenario registers a `ScenarioSpec` with
 `register_scenario` in `kitchenbot/evaluation/runner.py`, whose loader imports its environment
 config inside the function body and returns a backend with `run_batch(seeds)`.
 

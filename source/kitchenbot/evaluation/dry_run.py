@@ -37,9 +37,9 @@ judges a full pick-and-place, whichever it mirrors, so S2 and S3 only change the
 carries the mirrored scenario: ``run.config_path`` says which file was used and the scenario goes
 into ``resolved_config`` and so into ``run.config_hash``.
 
-``EvalConfig.extras`` (the command line has no flag for it): ``{"reach_gate": False}`` turns the
-reachability gate off, which leaves the fake arm unconstrained. Both settings are testable and
-differ in ``run.config_hash``.
+``EvalConfig.extras``, set on the command line with ``--extra reach_gate=false``:
+``{"reach_gate": False}`` turns the reachability gate off, which leaves the fake arm
+unconstrained. Both settings are testable and differ in ``run.config_hash``.
 
 What the dry run does not model
 -------------------------------
