@@ -9,7 +9,7 @@ Generated from `scripts/assets_manifest.yaml` by `python scripts/fetch_assets.py
 | ArtVIP (`artvip`) | <https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP> | `d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e` | Apache-2.0 | arXiv 2506.04941 |
 | MolmoSpaces (Ai2) (`molmospaces`) | <https://huggingface.co/datasets/allenai/molmospaces> | `5f802a46816ffc3520e59b5ef49fa8dafee8eeca` | CC-BY-4.0 (data, except the Objaverse subset: ODC-BY-1.0); code Apache-2.0 | arXiv 2602.11337 |
 
-Licence notes. ArtVIP: the Hugging Face dataset card metadata says `apache-2.0`; the repo ships no separate LICENSE file. MolmoSpaces: the card says all subsets except Objaverse are CC BY 4.0 (attribution required: Ai2, MolmoSpaces, arXiv 2602.11337) and adds that the data is intended for research and educational use under Ai2's Responsible Use Guidelines; the card shows no `commercial_safe` flag.
+Licence notes. ArtVIP: the Hugging Face dataset card metadata says `apache-2.0`; the repo ships no separate LICENSE file. MolmoSpaces: the card says all subsets except Objaverse are CC BY 4.0 (attribution required: Ai2, MolmoSpaces, arXiv 2602.11337) and adds that the data is intended for research and educational use under Ai2's Responsible Use Guidelines. The `commercial_safe` filter exists only in the code (<https://github.com/allenai/molmospaces>, an environment variable that drops non-commercial Objaverse assets); the dataset card has no such flag and the THOR assets used here are not Objaverse.
 
 ## Assets
 

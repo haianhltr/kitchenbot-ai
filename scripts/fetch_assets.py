@@ -296,7 +296,10 @@ def render_manifest_md(manifest: dict) -> str:
         "repo ships no separate LICENSE file. MolmoSpaces: the card says all subsets except "
         "Objaverse are CC BY 4.0 (attribution required: Ai2, MolmoSpaces, arXiv 2602.11337) and "
         "adds that the data is intended for research and educational use under Ai2's "
-        "Responsible Use Guidelines; the card shows no `commercial_safe` flag.",
+        "Responsible Use Guidelines. The `commercial_safe` filter exists only in the code "
+        "(<https://github.com/allenai/molmospaces>, an environment variable that drops "
+        "non-commercial Objaverse assets); the dataset card has no such flag and the THOR "
+        "assets used here are not Objaverse.",
         "",
         "## Assets",
         "",
