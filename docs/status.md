@@ -2,7 +2,7 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #23, #28, #29, #30 and #35 merged, Isaac Sim not yet installed.
+**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30 and #35 merged, Isaac Sim not yet installed.
 
 ## What exists
 
@@ -23,7 +23,10 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
 - Evaluator: `scripts/evaluate.py` with the protocol's flags, `kitchenbot.evaluation` (scenario
   registry S0 to S4 with placeholder loaders naming their issues, strict JSON schema, Wilson
   intervals, failure-tag precedence, seed splits with `seen` as the default and a held-out notice
-  on `unseen`), and a synthetic `fake` scenario that runs on CI (#23). 160 unit tests pass.
+  on `unseen`), and a synthetic `fake` scenario that runs on CI (#23). `scripts/plot_results.py`
+  (success rates with intervals, failure histograms, torso error over time from optional traces)
+  and `scripts/update_experiments.py` (idempotent table rows, synthetic documents refused by
+  default) (#24). 237 unit tests pass.
 - `scripts/host_check.ps1`: read-only Windows readiness check with a `-Fix` mode for long paths,
   git `core.longpaths` and `uv` (#35). Run on this host on 2026-10-23: GPU, driver 616.92, disk
   and RAM pass; long paths, git option, VS 2022 C++ tools and `uv` fail; a reboot is pending.
@@ -37,7 +40,7 @@ none needing Isaac Sim:
 
 | Issue | Owner | What |
 | --- | --- | --- |
-| #24 | kb-eval | Plot script and `docs/experiments.md` table generation from result JSONs |
+| #40 | kb-eval | Experiments table rows for continuous metrics (mean, median, bootstrap interval) |
 
 #1 (the install) is on hold without `status:ready` until the operator reboots; #3 follows it.
 
@@ -56,5 +59,5 @@ none needing Isaac Sim:
 ## Next critical step
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
-(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #24 finishes without a
+(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #40 finishes without a
 simulator; after it nothing is left that does not need Isaac Sim.
