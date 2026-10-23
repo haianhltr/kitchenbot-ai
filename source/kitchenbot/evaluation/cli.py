@@ -3,7 +3,10 @@
 Example (docs/evaluation.md section 4)::
 
     python scripts/evaluate.py --scenario S4 --split unseen --seeds 1000-1049 \
-        --num_envs 50 --headless
+        --num_envs 50 --headless --config configs/eval/s4_unseen.yaml
+
+``--config`` names the committed ``configs/eval`` YAML the run was started from; its path and
+SHA256 go into the result (``run.config_path``, ``run.config_sha256``). The file is not read.
 
 Exit status: 0 on success, 2 for invalid arguments, 3 for a scenario that is registered but not
 implemented yet.
@@ -89,6 +92,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="fixed pelvis or floating base with the balance policy active (default floating)",
     )
     parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help=(
+            "the committed configs/eval/*.yaml this run was started from (optional): its path "
+            "and SHA256 are recorded in the result. The file is hashed, not read"
+        ),
+    )
+    parser.add_argument(
         "--out",
         type=Path,
         default=None,
@@ -130,6 +142,8 @@ def format_summary(doc: Mapping[str, Any]) -> str:
         )
     counts = ", ".join(f"{tag} {n}" for tag, n in agg["failure_tag_counts"].items())
     lines.append(f"  failure tags: {counts}")
+    if "config_path" in run:
+        lines.append(f"config {run['config_path']} | sha256 {run['config_sha256'][:12]}")
     lines.append(
         f"commit {run['git_commit'][:12]}{' (dirty)' if run['git_dirty'] else ''} | "
         f"gpu {run['gpu_name']} | wall-clock {run['wall_clock_s']:.2f} s"
@@ -160,6 +174,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             hand=args.hand,
             base=args.base,
             headless=args.headless,
+            config_path=args.config,
         )
     except ValueError as exc:
         parser.error(str(exc))  # exits with status 2
