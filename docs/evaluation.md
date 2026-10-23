@@ -73,8 +73,9 @@ python scripts/evaluate.py --scenario S4 --split unseen --seeds 1000-1049 --num_
 ```
 
 From the repository root. `--seeds` takes a count, a list or ranges (`50`, `0,5,10-12`, `1000-1049`)
-and defaults to the trial counts of step 2; seeds must belong to the chosen split. The result is
-written to `outputs/eval/<UTC timestamp>_<short commit>_<scenario>_<split>.json` (the timestamp
+and defaults to the trial counts of step 2; seeds must belong to the chosen split. `--split`
+defaults to `seen`: `unseen` is the held-out split, so a run on it prints a reminder to report only
+and never tune on those seeds. The result is written to `outputs/eval/<UTC timestamp>_<short commit>_<scenario>_<split>.json` (the timestamp
 stands in for the date of step 1 so two baselines run on one day do not overwrite each other),
 checked against `source/kitchenbot/evaluation/schema.json`, and summarised on stdout. When several
 causes of section 7 occur in one trial, the one listed first there is the primary tag.

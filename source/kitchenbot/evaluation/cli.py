@@ -30,6 +30,9 @@ from kitchenbot.evaluation.runner import (
 )
 from kitchenbot.evaluation.seeds import SPLITS, parse_seeds
 
+#: Printed before the summary of every run on the unseen split.
+HELD_OUT_NOTICE = "held-out split: report only, do not tune on these seeds"
+
 EXIT_USAGE = 2
 EXIT_NOT_IMPLEMENTED = 3
 
@@ -51,8 +54,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--split",
         choices=SPLITS,
-        default="unseen",
-        help="seed split: seen (0-99) or unseen (1000-1049); default unseen",
+        default="seen",
+        help=(
+            "seed split: seen (0-99, for development; default) or unseen (1000-1049, held out: "
+            "report only, do not tune on these seeds)"
+        ),
     )
     parser.add_argument(
         "--seeds",
@@ -165,6 +171,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return EXIT_NOT_IMPLEMENTED
 
     path = write_result(doc, _resolve_out(args.out, doc))
+    if config.split == "unseen":
+        print(HELD_OUT_NOTICE)
     print(format_summary(doc))
     print(f"wrote {path.as_posix()}")
     return 0
