@@ -11,3 +11,7 @@ configs/
 Every file that names a physics preset must set `physics: isaacsim_physx`; `tests/test_package.py`
 fails otherwise. Configs record `num_envs`, seeds, iteration budgets and randomization ranges, and
 the evaluator writes the config's hash into every result JSON.
+
+| Config | Run family | Status |
+| --- | --- | --- |
+| `train/stand_g1_dex3.yaml` | `KitchenBot-Stand-G1-Dex3` balance policy, RSL-RL PPO, 1024 envs, 1,500 iterations | Untested draft (#46); #5 runs it |

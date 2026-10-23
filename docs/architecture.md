@@ -147,6 +147,17 @@ implies about one hour for the 3,000-iteration rough G1 task. Our flat standing 
 environments on an RTX 5080 should land in the same order of magnitude, but no wall-clock is
 promised until the first run is measured and recorded in `docs/experiments.md`.
 
+**Draft status (#46, 2026-10-23).** An untested draft of this environment exists: `stand_env_cfg.py`,
+`commands.py`, `upper_body_action.py`, `rewards.py`, `curriculums.py` and `agents/rsl_rl_ppo_cfg.py`
+in `kitchenbot/locomotion`, `robots/g1_dex3.py`, `tasks/registry.py` and
+`configs/train/stand_g1_dex3.yaml`, written against the Isaac Lab v3.0.0 source without a simulator.
+Every Isaac Lab symbol it uses is pinned to a file and line in `docs/isaaclab_3_api_notes.md`,
+including where the source differs from this section (no 10 N floor for pushes, a `play_mode()`
+method instead of a `_PLAY` class, the knee limits already correct upstream). The sampling and
+curriculum math (`locomotion/upper_body_targets.py`) and the observation layout
+(`locomotion/obs_layout.py`: 138 values per frame, 690 over five frames, time-major) are tested on
+CI. #5 runs the draft and fixes it.
+
 ## 7. Arm controller (M3, reused with configuration)
 
 `DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls")`, wired
