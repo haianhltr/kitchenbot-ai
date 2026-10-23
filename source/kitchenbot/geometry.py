@@ -5,8 +5,11 @@ the arm controllers can use it without importing the planner; ``kitchenbot.plann
 re-exports every name. ``kitchenbot.scene`` imports nothing from here.
 
 Quaternions are ``(w, x, y, z)``, Isaac Lab's order, and are treated as unit rotations: every
-helper normalises its inputs. All poses are in one frame; turning them into the pelvis frame is
-#15's job, not the planner's.
+helper normalises its inputs. The planner keeps all its poses in one frame (the world). The frame
+helpers added in #48 move poses between frames for the arm pipeline: a ``Pose`` is read as the
+transform from its own frame to the frame it is expressed in, :func:`pose_compose` chains two such
+transforms, :func:`pose_inverse` reverses one, and :func:`to_frame` expresses a world pose in a
+moving frame such as the pelvis (docs/architecture.md section 5, "Frames").
 
 Frame conventions used by :mod:`kitchenbot.planning.plate_to_rack`:
 
@@ -26,7 +29,10 @@ import numpy as np
 
 __all__ = [
     "Pose",
+    "matrix_to_quat",
     "plate_vertical_quat",
+    "pose_compose",
+    "pose_inverse",
     "position_distance",
     "quat_angle",
     "quat_apply",
@@ -35,7 +41,9 @@ __all__ = [
     "quat_from_yaw",
     "quat_multiply",
     "quat_slerp",
+    "quat_to_matrix",
     "tilt_from_vertical",
+    "to_frame",
     "yaw_from_quat",
 ]
 
@@ -126,6 +134,49 @@ def position_distance(a, b) -> float:
     return float(np.linalg.norm(np.asarray(a, dtype=np.float64) - np.asarray(b, dtype=np.float64)))
 
 
+def quat_to_matrix(q) -> np.ndarray:
+    """3x3 rotation matrix of ``q``: ``quat_to_matrix(q) @ v == quat_apply(q, v)``."""
+    w, x, y, z = _unit_quat(q)
+    return np.array(
+        [
+            [1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y - w * z), 2.0 * (x * z + w * y)],
+            [2.0 * (x * y + w * z), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z - w * x)],
+            [2.0 * (x * z - w * y), 2.0 * (y * z + w * x), 1.0 - 2.0 * (x * x + y * y)],
+        ]
+    )
+
+
+def matrix_to_quat(m) -> np.ndarray:
+    """Unit quaternion ``(w, x, y, z)`` with ``w >= 0`` of the 3x3 rotation matrix ``m``.
+
+    Shepperd's method: the largest of ``w``, ``x``, ``y``, ``z`` is computed from the trace or a
+    diagonal entry, so the result stays accurate near half-turns. ``m`` must be a rotation matrix
+    (orthonormal, determinant +1, checked to 1e-6).
+    """
+    r = np.asarray(m, dtype=np.float64)
+    if r.shape != (3, 3) or not np.all(np.isfinite(r)):
+        raise ValueError(f"rotation matrix must be 3x3 and finite, got shape {r.shape}")
+    if not np.allclose(r @ r.T, np.eye(3), atol=1e-6) or np.linalg.det(r) < 0.0:
+        raise ValueError("matrix is not a rotation (orthonormal with determinant +1)")
+    trace = float(np.trace(r))
+    candidates = (trace, r[0, 0], r[1, 1], r[2, 2])
+    k = int(np.argmax(candidates))
+    if k == 0:
+        s = 2.0 * math.sqrt(1.0 + trace)
+        q = (0.25 * s, (r[2, 1] - r[1, 2]) / s, (r[0, 2] - r[2, 0]) / s, (r[1, 0] - r[0, 1]) / s)
+    elif k == 1:
+        s = 2.0 * math.sqrt(1.0 + r[0, 0] - r[1, 1] - r[2, 2])
+        q = ((r[2, 1] - r[1, 2]) / s, 0.25 * s, (r[0, 1] + r[1, 0]) / s, (r[0, 2] + r[2, 0]) / s)
+    elif k == 2:
+        s = 2.0 * math.sqrt(1.0 + r[1, 1] - r[0, 0] - r[2, 2])
+        q = ((r[0, 2] - r[2, 0]) / s, (r[0, 1] + r[1, 0]) / s, 0.25 * s, (r[1, 2] + r[2, 1]) / s)
+    else:
+        s = 2.0 * math.sqrt(1.0 + r[2, 2] - r[0, 0] - r[1, 1])
+        q = ((r[1, 0] - r[0, 1]) / s, (r[0, 2] + r[2, 0]) / s, (r[1, 2] + r[2, 1]) / s, 0.25 * s)
+    out = _unit_quat(q)
+    return -out if out[0] < 0.0 else out
+
+
 def plate_vertical_quat(slot_yaw: float) -> np.ndarray:
     """Orientation of a plate standing vertically in a slot with heading ``slot_yaw``.
 
@@ -196,3 +247,31 @@ class Pose:
     def with_quat(self, quat_wxyz) -> Pose:
         """The same position with another orientation."""
         return Pose(self.position, quat_wxyz)
+
+
+def pose_compose(a: Pose, b: Pose) -> Pose:
+    """``a * b``: the pose ``b``, given in ``a``'s frame, expressed in the frame ``a`` is given in.
+
+    Position ``a.p + R(a) b.p``, orientation ``a.q * b.q``. Read as transforms, ``b`` is applied
+    first, as in :func:`quat_multiply`.
+    """
+    return Pose(
+        a.position + quat_apply(a.quat_wxyz, b.position),
+        quat_multiply(a.quat_wxyz, b.quat_wxyz),
+    )
+
+
+def pose_inverse(a: Pose) -> Pose:
+    """The inverse transform: ``pose_compose(a, pose_inverse(a))`` is the identity pose."""
+    q_inv = quat_conjugate(a.quat_wxyz)
+    return Pose(-quat_apply(q_inv, a.position), q_inv)
+
+
+def to_frame(world_pose: Pose, frame_pose: Pose) -> Pose:
+    """``world_pose`` expressed in the frame whose world pose is ``frame_pose``.
+
+    Used every control step with ``frame_pose`` the current pelvis pose, so a world-frame target
+    becomes a pelvis-frame target and the arm, not the legs, compensates body sway
+    (docs/architecture.md section 5). Inverse of ``pose_compose(frame_pose, local_pose)``.
+    """
+    return pose_compose(pose_inverse(frame_pose), world_pose)
