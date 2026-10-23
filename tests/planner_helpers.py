@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 
@@ -110,7 +111,7 @@ class FakeHand:
     def is_holding(self) -> bool:
         return self.holding
 
-    def advance(self, dt: float) -> None:
+    def update(self, dt: float) -> None:
         if self.posture != "close":
             self._closing_s = 0.0
             self.holding = False
@@ -190,10 +191,16 @@ class FakePlate:
 
 @dataclass
 class Fakes:
-    """Everything the planner observes. Observation offsets make the planner see a wrong pose."""
+    """Everything the planner observes. Observation offsets make the planner see a wrong pose.
+
+    ``hand`` is any object with the ``HandController`` verbs, ``is_holding()`` and ``update(dt)``,
+    e.g. the #42 ``MockHand``. With ``hand_reach_from_geometry`` the harness sets the hand's
+    ``plate_in_reach`` from the palm-to-plate distance each step; off keeps the hand's own.
+    """
 
     arm: FakeArm = field(default_factory=lambda: FakeArm(PALM_START))
-    hand: FakeHand = field(default_factory=FakeHand)
+    hand: Any = field(default_factory=FakeHand)
+    hand_reach_from_geometry: bool = True
     plate: FakePlate = field(default_factory=FakePlate)
     rack: FakeRack = field(default_factory=FakeRack)
     counter_edge_pose: Pose = field(default_factory=lambda: COUNTER_EDGE)
@@ -220,10 +227,10 @@ class Fakes:
         """Send the command the way the composite environment will, then advance the fakes."""
         self.arm.step(command.arm_target, dt)
         getattr(self.hand, command.hand.value)()  # HandAction values are method names
-        self.hand.plate_in_reach = (
-            position_distance(self.arm.palm.position, self.plate.pose.position) <= ATTACH_RADIUS_M
-        )
-        self.hand.advance(dt)
+        if self.hand_reach_from_geometry:
+            palm_to_plate = position_distance(self.arm.palm.position, self.plate.pose.position)
+            self.hand.plate_in_reach = palm_to_plate <= ATTACH_RADIUS_M
+        self.hand.update(dt)
         self.plate.advance(self.arm.palm, self.hand.is_holding())
 
 
