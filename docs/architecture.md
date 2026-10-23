@@ -165,6 +165,16 @@ fallback is Isaac Lab's `OperationalSpaceController` with a null-space posture t
 floating bases, at the cost of switching the arm to effort control. This is a recorded risk, not a
 plan.
 
+The filter and the check exist since #48, without a simulator. `controllers/target_filter.py` has
+the slew filter and `ArmTargetPipeline`: world target, `kitchenbot.geometry.to_frame` into the
+pelvis frame, envelope gate, slew; it returns the pelvis-frame target and `infeasible`, the
+planner's `arm_infeasible`, and holds the last feasible target. The envelope
+(`controllers/data/right_arm_envelope.npz`, from `scripts/make_reach_envelope.py`) marks 2 cm
+pelvis-frame voxels reached by the right palm link in URDF forward kinematics
+(`robots/kinematics.py`) of 2,000,000 configurations sampled inside the limits with the wrist
+margin, waist at zero, seed 48; there is no collision check. #3 checks the chain against the USD,
+#14 builds the IK, #16 checks the envelope against the real IK and decides on the waist range.
+
 ## 8. Grasping (M4, developed)
 
 **Plate asset.** A rigid dinner plate with a 10 mm rim thickness and a 25 cm diameter, mass 0.35 kg,
