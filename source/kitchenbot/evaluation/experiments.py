@@ -1,7 +1,15 @@
 """Rows of the "Evaluation results" table in ``docs/experiments.md``.
 
-``scripts/update_experiments.py`` appends one row per aggregate rate of a result document, plus
-the median completion time where the document has one, to the table whose header is :data:`HEADER`.
+``scripts/update_experiments.py`` appends one row per aggregate rate of a result document and one
+row per continuous metric it carries to the table whose header is :data:`HEADER`.
+
+Reporting rule for a continuous metric (standing duration, torso orientation error, hand target
+error, completion time): Value is ``mean x.xx (median y.yy)`` with the unit implied by the metric
+name, 95% CI is the percentile bootstrap interval of the mean (2000 resamples,
+``random.Random(0)``, see :func:`kitchenbot.evaluation.stats.bootstrap_mean_interval`), and
+Trials is the number of episodes that carry the metric, written ``n of N`` when that is fewer than
+all ``N`` episodes (completion time exists for successes only).
+
 A document is keyed by its file name (the last column): a name already in the table is skipped,
 so running the script twice adds nothing the second time.
 
@@ -13,6 +21,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from typing import Any
+
+from kitchenbot.evaluation.stats import bootstrap_mean_interval
 
 SECTION = "## Evaluation results"
 
@@ -52,8 +62,8 @@ def _commit_cell(run: Mapping[str, Any]) -> str:
 def rows_for(doc: Mapping[str, Any], file_name: str) -> list[str]:
     """Table rows for one result document, in a fixed order.
 
-    ``success_rate`` first, then the other rates in the document's order, then the median
-    completion time if the document has successes with a completion time.
+    ``success_rate`` first, then the other rates in the document's order, then one row per
+    continuous metric that at least one episode carries (a metric with no values has no row).
     """
     run, agg = doc["run"], doc["aggregates"]
     prefix = [
@@ -82,14 +92,22 @@ def rows_for(doc: Mapping[str, Any], file_name: str) -> list[str]:
                 str(rate["n"]),
             )
         )
-    completion = agg["continuous"].get("completion_time_s")
-    if completion is not None and completion["n"] > 0:
+    for name, summary in agg["continuous"].items():
+        if summary["n"] == 0:
+            continue
+        values = [e["metrics"][name] for e in doc["episodes"] if e["metrics"][name] is not None]
+        if len(values) > 1:
+            low, high = bootstrap_mean_interval(values)
+            interval = f"{low:.2f} to {high:.2f}"
+        else:
+            interval = "n/a"  # one value has no spread to resample
+        n, total = summary["n"], agg["num_episodes"]
         rows.append(
             row(
-                "completion_time_s (median)",
-                f"{completion['median']:.2f} s",
-                "n/a",
-                f"{completion['n']} of {agg['num_episodes']}",
+                name,
+                f"mean {summary['mean']:.2f} (median {summary['median']:.2f})",
+                interval,
+                str(n) if n == total else f"{n} of {total}",
             )
         )
     return rows

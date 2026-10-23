@@ -1,12 +1,14 @@
 """Statistics for evaluation results: Wilson intervals and per-run aggregates.
 
 docs/evaluation.md section 4, step 3: every reported rate carries a 95 percent Wilson confidence
-interval. Pure standard library, so it runs on CI without numpy.
+interval; continuous metrics get a bootstrap interval of the mean. Pure standard library, so it
+runs on CI without numpy.
 """
 
 from __future__ import annotations
 
 import math
+import random
 import statistics
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -49,6 +51,41 @@ def wilson_interval(successes: int, n: int, z: float = Z_95) -> tuple[float, flo
     half = z * math.sqrt(p * (1.0 - p) / n + z2 / (4.0 * n * n)) / denom
     # The interval always contains p; the clamps only remove floating point error at 0 and 1.
     return max(0.0, min(p, centre - half)), min(1.0, max(p, centre + half))
+
+
+def bootstrap_mean_interval(
+    values: Sequence[float], resamples: int = 2000, seed: int = 0, level: float = 0.95
+) -> tuple[float, float]:
+    """Percentile bootstrap interval ``(low, high)`` of the mean of ``values``.
+
+    Draws ``resamples`` samples of ``len(values)`` values with replacement, takes the mean of
+    each, sorts the means and returns the nearest-rank percentiles: with ``B = resamples`` and
+    ``alpha = (1 - level) / 2`` the means of rank ``ceil(alpha * B)`` and ``ceil((1 - alpha) * B)``
+    (1-based), which is ranks 50 and 1950 for the defaults.
+
+    Deterministic: all randomness comes from ``random.Random(seed)`` and only ``random()`` is
+    used, whose output Python guarantees. Constant input gives a zero-width interval, and the
+    interval never leaves ``[min(values), max(values)]``. One value gives a zero-width interval
+    too (no spread to resample); callers should not present that as a confidence interval.
+    """
+    n = len(values)
+    if n < 1:
+        raise ValueError("need at least one value")
+    if resamples < 1:
+        raise ValueError("resamples must be at least 1")
+    if not 0.0 < level < 1.0:
+        raise ValueError("level must be between 0 and 1")
+    lowest, highest = min(values), max(values)
+    if lowest == highest:
+        return lowest, highest
+    rng = random.Random(seed)
+    means = sorted(
+        math.fsum(values[int(rng.random() * n)] for _ in range(n)) / n for _ in range(resamples)
+    )
+    alpha = (1.0 - level) / 2.0
+    low = means[max(1, math.ceil(alpha * resamples)) - 1]
+    high = means[min(resamples, math.ceil((1.0 - alpha) * resamples)) - 1]
+    return max(lowest, low), min(highest, high)
 
 
 def summarize_rate(count: int, n: int) -> dict[str, Any]:

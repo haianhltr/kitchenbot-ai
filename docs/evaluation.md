@@ -88,8 +88,12 @@ Figures and the results table are regenerated from the JSON files, never edited 
 `python scripts/plot_results.py` writes `success_rates.png`, `failure_tags.png` and
 `torso_error.png` to `outputs/figures/`, and `python scripts/update_experiments.py` appends the
 rows of every file in `outputs/eval/` that `docs/experiments.md` does not list yet (keyed by file
-name, so it is safe to run twice). Both refuse synthetic `fake` results unless `--allow-synthetic`
-is given, which is only for CI and scratch copies (`--doc`); never commit such rows.
+name, so it is safe to run twice). A continuous metric (standing duration, torso orientation error,
+hand target error, completion time) gets one row: `mean x.xx (median y.yy)`, the 95 percent
+percentile-bootstrap interval of the mean (2000 resamples, `random.Random(0)`), and the number of
+episodes that carry the metric (`36 of 50` for completion time, which exists for successes only).
+Both refuse synthetic `fake` results unless `--allow-synthetic` is given, which is only for CI and
+scratch copies (`--doc`); never commit such rows.
 
 ## 5. Targets
 

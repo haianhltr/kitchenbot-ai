@@ -7,6 +7,7 @@ from pathlib import Path
 
 from kitchenbot.evaluation.runner import EvalConfig, run_evaluation, write_result
 from kitchenbot.evaluation.schema import validate_result
+from kitchenbot.evaluation.stats import aggregate_episodes
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -50,6 +51,16 @@ def as_real_s4(doc: dict, commit: str = "ab" * 20, dirty: bool = False) -> dict:
         git_commit=commit,
         git_dirty=dirty,
     )
+    validate_result(doc)
+    return doc
+
+
+def scenario_doc(scenario: str, episodes: list[dict]) -> dict:
+    """A real document of ``scenario`` holding exactly ``episodes`` (dicts without ``seed``)."""
+    doc = as_real_s4(fake_doc("unseen", seeds=tuple(range(1000, 1000 + len(episodes)))))
+    doc["run"]["scenario"] = scenario
+    doc["episodes"] = [{"seed": 1000 + i, **e} for i, e in enumerate(episodes)]
+    doc["aggregates"] = aggregate_episodes(scenario, doc["episodes"])
     validate_result(doc)
     return doc
 
