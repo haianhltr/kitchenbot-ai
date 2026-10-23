@@ -2,7 +2,7 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #23, #28, #29 and #30 merged, Isaac Sim not yet installed.
+**As of:** 2026-10-23, #2, #23, #28, #29, #30 and #35 merged, Isaac Sim not yet installed.
 
 ## What exists
 
@@ -24,6 +24,9 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
   registry S0 to S4 with placeholder loaders naming their issues, strict JSON schema, Wilson
   intervals, failure-tag precedence, seed splits with `seen` as the default and a held-out notice
   on `unseen`), and a synthetic `fake` scenario that runs on CI (#23). 160 unit tests pass.
+- `scripts/host_check.ps1`: read-only Windows readiness check with a `-Fix` mode for long paths,
+  git `core.longpaths` and `uv` (#35). Run on this host on 2026-10-23: GPU, driver 616.92, disk
+  and RAM pass; long paths, git option, VS 2022 C++ tools and `uv` fail; a reboot is pending.
 - GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26), the pinned GPU
   queue #27, and no-simulation issues #28, #29, #30 added so work continues before the install.
 
@@ -35,15 +38,17 @@ none needing Isaac Sim:
 | Issue | Owner | What |
 | --- | --- | --- |
 | #24 | kb-eval | Plot script and `docs/experiments.md` table generation from result JSONs |
-| #35 | kb-sim | Windows host check script (long paths, build tools, uv, driver, disk) |
 
 #1 (the install) is on hold without `status:ready` until the operator reboots; #3 follows it.
 
 ## What needs the operator
 
-1. Install Visual Studio 2022 Build Tools with the C++ workload and `uv` (no reboot needed).
-2. Enable Windows long paths, then reboot (`docs/setup.md` section 2).
-3. After the reboot, tell the director; it re-adds `status:ready` to #1.
+1. In an elevated PowerShell: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\host_check.ps1 -Fix`
+   (enables long paths, sets the git option, installs `uv`).
+2. Install Visual Studio 2022 Build Tools with the "Desktop development with C++" workload
+   (https://aka.ms/vs/17/release/vs_BuildTools.exe), then reboot.
+3. After the reboot, run the check again without `-Fix`; when it reports no FAIL, tell the
+   director, who re-adds `status:ready` to #1.
 4. Read the MolmoSpaces dataset card's licence wording ("research and educational use" on top of
    CC BY 4.0) and say whether its two static filler assets may appear in the portfolio video; they
    are optional (D011).
@@ -51,5 +56,5 @@ none needing Isaac Sim:
 ## Next critical step
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
-(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #24 and #35 finish
-without a simulator; after them nothing is left that does not need Isaac Sim.
+(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #24 finishes without a
+simulator; after it nothing is left that does not need Isaac Sim.
