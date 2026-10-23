@@ -185,6 +185,15 @@ real-world plate is a known PhysX failure case; the rim is the concession, state
    the palm. Finger stiffness and friction are tuned against the S2 protocol.
 3. `Dex1GripperHand` (fallback): one prismatic or revolute joint, same interface.
 
+**Status (#42, no simulation).** The interface exists in `controllers/hand/base.py`: the four
+methods plus `update(dt)` and a read-only commanded `posture`, with `MockHand` for tests and the
+planner. `Dex3SynergyHand` exists as logic only, sensing and target writing injected as callables;
+its three postures are closing fractions of the URDF joint limits (`robots/joint_limits.py`) in
+one table in `controllers/hand/dex3_postures.py`. The closing directions of `thumb_0` and
+`thumb_1` are reasoned from the URDF joint origins and **unverified** until #18 runs them in
+simulation; they sit in one constant there. #17 adds `KinematicFollowHand`; #18 adds the contact
+sensors and the Isaac Lab wiring and tunes the table.
+
 Decision rule from the plan: if `Dex3SynergyHand` is below the S2 target after 15 hours of effort,
 switch to `Dex1GripperHand` and record the decision in `docs/decisions.md`.
 
