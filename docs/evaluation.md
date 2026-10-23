@@ -74,6 +74,10 @@ lower-body policy. Our 50-trial unseen split and the S0 metrics follow them.
 
 ### Running the evaluator
 
+Start every run from its committed YAML: `--config configs/eval/<scenario>_<split>.yaml` names the
+file and the evaluator records its path and SHA256 in `run.config_path` and `run.config_sha256`
+(#52; AGENTS.md section 6: a run without a committed config did not happen).
+
 ```
 python scripts/evaluate.py --scenario S4 --split unseen --seeds 1000-1049 --num_envs 50 --headless
 ```

@@ -2,9 +2,10 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47 and #48 merged,
-Isaac Sim not yet installed. Actuals: those thirteen issues (38 estimated hours) were finished in
-about five hours of wall-clock by parallel worker sessions, reviewed and merged by the director.
+**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49 and
+#52 merged, Isaac Sim not yet installed. Actuals: those fifteen issues (42 estimated hours) were
+finished in about six hours of wall-clock by parallel worker sessions, reviewed and merged by the
+director. CI is green on `main`.
 
 ## What exists
 
@@ -28,6 +29,11 @@ about five hours of wall-clock by parallel worker sessions, reviewed and merged 
   `rack_tines.usda`, `counter.usda` and `floor.usda` as static primitive colliders, each checked
   against the module to 1 mm (#47). Known tension: the tines leave 12 mm per side and stop an
   8.5 degree lean, tighter than the planner's provisional tolerances (noted on #21).
+- Seeded randomization `scene/randomization.py`: every row of `docs/evaluation.md` section 2 as
+  `RandomizationRanges`, one deterministic `EpisodeSpec` per (scenario, split, seed), the ten
+  `configs/eval/s<N>_<split>.yaml` files generated and checked by `scripts/make_eval_configs.py`,
+  and `scripts/evaluate.py --config` recording the YAML's SHA256 in the result (`schema_version`
+  2) (#52). #13 wraps the sampler in Isaac Lab event terms.
 - Evaluator: `scripts/evaluate.py` with the protocol's flags, `kitchenbot.evaluation` (scenario
   registry S0 to S4 with placeholder loaders naming their issues, strict JSON schema, Wilson
   intervals, failure-tag precedence, seed splits with `seen` as the default and a held-out notice
@@ -64,19 +70,29 @@ about five hours of wall-clock by parallel worker sessions, reviewed and merged 
   repository's geometry is (w, x, y, z), PhysX is a CLI preset resolved through a `PresetCfg`
   field, un-actuated joint targets go through `set_position_index` (#46). #5 runs and fixes the
   drafts against the 15-item checklist in PR #53.
+- Report and video skeletons: `docs/report.md` with every empty slot an HTML comment naming the
+  issue that fills it, and `docs/demo_video_script.md` (16 shots, 163 s, selection rules fixed
+  before any result exists, overlay specification for `record_demo.py`); `tests/test_docs_skeletons.py`
+  keeps result rows digit-free (#49). Protocol gaps it exposed were added as tasks to #7, #20, #21,
+  #22 and #26 (unseen-split runs, committed figures, the Agile checkpoint licence).
 - `scripts/host_check.ps1`: read-only Windows readiness check with a `-Fix` mode for long paths,
   git `core.longpaths` and `uv` (#35). Run on this host on 2026-10-23: GPU, driver 616.92, disk
   and RAM pass; long paths, git option, VS 2022 C++ tools and `uv` fail; a reboot is pending.
 - GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26), the pinned GPU
   queue #27, and no-simulation issues #28, #29, #30, #35, #40, #42, #43, #46 to #49 and #52 added
-  so work continued before the install. CI is green on `main`.
+  so work continued before the install.
+
+## Open design question (decided in simulation, not now)
+
+The sampled plate centres lie 0.61 to 0.84 m ahead of the pelvis (stand-off 0.45 m plus the plate
+box centred 0.30 m into the counter), while the right-palm envelope with the waist at zero reaches
+0.44 m forward; no S4 draw is reachable without leaning or stepping closer. The knobs are
+`ROBOT_STANDOFF_M`, `PLATE_NOMINAL_XY_M` and the waist range in the envelope, one constant each.
+#10 and #14 measure, #16 decides the waist range; recorded on #10, #13, #14 and #16.
 
 ## What is running
 
-No training run has started. Two no-simulation issues are in progress: #49 (technical report
-skeleton and demo video script, kb-eval; the report file had to be written by the director because
-the harness blocks worker sessions from writing report files) and #52 (seeded randomization sampler
-and the ten eval YAMLs, kb-sim). Every other open issue needs Isaac Sim.
+No training run has started. Nothing is in progress: every remaining open issue needs Isaac Sim.
 
 #1 (the install) is on hold without `status:ready` until the operator reboots; #3 follows it.
 
@@ -96,5 +112,4 @@ and the ten eval YAMLs, kb-sim). Every other open issue needs Isaac Sim.
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #49 and #52 merge, nothing that does not need Isaac Sim is left; the next move
-is the operator's.
+Windows gate). Nothing that does not need Isaac Sim is left; the next move is the operator's.

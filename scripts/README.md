@@ -11,6 +11,7 @@ number are planned.
 | `make_rack_tines_usd.py` | generate `source/kitchenbot/scene/assets/dishwasher/rack_tines.usda` (base frame, two rows of capsule tines, slot markers; static primitive colliders) from `kitchenbot.scene.kitchen_dims`; `--check FILE` compares a file with it to 1 mm and exits 1 on any mismatch (needs `usd-core`, no simulator) | #47 |
 | `make_counter_usd.py` | generate `source/kitchenbot/scene/assets/kitchen/counter.usda` (counter with a recessed sink) and `floor.usda` (top face z = 0) from `kitchenbot.scene.kitchen_dims`; `--check FILE...` verifies the counter-top height and the floor top (needs `usd-core`, no simulator) | #47 |
 | `make_reach_envelope.py` | sample the right palm's reachability envelope with URDF forward kinematics (2 cm pelvis-frame voxels, waist at zero) into `source/kitchenbot/controllers/data/right_arm_envelope.npz`; `--seed`, `--samples`; `--check FILE` prints fill fraction, bounding box and file size; `--plot` writes `outputs/figures/right_arm_envelope.png` (no simulator) | #48 |
+| `make_eval_configs.py` | write the ten `configs/eval/s<N>_<split>.yaml` (scenario, split, physics, `num_envs`, seeds, evaluator defaults, the `randomization` block of `RandomizationRanges`) from `kitchenbot.scene.randomization`; `--check` regenerates into a temporary directory, diffs, and exits 1 on any difference (no simulator) | #52 |
 | `host_check.ps1` | Windows host readiness check for the install: long paths, VS 2022 C++ tools, `uv`, NVIDIA driver, disk, RAM, pending reboot; read-only, `-Fix` for the safe fixes (PowerShell 5.1, no simulator) | #35 |
 | `smoke/dump_g1_joints.py` | spawn the G1 + Dex3 asset, print joints, links, DoF, defaults | P03 |
 | `smoke/load_kitchen.py` | load scene layers and step; report FPS | P10 to P12 |
@@ -18,7 +19,7 @@ number are planned.
 | `usd_inspect.py` | print prim tree, revolute and prismatic joints, mesh count and collision approximations of a USD file (needs `usd-core`) | P29 |
 | `train_stand.py` | thin wrapper around `isaaclab train` for the standing task with the pinned config | P06 |
 | `export_policy.py` | TorchScript export plus joint-order and observation manifest | P06 |
-| `evaluate.py` | run scenarios S0 to S4 per `docs/evaluation.md` and write JSON | #23 |
+| `evaluate.py` | run scenarios S0 to S4 per `docs/evaluation.md` and write JSON; `--config FILE` records the SHA256 of the committed `configs/eval` YAML in `run.config_sha256` | #23, #52 |
 | `plot_results.py` | figures from `outputs/eval/*.json` | #24 |
 | `update_experiments.py` | append measured rows to `docs/experiments.md` | #24 |
 | `record_demo.py` | demo video with on-screen controller labels | P25 |
