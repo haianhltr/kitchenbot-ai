@@ -4,13 +4,13 @@
 
 The video has one job: a viewer can tell, at every moment, which controller is moving which part of the robot, and can tell a trained policy from a scripted motion. It is silent by design because the labels carry the information; any audio is the operator's choice at publishing time.
 
-**Length.** The shot list below is a cut of 60 to 90 seconds, as issue #49 specifies. `docs/evaluation.md` section 8 and issue #25 ask for 2 to 3 minutes; the director reconciles the two. A longer cut can reuse the same shots with the full-length S4 successes.
+**Length.** The cut follows `docs/evaluation.md` section 8 (2 to 3 minutes).
 
 ## Rules that apply to every clip
 
 1. **Every clip is one evaluation trial.** It is re-rendered from the seed and the configuration of a trial that is listed in a committed `outputs/eval/*.json` file, through the evaluator's own code path. Nothing is keyframed, hand-driven or played back from a recorded joint trajectory.
 2. **The outcome must match the file.** After rendering, the outcome of the clip (success, or the failure tag) is compared with the outcome stored for that seed. If they differ, the clip is not used and the mismatch is written into the limitations of the report.
-3. **Selection is fixed here and is never redone by eye.** The clips of shots 02 and 04 to 09 use the first successful seeds of their result file in ascending order (for S0, successful means the robot did not fall), the failure clips use the first seed in ascending order for each of the most frequent failure tags, and the comparison clip of shot 03 uses the first seed with no filter on its outcome. A clip is not replaced because it looks better or worse than another.
+3. **Selection is fixed here and is never redone by eye.** The building-block clips (S0, S1, S2 and S3) and the three S4 success clips use the first successful seeds of their result file in ascending order (for S0, successful means the robot did not fall). The failure clips use the first seed in ascending order for each of the most frequent failure tags. The side-by-side S0 comparison uses the first seed with no filter on its outcome. A clip is not replaced because it looks better or worse than another.
 4. **Labels are read, not typed.** The words on screen are produced from the run block of the JSON file and from the live environment by the table in "Label text" below.
 5. **Speed.** Real time is the default. A clip longer than its slot may be sped up by a whole factor, and the corner text always shows the factor. There is no slow motion and no cut inside a clip.
 6. **Which results.** Clips use the unseen split of the scenario when its file exists, and otherwise the seen split; the corner text names the split either way. Synthetic result files and files from a modified working tree are never used for the final cut.
@@ -21,24 +21,27 @@ The video has one job: a viewer can tell, at every moment, which controller is m
 
 | Shot | Scenario | Base | Camera | Seconds | Lower-body label | Failure tag |
 | --- | --- | --- | --- | --- | --- | --- |
-| 01 | card | none | card | 4 | title card | none |
-| 02 | S0 | balance policy | wide | 6 | `own policy v1` | none |
-| 03 | S0 | balance policy | split-wide | 8 | `own policy v1` and `Agile baseline` | none |
-| 04 | S1 | balance policy | medium-right | 6 | `own policy v1` | none |
-| 05 | S2 | balance policy | hand-close | 7 | `own policy v1` | none |
-| 06 | S3 | fixed pelvis | slot-side | 7 | `pelvis fixed (no policy)` | none |
-| 07 | S4 | balance policy | wide | 16 | `own policy v1` | none |
-| 08 | S4 | balance policy | wide | 5 | `own policy v1` | none |
-| 09 | S4 | balance policy | wide | 5 | `own policy v1` | none |
-| 10 | S4 | balance policy | wide | 4 | `own policy v1` | most frequent |
-| 11 | S4 | balance policy | wide | 4 | `own policy v1` | second most frequent |
-| 12 | S4 | balance policy | wide | 4 | `own policy v1` | third most frequent |
-| 13 | card | none | card | 5 | closing card | none |
+| 01 | card | none | card | 6 | title card | none |
+| 02 | S0 | balance policy | wide | 8 | `own policy v1` | none |
+| 03 | S0 | balance policy | split-wide | 14 | `own policy v1` and `Agile baseline` | none |
+| 04 | S1 | fixed pelvis | medium-right | 8 | `pelvis fixed (no policy)` | none |
+| 05 | S1 | balance policy | medium-right | 8 | `own policy v1` | none |
+| 06 | S2 | fixed pelvis | hand-close | 8 | `pelvis fixed (no policy)` | none |
+| 07 | S2 | balance policy | hand-close | 10 | `own policy v1` | none |
+| 08 | S3 | fixed pelvis | slot-side | 10 | `pelvis fixed (no policy)` | none |
+| 09 | S4 | balance policy | wide | 30 | `own policy v1` | none |
+| 10 | S4 | balance policy | wide | 12 | `own policy v1` | none |
+| 11 | S4 | balance policy | wide | 12 | `own policy v1` | none |
+| 12 | S4 | balance policy | wide | 8 | `own policy v1` | most frequent |
+| 13 | S4 | balance policy | wide | 8 | `own policy v1` | second most frequent |
+| 14 | S4 | balance policy | wide | 8 | `own policy v1` | third most frequent |
+| 15 | card | none | card | 8 | closing card | none |
+| 16 | card | none | card | 5 | credits card | none |
 
 The lower-body label in the table is the default configuration. Which lower-body controller and which hand the final clips show follows from the result files, through the label table below.
 
-<!-- TODO(#8): record which lower-body controller the director chose for the MVP; if it is the Agile baseline, the default label of shots 02 and 04 to 12 changes to the Agile text and nothing else -->
-<!-- TODO(#18): record the outcome of the Dex3 or Dex1 decision; the hand label of shots 05 to 12 follows it through the label table -->
+<!-- TODO(#8): record which lower-body controller the director chose for the MVP; if it is the Agile baseline, the default label of every shot that says own policy v1 changes to the Agile text and nothing else -->
+<!-- TODO(#18): record the outcome of the Dex3 or Dex1 decision; the hand label of every shot with a physical hand follows it through the label table -->
 
 ## Label text
 
@@ -110,11 +113,24 @@ HAND        held open (no grasp)
 STATE       n/a (no planner)
 ```
 
-What happens: the same seed, the same pushes and the same camera pose in both halves, each half rendered from its own result file and joined side by side. This is the project's first robot-learning comparison, so the clip is not filtered on outcome: whatever each controller did is shown, including a fall.
+What happens: the same seed, the same pushes and the same camera pose in both halves, each half rendered from its own result file and joined side by side. This is the project's first robot-learning comparison, so the clip is not filtered on outcome: whatever each controller did is shown, including a fall. The long slot lets two to three pushes play out in real time.
 
 <!-- TODO(#7): the two result files and the shared seed, chosen by rule 3 with no outcome filter -->
 
-### Shot 04: S1, reach with the balance policy active
+### Shot 04: S1, reach with the pelvis fixed
+
+```
+LOWER BODY  pelvis fixed (no policy)
+ARM         DifferentialIK (right), held posture (left)
+HAND        held open (no grasp)
+STATE       n/a (no planner)
+```
+
+What happens: a reach target appears in front of the robot and the right hand moves to it with the pelvis bolted in place. This is the reference for the next shot: the arm controller alone, without the cost of balancing. The target is a marker drawn by the environment, not by the overlay. Camera `medium-right`.
+
+<!-- TODO(#14): result file, seed and commit of the fixed-base S1 clip -->
+
+### Shot 05: S1, reach with the balance policy active
 
 ```
 LOWER BODY  own policy v1
@@ -123,12 +139,25 @@ HAND        held open (no grasp)
 STATE       n/a (no planner)
 ```
 
-What happens: a reach target appears in front of the robot and the right hand moves to it while the legs keep balance. The target is a marker drawn by the environment, not by the overlay. Camera `medium-right`.
+What happens: the same kind of reach target appears and the right hand moves to it while the legs keep balance. Same camera as shot 04 so the two base modes can be compared by eye. Camera `medium-right`.
 
-<!-- TODO(#16): result file, seed and commit of the S1 clip -->
+<!-- TODO(#16): result file, seed and commit of the balance-policy S1 clip -->
 <!-- TODO(#15): the reach target marker in the composite environment -->
 
-### Shot 05: S2, grasp and lift
+### Shot 06: S2, grasp and lift with the attach baseline
+
+```
+LOWER BODY  pelvis fixed (no policy)
+ARM         DifferentialIK (right), held posture (left)
+HAND        KinematicFollowHand (attach baseline)
+STATE       pre_grasp
+```
+
+What happens: the baseline attaches the plate to the palm and lifts it clear of the counter. It is shown, labelled as a baseline, so that the physical grasp in the next shot can be told apart from it. STATE steps through `pre_grasp`, `grasp` and `lift`. Camera `hand-close`.
+
+<!-- TODO(#17): result file, seed and commit of the fixed-base S2 clip with the attach baseline -->
+
+### Shot 07: S2, grasp and lift with the physical hand
 
 ```
 LOWER BODY  own policy v1
@@ -137,11 +166,12 @@ HAND        Dex3SynergyHand
 STATE       pre_grasp
 ```
 
-What happens: the hand closes on the rim of the plate and lifts it clear of the counter. STATE steps through `pre_grasp`, `grasp` and `lift`. Camera `hand-close`.
+What happens: the hand closes on the rim of the plate and lifts it clear of the counter with the balance policy active. STATE steps through `pre_grasp`, `grasp` and `lift`. Camera `hand-close`.
 
 <!-- TODO(#20): result file, seed and commit of the S2 clip with the balance policy active -->
+<!-- TODO(#18): the hand label follows the outcome of the Dex3 or Dex1 decision -->
 
-### Shot 06: S3, place in the rack
+### Shot 08: S3, place in the rack
 
 ```
 LOWER BODY  pelvis fixed (no policy)
@@ -154,7 +184,7 @@ What happens: the plate held in the hand is carried over the rack, aligned with 
 
 <!-- TODO(#21): result file, seed and commit of the fixed-base S3 clip; GAP, no issue schedules S3 with the balance policy, so the label stays "pelvis fixed" unless such a file exists -->
 
-### Shot 07: S4, full task, first success
+### Shot 09: S4, full task, first success
 
 ```
 LOWER BODY  own policy v1
@@ -163,11 +193,11 @@ HAND        Dex3SynergyHand
 STATE       idle
 ```
 
-What happens: the whole task from a random plate pose to the released plate, at real time if the trial fits the slot, otherwise sped up by a whole factor shown in the corner. STATE steps through `idle`, `pre_grasp`, `grasp`, `lift`, `transport`, `align`, `insert`, `release` and `done`. Camera `wide`.
+What happens: the whole task from a random plate pose to the released plate, in real time; the slot is as long as the evaluator's trial limit, so the trial always fits. STATE steps through `idle`, `pre_grasp`, `grasp`, `lift`, `transport`, `align`, `insert`, `release` and `done`. Camera `wide`.
 
 <!-- TODO(#22): result file, seed and commit of the first successful S4 trial in ascending seed order -->
 
-### Shot 08: S4, second success
+### Shot 10: S4, second success
 
 ```
 LOWER BODY  own policy v1
@@ -176,11 +206,11 @@ HAND        Dex3SynergyHand
 STATE       idle
 ```
 
-What happens: the second successful trial in ascending seed order, sped up by a whole factor if needed. STATE as in shot 07. Camera `wide`.
+What happens: the second successful trial in ascending seed order, sped up by a whole factor if it is longer than the slot. STATE as in shot 09. Camera `wide`.
 
 <!-- TODO(#22): seed of the second successful S4 trial -->
 
-### Shot 09: S4, third success
+### Shot 11: S4, third success
 
 ```
 LOWER BODY  own policy v1
@@ -189,11 +219,11 @@ HAND        Dex3SynergyHand
 STATE       idle
 ```
 
-What happens: the third successful trial in ascending seed order, sped up by a whole factor if needed. STATE as in shot 07. Camera `wide`.
+What happens: the third successful trial in ascending seed order, sped up by a whole factor if it is longer than the slot. STATE as in shot 09. Camera `wide`.
 
 <!-- TODO(#22): seed of the third successful S4 trial -->
 
-### Shot 10: S4, failure with the most frequent tag
+### Shot 12: S4, failure with the most frequent tag
 
 ```
 LOWER BODY  own policy v1
@@ -203,11 +233,11 @@ STATE       idle
 FAILURE: <tag>
 ```
 
-What happens: the first trial in ascending seed order that carries the most frequent failure tag in the S4 result file. The clip ends one second after the failure banner appears. `<tag>` is one of the seven failure tags of [evaluation.md](evaluation.md), read from the file. Camera `wide`, real time.
+What happens: the first trial in ascending seed order that carries the most frequent failure tag in the S4 result file. The clip ends one second after the failure banner appears and starts early enough to fill its slot. `<tag>` is one of the seven failure tags of [evaluation.md](evaluation.md), read from the file. Camera `wide`, real time.
 
 <!-- TODO(#22): the failure histogram that ranks the tags, and the seed with the most frequent one -->
 
-### Shot 11: S4, failure with the second most frequent tag
+### Shot 13: S4, failure with the second most frequent tag
 
 ```
 LOWER BODY  own policy v1
@@ -217,11 +247,11 @@ STATE       idle
 FAILURE: <tag>
 ```
 
-What happens: as shot 10, for the second most frequent failure tag. If fewer than two tags occur, the shot is dropped and its seconds go to shot 13, which keeps the total inside the limit.
+What happens: as shot 12, for the second most frequent failure tag. If fewer than two tags occur, the shot is dropped and the total stays inside the protocol's length.
 
 <!-- TODO(#22): the seed with the second most frequent tag -->
 
-### Shot 12: S4, failure with the third most frequent tag
+### Shot 14: S4, failure with the third most frequent tag
 
 ```
 LOWER BODY  own policy v1
@@ -231,11 +261,11 @@ STATE       idle
 FAILURE: <tag>
 ```
 
-What happens: as shot 10, for the third most frequent failure tag. If fewer than three tags occur, the shot is dropped and its seconds go to shot 13.
+What happens: as shot 12, for the third most frequent failure tag. If fewer than three tags occur, the shot is dropped.
 
 <!-- TODO(#22): the seed with the third most frequent tag -->
 
-### Shot 13: closing card
+### Shot 15: closing card
 
 ```
 Measured with scripts/evaluate.py
@@ -243,10 +273,25 @@ Every number in the report traces to a file in outputs/eval
 github.com/haianhltr/kitchenbot-ai
 ```
 
-What happens: the success-rate figure, unchanged, as produced by `scripts/plot_results.py` from the same result files, with the three lines above under it and the commit in the corner. The card makes no claim of its own; the numbers are in the figure.
+What happens: the success-rate figure, unchanged, as produced by `scripts/plot_results.py` from the same result files, with the three lines above under it. The card makes no claim of its own; the numbers are in the figure.
 
 <!-- TODO(#24): the figure outputs/figures/success_rates.png from the final result files -->
 <!-- TODO(#26): the release or repository address printed on the card, once the release exists; keep the second line only if the traceability check of the report passed -->
+
+### Shot 16: credits card
+
+```
+Credits
+Code: MIT. Unitree G1 description: BSD-3-Clause.
+Kitchen assets: ArtVIP, Apache-2.0.
+Simulation: NVIDIA Isaac Sim and Isaac Lab.
+commit <7 hex digits>   seeds <the seeds of the clips, in shot order>
+```
+
+What happens: plain text on the card background; no motion. The commit is the first seven digits of `git_commit` of the result files used, and the seeds are listed in the order of the shots, so a viewer can look up every clip.
+
+<!-- TODO(#26): the licence lines copied from the Acknowledgements table of the report at the release; add the MolmoSpaces attribution only if one of its assets is visible, and drop the ArtVIP line if the authored dishwasher replaced it -->
+<!-- TODO(#12): which furniture assets are visible in the final clips -->
 
 ## Camera presets
 
@@ -278,7 +323,7 @@ This is what `scripts/record_demo.py` (#25) implements. All sizes are fractions 
 
 **Split shot.** Each half has its own panel, as above, and a top rule 0.006 H high in the colour of its lower-body value. The corner strip is shared and sits at the bottom right of the full frame.
 
-**Cards.** Background `#101418`, text centred, the first line at 0.07 H in white and the others at 0.035 H in light grey. The closing card places the figure within 0.7 H of height, unscaled in content.
+**Cards.** Background `#101418`, text centred, the first line at 0.07 H in white and the others at 0.035 H in light grey. The closing card places the figure within 0.7 H of height, unscaled in content. The cards carry no corner strip; the credits card prints the commit and the seeds in its own text.
 
 **Behaviour.** The overlay is burned into every frame by `record_demo.py` from live state, not added as a subtitle track. Values come from the run block of the result file and from the environment on that frame. If any value cannot be read the recording stops with an error instead of drawing a blank. The script refuses synthetic result files and, for the final cut, files whose `git_dirty` is true; rehearsal clips may use them and then show `+dirty` in the corner. Text that is not derived from these sources is not allowed on screen, apart from the card text above.
 
