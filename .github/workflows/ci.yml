@@ -22,6 +22,9 @@ jobs:
       - name: Lint
         run: ruff check .
 
+      - name: Parse-check scripts/host_check.ps1 (PowerShell, parse only)
+        run: 'pwsh -NoProfile -Command "[scriptblock]::Create((Get-Content -Raw scripts/host_check.ps1)) | Out-Null"'
+
       - name: Unit tests (sim tests are skipped without --run-sim)
         run: pytest -q
 
