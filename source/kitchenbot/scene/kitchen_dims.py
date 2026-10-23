@@ -19,6 +19,14 @@ tine rows, ``z`` up, origin at the centre of the underside of the base frame. Th
 slot frame (``planning/geometry.py``): a seated plate's normal points along ``x``, so a slot pose
 has yaw 0 here and the world yaw of a slot is the yaw of the rack link. The rack frame is the
 frame of the rack link that #11 attaches the tines to.
+
+Dishwasher root-link frame (#59, the ``DISHWASHER_*`` constants at the end): the frame of
+``E_body_5``, the articulation root link of ArtVIP ``dishwasher_2``, which
+``dishwasher_2_overrides.usda`` puts at its origin. The origin is on the unit's underside at the
+end of the front face with the smallest ``x``; ``x`` runs along the front face, ``y`` from the front
+face into the unit (the door opens and the racks pull out towards ``-y``), ``z`` is up. Lengths are
+at asset scale 1.0. ``DISHWASHER_POSE_KITCHEN`` places this frame in the kitchen frame; the frame
+math lives in ``scene/dishwasher_frames.py``.
 """
 
 from __future__ import annotations
@@ -255,3 +263,108 @@ class RackSlotLayout:
             top_z=self.base_thickness + diameter_m,
             fits=bool(side > 0.0 and depth_margin >= 0.0 and row_margin >= 0.0 and engaged > 0.0),
         )
+
+
+# --------------------------------------------------------------------------------------------
+# Dishwasher: ArtVIP dishwasher_2 in the kitchen (#59, no simulator)
+# --------------------------------------------------------------------------------------------
+# Measured with usd-core on model_dishwasher_2.usda (#29's file, ArtVIP revision d22f209) in the
+# root-link frame (module docstring), at asset scale 1.0. #29 gave the joint limits, drives and
+# overall sizes; the link origins, the door hinge and the rack floor below were read on 2026-10-23
+# for #59. scene/dishwasher_frames.py turns them into poses.
+
+#: #29: body E_body_5 is 0.482 x 0.395 x 0.470 m (x along the front face, y into the unit, z up).
+DISHWASHER_BODY_SIZE_M = (0.4819, 0.3949, 0.470)
+#: #59: E_body_5's frame sits at this point of the ArtVIP asset frame (its authored transform);
+#: the overrides layer translates the asset by minus this, so the root link is at the layer origin.
+DISHWASHER_ROOT_LINK_IN_ASSET_M = (-0.2364634, -0.2022152, 0.0)
+#: #59: the door joint (revolute about x, 0 to 90 deg, #29) in the root-link frame. +90 deg swings
+#: the door's top edge forward and down: open, the door is a plank in front of the front face.
+DISHWASHER_DOOR_HINGE_M = (0.2481, 0.0002, 0.0142)
+DISHWASHER_DOOR_LENGTH_M = 0.3593  # #59: hinge to the door's top edge (0.3735 m), its open reach
+DISHWASHER_DOOR_SPAN_X_M = (0.0164, 0.4673)  # #59: the door's x extent, handle included
+DISHWASHER_DOOR_THICKNESS_M = (-0.0197, 0.0096)  # #59: closed door's y extent about the hinge
+DISHWASHER_DOOR_OPEN_DEG = 90.0  # #29: E_door_4 limit 0..90 deg, ArtVIP drive target 90 (open)
+#: #59: origin of the lower-rack link E_shelf_1_04 at joint position 0, in the root-link frame
+#: (the prismatic joint's localPos0). The rack mesh spans RACK_WIDTH_M x RACK_DEPTH_M from it.
+DISHWASHER_LOWER_RACK_LINK_M = (0.0618026, 0.0167763, 0.0875132)
+DISHWASHER_RACK_HEIGHT_M = 0.0351  # #59: the rack mesh, link origin to the top of its rim
+#: #59: E_shelf_1_04's authored transform scales its local x by 0.9191 (E_shelf_03: 0.94); a child
+#: of the link inherits it, so the tines are attached under the inverse (dishwasher_frames).
+DISHWASHER_LOWER_RACK_LINK_SCALE_X = 0.9191
+#: #29: both racks are prismatic along the root-link y, limits -0.2..0 m (negative pulls out).
+DISHWASHER_RACK_LIMITS_M = (-0.2, 0.0)
+DISHWASHER_UPPER_RACK_UNDERSIDE_Z_M = 0.2418  # #59: E_shelf_03's underside, root-link frame
+#: Provisional (#59): the lower-rack travel the kitchen pose assumes; #11 raises the -0.2 m limit
+#: of #29 to -DISHWASHER_RACK_TRAVEL_M (scripts/make_dishwasher_overrides.py --rack-travel). At
+#: 0.2 m a 25 cm plate standing in the slot row reaches 85 mm back past the front face, under the
+#: upper rack (0.119 m above the lower one) and the tub's top, so it cannot be lowered in from
+#: above at any pose. The plate clears the front face from 0.160 * scale + radius (0.295 m for
+#: the 27 cm plate at scale 1.0, dishwasher_frames.min_rack_travel); 0.40 m, #11's original
+#: number, keeps a 2 cm margin up to scale 1.5. The rack then hangs 64 mm above the open door,
+#: in front of the body, held by the joint (a real rack would roll onto the door's rails). It
+#: also moves the open door's tip 0.12 m inside the rack centre instead of 0.32 m, which is what
+#: lets the rack come as close to the robot as DISHWASHER_POSE_KITCHEN puts it.
+DISHWASHER_RACK_TRAVEL_M = 0.40
+
+#: (x, y, z, yaw) of the rack frame (the origin of rack_tines.usda) in the lower-rack link's
+#: local coordinates, which carry the link's x scale: x = 0.1993 is 0.1832 m (RACK_WIDTH_M / 2)
+#: and y = 0.1434 m (RACK_DEPTH_M / 2), the centre of the rack mesh; z = 0.0121 m is the top of
+#: the rack's floor wires (#59). Yaw 0: the rack frame's x is the rack's width, its y the pull-out
+#: axis, matching RackSlotLayout. Asset-scaled with the link, so the same at every RACK_SCALE.
+RACK_TINES_POSE_IN_LINK = (0.1993, 0.1434, 0.0121, 0.0)
+
+#: Provisional (#59): (x, y, z, yaw) of the root-link frame in the kitchen frame, metres and
+#: radians. The articulation root link, so this is also ArticulationCfg.init_state. Option (a) of
+#: the #56 follow-up: the compact unit raised on a plinth beside the robot, clear of the counter.
+#: Reasoned without a simulator from #56 (PR #63: the slots are reachable with the rack base,
+#: the rack frame origin, 0.5 to 0.7 m above the floor and about 0.25 m to the robot's right; on
+#: the floor, rack base 0.09 m, nothing is) and the #48 envelope (waist at zero, pelvis 0.75 m):
+#: * the rack must be clear of the counter in y: the counter is solid over 0 <= y <= 0.6 m up to
+#:   0.9 m and the planner lowers the plate vertically after lift -> counter edge -> above slot
+#:   (docs/architecture.md section 9). The unit (0.48 m wide) does not fit between the edge and the
+#:   pelvis, so it stands to the robot's right, front facing -x (yaw -90 deg), its body 15 mm in
+#:   front of the counter (x 0.59 to 0.98 m, y -0.50 to -0.015 m); the rack is 77 mm clear of the
+#:   counter edge;
+#: * z = 0.55 m (a plinth under the body, scene/kitchen_scene_cfg.py) puts the rack frame origin at
+#:   0.65 m, inside #56's band. The upper rack (option c) would need the unit 0.15 m lower for the
+#:   same rack height and gains no reach (below); on the counter top (option b) the rack base would
+#:   be at 1.0 m and the targets 25 cm above the slots 0.72 to 0.84 m above the pelvis, at or past
+#:   the envelope's top (0.74 m);
+#: * the lateral offset is set by the right leg, not by reach: at this height the open door
+#:   (z 0.54 to 0.57 m) and the pulled-out rack (z 0.64 to 0.67 m) lie across the robot's y band at
+#:   either stand-off, and the leg's joint line is 0.12 m to the right of the pelvis (URDF), its
+#:   surface about 0.17 m (estimate: the link meshes are not in the fixture). The rack's near edge
+#:   is 0.143 m inside the rack centre and the door tip 0.12 m inside it, so the centre has to be
+#:   at least about 0.33 m to the right; 0.35 m leaves 37 mm (rack edge at x = 0.207 m) and 61 mm
+#:   (door tip at x = 0.231 m). #56's 0.25 m cannot be had with this unit without the leg hitting
+#:   the rack; at 0.40 m #56 lost the unseen slot 5, so 0.35 m is the compromise;
+#: * with DISHWASHER_RACK_TRAVEL_M the rack frame origin is at (0.350, -0.260, 0.650) m and the
+#:   slot row runs along y (slot 1 at y = -0.16 m, slot 5 at -0.36 m), 0.35 m to the right of the
+#:   pelvis and 0.10 m below it. At the 0.45 m stand-off the origin is 0.19 m ahead of the pelvis,
+#:   0.398 m away horizontally (0.411 m in 3D); at #56's 0.25 m stand-off it is 0.01 m behind it,
+#:   0.350 m (0.364 m). In the waist-zero envelope every palm waypoint around the five slots (slot
+#:   pose, 25 cm above, 5 cm below; grasp frame on the plate's side or top rim) is inside with 2 cm
+#:   to spare at 0.25 m; at 0.45 m all but the side-grasp insertion point of slot 1 (0.29 m ahead).
+#:   At the authored 0.2 m travel the rack would be 0.55 m to the right, out of reach.
+#: At scale 1.3 the 0.47 m door and the larger rack push the centre further right still, one
+#: reason RACK_SCALE stays 1.0. #56 re-runs its analysis on this pose; #10 and #11 confirm it in
+#: simulation, the leg clearance first.
+DISHWASHER_POSE_KITCHEN = (0.59, -0.015, 0.55, -math.pi / 2.0)
+
+
+def rack_fits_plate(
+    scale: float = RACK_SCALE, diameter_m: float = PLATE_DIAMETERS_M[1]
+) -> PlateFit:
+    """How a plate of ``diameter_m`` sits in the slot row with the ArtVIP asset scaled by ``scale``.
+
+    The ArtVIP rack scales with the asset (its outline becomes ``RACK_WIDTH_M * scale`` by
+    ``RACK_DEPTH_M * scale``); the authored tines and the plates do not: the tines keep the 5 cm
+    pitch and 8 cm height of :class:`RackSlotLayout` (they are attached under a compensating scale,
+    ``dishwasher_frames.rack_tines_scale_in_link``). Defaults: today's ``RACK_SCALE`` and the 25 cm
+    plate.
+    """
+    if not math.isfinite(scale) or scale <= 0.0:
+        raise ValueError(f"scale must be positive and finite, got {scale!r}")
+    layout = RackSlotLayout(rack_width_m=RACK_WIDTH_M * scale, rack_depth_m=RACK_DEPTH_M * scale)
+    return layout.plate_fit(diameter_m)
