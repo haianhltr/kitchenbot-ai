@@ -692,6 +692,9 @@
         },
         "metrics": {
           "$ref": "#/$defs/metrics"
+        },
+        "traces": {
+          "$ref": "#/$defs/traces"
         }
       },
       "if": {
@@ -905,6 +908,30 @@
               "minimum": 0
             }
           }
+        }
+      }
+    },
+    "traces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_rate_hz",
+        "torso_orientation_error_deg"
+      ],
+      "description": "Optional downsampled per-step series of one episode (10 Hz is enough). A document may omit it and still validate; scripts/plot_results.py uses it when present.",
+      "properties": {
+        "sample_rate_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "torso_orientation_error_deg": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "Torso tilt error sqrt(roll^2 + pitch^2) in degrees at each sample, sample k at time k / sample_rate_hz from the episode start. The episode metric of the same name is the RMS of the full-rate series."
         }
       }
     }

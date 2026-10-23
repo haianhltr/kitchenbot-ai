@@ -238,3 +238,38 @@ def test_cross_field_checks():
     bad["run"]["split"] = "seen"
     with pytest.raises(ValueError, match="split"):
         validate_result(bad)
+
+
+def _with_traces(doc, traces):
+    doc = copy.deepcopy(doc)
+    doc["episodes"][0]["traces"] = traces
+    return doc
+
+
+def test_traces_are_optional_and_validated_when_present():
+    doc = make_doc("S4")
+    assert all("traces" not in e for e in doc["episodes"])
+    validate_result(doc)  # no traces: still valid
+    good = {"sample_rate_hz": 10.0, "torso_orientation_error_deg": [1.0, 2.5, 0.0]}
+    validate_result(_with_traces(doc, good))
+    validate_result(_with_traces(doc, {**good, "sample_rate_hz": 0.5}))
+
+
+@pytest.mark.parametrize(
+    "traces",
+    [
+        {"torso_orientation_error_deg": [1.0]},
+        {"sample_rate_hz": 10.0},
+        {"sample_rate_hz": 0, "torso_orientation_error_deg": [1.0]},
+        {"sample_rate_hz": -10.0, "torso_orientation_error_deg": [1.0]},
+        {"sample_rate_hz": "10", "torso_orientation_error_deg": [1.0]},
+        {"sample_rate_hz": 10.0, "torso_orientation_error_deg": []},
+        {"sample_rate_hz": 10.0, "torso_orientation_error_deg": [1.0, -0.5]},
+        {"sample_rate_hz": 10.0, "torso_orientation_error_deg": [1.0, None]},
+        {"sample_rate_hz": 10.0, "torso_orientation_error_deg": [1.0], "extra": []},
+        [1.0, 2.0],
+    ],
+)
+def test_bad_traces_are_rejected(traces):
+    with pytest.raises(ValidationError):
+        validate_result(_with_traces(make_doc("S4"), traces))

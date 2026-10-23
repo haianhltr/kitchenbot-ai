@@ -108,7 +108,8 @@ class EpisodeResult:
     """What a backend reports for one seed. ``metrics`` keys must equal ``metrics_for(scenario)``.
 
     ``duration_s`` is simulated episode time in seconds. ``failure_tag`` is ``FailureTag.SUCCESS``
-    exactly when ``success`` is true.
+    exactly when ``success`` is true. ``traces`` is optional: ``{"sample_rate_hz": 10.0,
+    "torso_orientation_error_deg": [...]}`` as described by ``schema.json``.
     """
 
     seed: int
@@ -116,6 +117,7 @@ class EpisodeResult:
     failure_tag: FailureTag
     duration_s: float
     metrics: Mapping[str, Any] = field(default_factory=dict)
+    traces: Mapping[str, Any] | None = None
 
 
 class ScenarioBackend(Protocol):
@@ -292,13 +294,16 @@ def _episode_record(result: EpisodeResult, scenario: str) -> dict[str, Any]:
     tag = FailureTag(result.failure_tag)
     if result.success != (tag is FailureTag.SUCCESS):
         raise ValueError(f"seed {result.seed}: success={result.success} but failure_tag={tag}")
-    return {
+    record: dict[str, Any] = {
         "seed": int(result.seed),
         "success": bool(result.success),
         "failure_tag": tag.value,
         "duration_s": round(float(result.duration_s), 4),
         "metrics": dict(result.metrics),
     }
+    if result.traces is not None:
+        record["traces"] = dict(result.traces)
+    return record
 
 
 def run_evaluation(config: EvalConfig, *, validate: bool = True) -> dict[str, Any]:
@@ -357,18 +362,48 @@ def default_output_path(doc: Mapping[str, Any], out_dir: Path = DEFAULT_OUTPUT_D
 
     docs/evaluation.md section 4 names ``<date>_<commit>_<scenario>_<split>``. The date carries
     the time of day so two runs of one scenario on one day (own policy and Agile, say) do not
-    overwrite each other.
+    overwrite each other. If the file already exists (two runs within one second) ``-2``, ``-3``
+    and so on is appended to the stem: a result is never overwritten.
     """
     run = doc["run"]
     stamp = run["started_at"].replace("-", "").replace(":", "")
     commit = run["git_commit"][:7] if run["git_commit"] != "unknown" else "nogit"
-    return Path(out_dir) / f"{stamp}_{commit}_{run['scenario']}_{run['split']}.json"
+    stem = f"{stamp}_{commit}_{run['scenario']}_{run['split']}"
+    path = Path(out_dir) / f"{stem}.json"
+    n = 2
+    while path.exists():
+        path = Path(out_dir) / f"{stem}-{n}.json"
+        n += 1
+    return path
+
+
+def _dumps(obj: Any, level: int = 0) -> str:
+    """``json.dumps(indent=2)`` except that a list of numbers stays on one line.
+
+    Seed lists and per-step traces would otherwise take one line per number.
+    """
+    pad, end = "  " * (level + 1), "  " * level
+    if isinstance(obj, Mapping):
+        if not obj:
+            return "{}"
+        items = [f"{pad}{json.dumps(k)}: {_dumps(v, level + 1)}" for k, v in obj.items()]
+        return "{\n" + ",\n".join(items) + "\n" + end + "}"
+    if isinstance(obj, list | tuple):
+        if not obj:
+            return "[]"
+        if all(isinstance(x, int | float) and not isinstance(x, bool) for x in obj):
+            return "[" + ", ".join(json.dumps(x, allow_nan=False) for x in obj) + "]"
+        return "[\n" + ",\n".join(pad + _dumps(v, level + 1) for v in obj) + "\n" + end + "]"
+    return json.dumps(obj, allow_nan=False)
 
 
 def write_result(doc: Mapping[str, Any], path: Path) -> Path:
-    """Write ``doc`` as strict JSON (no NaN), creating parent directories."""
+    """Write ``doc`` as strict JSON (no NaN), creating parent directories.
+
+    Lists of numbers (``run.seeds``, ``episodes[].traces``) are written on one line.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(doc, indent=2, allow_nan=False) + "\n"
+    text = _dumps(doc) + "\n"
     path.write_text(text, encoding="utf-8", newline="\n")
     return path
