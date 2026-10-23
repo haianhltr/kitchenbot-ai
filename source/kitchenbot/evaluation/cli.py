@@ -6,10 +6,16 @@ Example (docs/evaluation.md section 4)::
         --num_envs 50 --headless --config configs/eval/s4_unseen.yaml
 
 ``--config`` names the committed ``configs/eval`` YAML the run was started from; its path and
-SHA256 go into the result (``run.config_path``, ``run.config_sha256``). The file is not read.
+SHA256 go into the result (``run.config_path``, ``run.config_sha256``). The evaluator does not
+read the file; a scenario's loader may (``dry`` does, for the sampler scenario and ranges).
 
-Exit status: 0 on success, 2 for invalid arguments, 3 for a scenario that is registered but not
-implemented yet.
+``--extra KEY=VALUE`` (repeatable, value a YAML scalar) fills ``EvalConfig.extras``, the options
+one scenario reads: ``--scenario dry --extra reach_gate=false`` runs the dry scenario without the
+reachability gate. A key the scenario does not read is a usage error. Extras are not in the
+``run`` block; they reach ``run.config_hash`` through the scenario's resolved config.
+
+Exit status: 0 on success, 2 for invalid arguments or a configuration the scenario rejects, 3 for
+a scenario that is registered but not implemented yet.
 """
 
 from __future__ import annotations
@@ -20,12 +26,15 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from kitchenbot.evaluation.runner import (
     BASES,
     DEFAULT_OUTPUT_DIR,
     HANDS,
     POLICIES,
     EvalConfig,
+    ScenarioConfigError,
     default_output_path,
     run_evaluation,
     scenario_names,
@@ -52,7 +61,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--scenario",
         required=True,
         choices=scenario_names(),
-        help="S0 to S4, or fake (synthetic, no simulation, CI only)",
+        help=(
+            "S0 to S4, or fake or dry (synthetic, no simulation, CI only; dry chains the sampler, "
+            "the planner against fakes and the judges)"
+        ),
     )
     parser.add_argument(
         "--split",
@@ -97,7 +109,19 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "the committed configs/eval/*.yaml this run was started from (optional): its path "
-            "and SHA256 are recorded in the result. The file is hashed, not read"
+            "and SHA256 are recorded in the result. The file is hashed, not read, by the "
+            "evaluator (the dry scenario reads it too)"
+        ),
+    )
+    parser.add_argument(
+        "--extra",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help=(
+            "an option only one scenario reads, repeatable; the value is a YAML scalar (false, "
+            "0.3, text). dry reads reach_gate (default true): --extra reach_gate=false turns the "
+            "reachability gate off. The result's run.config_hash covers it"
         ),
     )
     parser.add_argument(
@@ -110,6 +134,28 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     return parser
+
+
+def parse_extras(items: Sequence[str]) -> dict[str, Any]:
+    """``{key: value}`` from ``--extra KEY=VALUE`` items; the value is parsed as a YAML scalar.
+
+    ``false``, ``0.3``, ``7`` and ``text`` become a bool, a float, an int and a string; an empty
+    value is ``None``. Raises ``ValueError`` for an item without ``=`` or with an empty key, for a
+    repeated key and for a value that is not valid YAML.
+    """
+    extras: dict[str, Any] = {}
+    for item in items:
+        key, sep, raw = item.partition("=")
+        key = key.strip()
+        if not sep or not key:
+            raise ValueError(f"--extra expects KEY=VALUE, got {item!r}")
+        if key in extras:
+            raise ValueError(f"--extra {key} given twice")
+        try:
+            extras[key] = yaml.safe_load(raw)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"--extra {key}: cannot read {raw!r} as a YAML value: {exc}") from exc
+    return extras
 
 
 def format_summary(doc: Mapping[str, Any]) -> str:
@@ -175,6 +221,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             base=args.base,
             headless=args.headless,
             config_path=args.config,
+            extras=parse_extras(args.extra),
         )
     except ValueError as exc:
         parser.error(str(exc))  # exits with status 2
@@ -184,10 +231,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     except NotImplementedError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_NOT_IMPLEMENTED
+    except ScenarioConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_USAGE
 
     path = write_result(doc, _resolve_out(args.out, doc))
     if config.split == "unseen":
         print(HELD_OUT_NOTICE)
     print(format_summary(doc))
+    if config.extras:
+        print("extras " + ", ".join(f"{key}={value}" for key, value in config.extras.items()))
     print(f"wrote {path.as_posix()}")
     return 0

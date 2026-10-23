@@ -22,8 +22,8 @@ number are planned.
 | `usd_inspect.py` | print prim tree, revolute and prismatic joints, mesh count and collision approximations of a USD file (needs `usd-core`) | P29 |
 | `train_stand.py` | thin wrapper around `isaaclab train` for the standing task with the pinned config | P06 |
 | `export_policy.py` | TorchScript export plus joint-order and observation manifest | P06 |
-| `evaluate.py` | run scenarios S0 to S4 per `docs/evaluation.md` and write JSON; `--config FILE` records the SHA256 of the committed `configs/eval` YAML in `run.config_sha256` | #23, #52 |
-| `plot_results.py` | figures from `outputs/eval/*.json` | #24 |
+| `evaluate.py` | run scenarios S0 to S4 per `docs/evaluation.md` and write JSON; `--config FILE` records the SHA256 of the committed `configs/eval` YAML in `run.config_sha256`; `--scenario fake` and `--scenario dry` are synthetic and need no simulator (`dry` chains the sampler, the planner against test doubles and the judges, and reads the YAML's ranges); `--extra KEY=VALUE` (repeatable, YAML scalar) sets a scenario option, e.g. `--extra reach_gate=false` for `dry` | #23, #52, #60 |
+| `plot_results.py` | figures from `outputs/eval/*.json`; synthetic `fake` and `dry` results only with `--allow-synthetic`, and the figures say so | #24, #60 |
 | `update_experiments.py` | append measured rows to `docs/experiments.md` | #24 |
 | `record_demo.py` | demo video with on-screen controller labels | P25 |
 

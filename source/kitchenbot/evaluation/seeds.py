@@ -17,8 +17,8 @@ UNSEEN_SEEDS: tuple[int, ...] = tuple(range(1000, 1050))
 
 _SPLIT_SEEDS = {"seen": SEEN_SEEDS, "unseen": UNSEEN_SEEDS}
 
-#: Scenarios that use 50 trials on both splits (section 4, step 2).
-_FIFTY_TRIAL_SCENARIOS = frozenset({"S4"})
+#: Scenarios that use 50 trials on both splits (section 4, step 2). ``dry`` mirrors S4 (#60).
+_FIFTY_TRIAL_SCENARIOS = frozenset({"S4", "dry"})
 
 
 def split_seeds(split: str) -> list[int]:

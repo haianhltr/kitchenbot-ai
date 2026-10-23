@@ -16,7 +16,9 @@ actually run::
     register_scenario(ScenarioSpec(name="S0", title="Stand", loader=_load_s0), replace=True)
 
 S0 to S4 currently register placeholder loaders that raise ``NotImplementedError`` naming the
-issue that creates the environment config. ``fake`` is a synthetic scenario for CI.
+issue that creates the environment config. ``fake`` and ``dry`` are synthetic scenarios for CI;
+``dry`` (#60, :mod:`kitchenbot.evaluation.dry_run`) is the template of a real backend: the
+sampler, the planner and the judges chained, with test doubles where the simulation will be.
 """
 
 from __future__ import annotations
@@ -65,7 +67,14 @@ class EvalConfig:
     from (AGENTS.md section 6: a run without a committed config did not happen). The file must
     exist; ``run_evaluation`` records its path and SHA256 in ``run.config_path`` and
     ``run.config_sha256``. It is not part of :meth:`to_dict`, so ``run.config_hash`` is the same
-    with and without it. The runner does not read the file's contents.
+    with and without it. The runner does not read the file's contents; a scenario's loader may.
+
+    ``extras`` are options only one scenario's loader reads (``dry``: ``reach_gate``, see
+    :mod:`kitchenbot.evaluation.dry_run`). They are not part of :meth:`to_dict`, so they are not
+    in the ``run`` block and the schema is untouched; a loader that uses one puts it in its
+    ``resolved_config()``, which is how it reaches ``run.config_hash``. The command line fills
+    them with ``--extra KEY=VALUE``; ``run_evaluation`` rejects keys the scenario does not list in
+    ``ScenarioSpec.extra_keys``.
     """
 
     scenario: str
@@ -77,6 +86,7 @@ class EvalConfig:
     base: str = "floating"
     headless: bool = False
     config_path: Path | None = None
+    extras: Mapping[str, Any] = field(default_factory=dict, hash=False)
 
     def __post_init__(self) -> None:
         for field_name, allowed in (
@@ -103,6 +113,9 @@ class EvalConfig:
             if not path.is_file():
                 raise ValueError(f"config_path {str(self.config_path)!r} is not a file")
             object.__setattr__(self, "config_path", path)
+        if not all(isinstance(key, str) for key in self.extras):
+            raise ValueError("extras keys must be strings")
+        object.__setattr__(self, "extras", dict(self.extras))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -134,6 +147,13 @@ class EpisodeResult:
     traces: Mapping[str, Any] | None = None
 
 
+class ScenarioConfigError(ValueError):
+    """A scenario's loader rejected the run's configuration (a YAML it read, an ``extras`` key).
+
+    The command line reports it as a usage error (exit status 2) instead of a traceback.
+    """
+
+
 class ScenarioBackend(Protocol):
     """Runs episodes of one scenario. Created by the scenario's loader."""
 
@@ -158,13 +178,19 @@ Loader = Callable[[EvalConfig], ScenarioBackend]
 
 @dataclass(frozen=True)
 class ScenarioSpec:
-    """A registered scenario. ``uses_gpu`` false records ``gpu_name`` as ``"none"``."""
+    """A registered scenario. ``uses_gpu`` false records ``gpu_name`` as ``"none"``.
+
+    ``extra_keys`` are the :attr:`EvalConfig.extras` keys the scenario's loader reads;
+    ``run_evaluation`` rejects any other key, so an option typed on the command line
+    (``--extra``) never silently does nothing.
+    """
 
     name: str
     title: str
     loader: Loader
     uses_gpu: bool = True
     synthetic: bool = False
+    extra_keys: tuple[str, ...] = ()
 
 
 _REGISTRY: dict[str, ScenarioSpec] = {}
@@ -189,7 +215,7 @@ def get_scenario(name: str) -> ScenarioSpec:
 
 
 def scenario_names() -> list[str]:
-    """Registered scenario names in the order S0 to S4, fake."""
+    """Registered scenario names in the order S0 to S4, fake, dry."""
     return [n for n in SCENARIO_NAMES if n in _REGISTRY]
 
 
@@ -207,6 +233,12 @@ def _load_fake(config: EvalConfig) -> ScenarioBackend:
     from kitchenbot.evaluation.fake import FakeBackend
 
     return FakeBackend(config)
+
+
+def _load_dry(config: EvalConfig) -> ScenarioBackend:
+    from kitchenbot.evaluation.dry_run import DryRunBackend
+
+    return DryRunBackend(config)
 
 
 def _register_builtin() -> None:
@@ -228,6 +260,16 @@ def _register_builtin() -> None:
             loader=_load_fake,
             uses_gpu=False,
             synthetic=True,
+        )
+    )
+    register_scenario(
+        ScenarioSpec(
+            name="dry",
+            title="Dry run: sampler, planner against fakes and judges (no simulation)",
+            loader=_load_dry,
+            uses_gpu=False,
+            synthetic=True,
+            extra_keys=("reach_gate",),  # dry_run.EXTRA_KEYS; a test keeps the two equal
         )
     )
 
@@ -333,6 +375,10 @@ def run_evaluation(config: EvalConfig, *, validate: bool = True) -> dict[str, An
     scenario whose loader is still a placeholder.
     """
     spec = get_scenario(config.scenario)
+    unknown = sorted(set(config.extras) - set(spec.extra_keys))
+    if unknown:
+        takes = f"reads {list(spec.extra_keys)}" if spec.extra_keys else "takes no extras"
+        raise ScenarioConfigError(f"unknown extras {unknown}: scenario {spec.name} {takes}")
     config_file: dict[str, str] = {}
     if config.config_path is not None:
         # Hashed before the backend loads, so what is recorded is what the run started with.

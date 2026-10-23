@@ -26,8 +26,9 @@ Per-episode ``metrics`` keys
 ``rack_collision`` is a metric, not the failure tag of the same name: a trial can touch the rack
 above the force threshold and still succeed, and the collision rate counts it.
 
-The scenario ``fake`` reports the S4 set, so CI exercises every kind of metric except the S0 and
-S1 ones.
+The scenarios ``fake`` and ``dry`` report the S4 set, so CI exercises every kind of metric except
+the S0 and S1 ones. ``dry`` (#60) fills that set from the judges; it has no torso, so its
+``torso_orientation_error_deg`` is always 0.0 and ``fell`` always false.
 """
 
 from __future__ import annotations
@@ -40,9 +41,12 @@ HAND_TARGET_THRESHOLD_CM = 3.0
 #: Name of the derived rate computed from ``hand_target_error_cm``.
 HAND_TARGET_RATE = "hand_target_under_3cm_rate"
 
-#: Scenarios the evaluator knows. ``fake`` is the synthetic scenario that runs on CI.
+#: Scenarios the evaluator knows. ``fake`` and ``dry`` are the synthetic ones that run on CI:
+#: ``fake`` draws outcomes from the seed, ``dry`` (#60) runs the sampler, the planner against test
+#: doubles and the judges. Neither is ever a result (``run.synthetic``).
 REAL_SCENARIOS: tuple[str, ...] = ("S0", "S1", "S2", "S3", "S4")
-SCENARIO_NAMES: tuple[str, ...] = (*REAL_SCENARIOS, "fake")
+SYNTHETIC_SCENARIOS: tuple[str, ...] = ("fake", "dry")
+SCENARIO_NAMES: tuple[str, ...] = (*REAL_SCENARIOS, *SYNTHETIC_SCENARIOS)
 
 #: What ``success`` means per scenario, quoted from docs/evaluation.md sections 3 and 5. The
 #: scenario backend decides it from simulation state; the runner only checks that ``success`` and
@@ -54,6 +58,7 @@ SUCCESS_DEFINITIONS: dict[str, str] = {
     "S3": "placement success: plate in the slot volume, within 15 deg of vertical, stable 2 s",
     "S4": "task success: grasp and placement both succeed, no fall, within the 30 s timeout",
     "fake": "synthetic: no failure cause drawn for the seed (mirrors S4)",
+    "dry": "synthetic: S4's definition decided by the judges on the planner's run against fakes",
 }
 
 
@@ -72,12 +77,12 @@ class MetricSpec:
     nullable: bool = False
 
 
-_S4_LIKE = {"S4", "fake"}
+_S4_LIKE = {"S4", *SYNTHETIC_SCENARIOS}
 
 METRICS: dict[str, MetricSpec] = {
     m.name: m
     for m in (
-        MetricSpec("fell", "bool", frozenset((*REAL_SCENARIOS, "fake")), rate_name="fall_rate"),
+        MetricSpec("fell", "bool", frozenset(SCENARIO_NAMES), rate_name="fall_rate"),
         MetricSpec("standing_duration_s", "number", frozenset({"S0"})),
         MetricSpec("torso_orientation_error_deg", "number", frozenset({"S0", "S1"} | _S4_LIKE)),
         MetricSpec("hand_target_error_cm", "number", frozenset({"S1"})),

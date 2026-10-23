@@ -5,8 +5,8 @@
 
 Writes success_rates.png, failure_tags.png and torso_error.png (deterministic names) to
 ``outputs/figures/`` (git-ignored) unless --out is given. Run from the repository root.
-Synthetic results (the fake scenario) are refused unless --allow-synthetic is given, and then
-the figures say so. Exit status: 0 ok, 1 a named file was refused, 2 bad input.
+Synthetic results (the fake and dry scenarios) are refused unless --allow-synthetic is given, and
+then the figures say so. Exit status: 0 ok, 1 a named file was refused, 2 bad input.
 """
 
 import argparse
@@ -37,7 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--allow-synthetic",
         action="store_true",
-        help="also plot synthetic (fake scenario) results; the figures are marked as synthetic",
+        help="also plot synthetic (fake or dry) results; the figures are marked as synthetic",
     )
     return parser
 

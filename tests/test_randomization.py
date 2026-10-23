@@ -85,7 +85,7 @@ def test_held_out_values_agree_with_kitchen_dims():
 
 
 def test_scenarios_are_s0_to_s4():
-    assert SCENARIOS == tuple(n for n in SCENARIO_NAMES if n != "fake")
+    assert SCENARIOS == tuple(n for n in SCENARIO_NAMES if n not in ("fake", "dry"))
 
 
 def test_nominal_plate_point_is_on_the_counter_right_of_the_sink():

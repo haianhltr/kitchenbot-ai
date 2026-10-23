@@ -94,7 +94,12 @@ stands in for the date of step 1 so two baselines run on one day do not overwrit
 checked against `source/kitchenbot/evaluation/schema.json`, and summarised on stdout. When several
 causes of section 7 occur in one trial, the one listed first there is the primary tag.
 `--scenario fake` is synthetic, needs no simulator, is what CI runs, and is marked
-`run.synthetic`: it is never a result. A new scenario registers a `ScenarioSpec` with
+`run.synthetic`: it is never a result. `--scenario dry --config configs/eval/s4_seen.yaml` is the
+same kind of run but chains the real pieces (the sampler for the episode, the planner against test
+doubles of the arm behind the reachability gate, the hand, the plate and the rack, and the judges
+for `success` and the failure tag; `--extra reach_gate=false` runs it without the gate), so it checks
+the contracts between them before any simulation exists and is the template of the real S3 and S4
+backends. A new scenario registers a `ScenarioSpec` with
 `register_scenario` in `kitchenbot/evaluation/runner.py`, whose loader imports its environment
 config inside the function body and returns a backend with `run_batch(seeds)`.
 
@@ -106,8 +111,8 @@ name, so it is safe to run twice). A continuous metric (standing duration, torso
 hand target error, completion time) gets one row: `mean x.xx (median y.yy)`, the 95 percent
 percentile-bootstrap interval of the mean (2000 resamples, `random.Random(0)`), and the number of
 episodes that carry the metric (`36 of 50` for completion time, which exists for successes only).
-Both refuse synthetic `fake` results unless `--allow-synthetic` is given, which is only for CI and
-scratch copies (`--doc`); never commit such rows.
+Both refuse synthetic `fake` and `dry` results unless `--allow-synthetic` is given, which is only
+for CI and scratch copies (`--doc`); never commit such rows.
 
 ## 5. Targets
 
