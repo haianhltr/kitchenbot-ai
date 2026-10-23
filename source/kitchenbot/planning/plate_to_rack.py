@@ -35,7 +35,7 @@ from typing import Any
 import numpy as np
 
 from kitchenbot.evaluation.failure_tags import FailureTag, primary_failure_tag
-from kitchenbot.planning.geometry import (
+from kitchenbot.geometry import (
     Pose,
     plate_vertical_quat,
     position_distance,
