@@ -252,6 +252,20 @@ Collision budgets: convex decomposition on rack tines (they are what the plate t
 for cabinet shells. The scene is one USD layer per element so M4 and M5 can load counter plus
 dishwasher without cabinets for speed.
 
+Authored geometry exists since #47, without a simulator. `scene/kitchen_dims.py` holds every
+authored dimension (counter 0.90 m high, 0.60 m deep, 1.8 m wide with a 0.45 x 0.40 m sink, robot
+stand-off 0.45 m; each marked with its source or `provisional`) and `RackSlotLayout`, whose
+`slot_pose(i)` is the planner's slot pose in the rack frame: `x` across the tines, `y` along the two
+tine rows, `z` up, origin at the centre of the base frame's underside, slot 3 of 5 at `x = 0`, pose
+height at the top of the tines. `scripts/make_counter_usd.py` and `scripts/make_rack_tines_usd.py`
+write `counter.usda`, `floor.usda` and `rack_tines.usda` as static primitive colliders (boxes,
+capsule tines; so the convex decomposition above is not needed for the tines) with a friction-1.0
+material and no rigid body; each `--check` compares the committed file with `kitchen_dims` to 1 mm.
+Still open: #10 builds the scene config, picks slab or `GroundPlaneCfg` for the floor and measures
+FPS; #11 attaches the tines to the rack link, decides the ArtVIP scale (it scales every authored
+length, the pitch included) and checks the slot poses against simulation to 1 cm; whether a plate
+stays upright on the flat base is not measured yet.
+
 ### 10a. Asset sources
 
 Isaac Sim 6.2 ships no kitchen environment and no articulated cabinet or dishwasher, so articulated
