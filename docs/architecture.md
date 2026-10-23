@@ -211,6 +211,31 @@ Each state has a timeout and a failure tag matching `docs/evaluation.md` section
 computed from the rack slot pose in the scene config; there is no motion planner in the MVP. Collision
 with the rack is avoided geometrically by a corridor above the slot, and measured, not assumed.
 
+The core exists since #43, tested against a fake arm (0.3 m/s, 1 rad/s slew) and hand; #21 wires it
+to the simulation. `step(obs, dt)` returns a palm pose target and a hand verb (`open`, `pre_grasp`,
+`close`, the `HandController` method names); it never calls the arm or the hand. `plate_pose` in
+the observation is the plate's grasp frame on the rim and `slot_pose` is that frame's pose at the
+slot entry, so the plate diameter is folded in by the environment layer, not the planner. Each
+step checks the current state's failure conditions first, then its exit; the first cause observed
+moves the planner to `failed`, which holds the palm where it is and never changes again. Causes seen
+in the same step resolve by the section 7 precedence. A 30 s budget (`timeout`) applies in every
+state. Timeouts, tolerances (2 cm, 10 deg), the 2 N seat contact, the 5 cm insertion depth and the
+15 cm counter-edge clearance are provisional, tuned in #21:
+
+| State | Timeout | Exit condition | Failure tags |
+| --- | --- | --- | --- |
+| `idle` | 0.5 s | first step after `reset` | `rack_collision`, `timeout` |
+| `pre_grasp` | 4.0 s | palm at the grasp frame + 8 cm | `ik_infeasible`, `rack_collision`, `timeout` |
+| `grasp` | 2.5 s | `hand_holding` (hand in `pre_grasp` until the palm reaches the rim, then `close`) | `ik_infeasible`, `rack_collision`, `grasp_miss` on timeout without holding |
+| `lift` | 2.0 s | palm at the grasp frame + 15 cm | `ik_infeasible`, `drop`, `rack_collision`, `timeout` |
+| `transport` | 6.0 s | palm above the counter edge, then 25 cm above the slot | as `lift` |
+| `align` | 5.0 s | palm at the plate-vertical orientation from the slot yaw, plate within 15 deg of vertical | as `lift` |
+| `insert` | 3.0 s | rack contact of 2 N to 20 N, or palm 5 cm below the slot entry | as `lift`; `rack_collision` above 20 N |
+| `release` | 4.0 s | hand open, palm 10 cm up, 2 s hold elapsed, `plate_in_slot` | `ik_infeasible`, `misplace` if not in the slot after the hold, `timeout` |
+
+The timeouts sum to 27 s. The planner is single-environment pure Python (numpy, no simulator
+import); #22 decides whether it is vectorised across `num_envs`.
+
 ## 10. Scene (M2)
 
 Assembled as one Isaac Lab `InteractiveSceneCfg`:
