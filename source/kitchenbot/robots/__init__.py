@@ -5,6 +5,8 @@ Planned files (docs/architecture.md section 4):
 - ``joint_maps.py``: joint and link names of the G1 + Dex3 asset as dumped from the USD, grouped
   into legs, waist, arms and hands, with the regexes every action term uses. A provisional version
   derived from the Unitree URDF exists since #28; P03 verifies it against the USD.
+- ``joint_limits.py``: ``JointLimit`` and the Dex3-1 hand joint limits, copied from the same URDF.
+  Exists since #42.
 - ``g1_dex3.py``: a copy of Isaac Lab's ``G1_29DOF_CFG`` with the rev 1.0 hip-roll limits
   (139 N·m, 20 rad/s) and switchable ``fix_root_link``. Created by P03.
 """
