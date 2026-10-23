@@ -1,0 +1,1055 @@
+# Source of truth for third-party assets, read by scripts/fetch_assets.py.
+# sha256 of Hugging Face LFS files is the upstream LFS oid; the others were computed at
+# first download with `fetch_assets.py --record-checksums`. MANIFEST.md is generated from
+# this file (`fetch_assets.py --write-manifest-md`); do not edit it by hand.
+schema: 1
+dest_root: source/kitchenbot/scene/assets/third_party
+sources:
+  artvip:
+    name: ArtVIP
+    kind: huggingface
+    repo_id: x-humanoid-robomind/ArtVIP
+    repo_type: dataset
+    revision: d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e
+    url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP
+    licence: Apache-2.0
+    paper: arXiv 2506.04941
+  molmospaces:
+    name: MolmoSpaces (Ai2)
+    kind: huggingface
+    repo_id: allenai/molmospaces
+    repo_type: dataset
+    revision: 5f802a46816ffc3520e59b5ef49fa8dafee8eeca
+    url: https://huggingface.co/datasets/allenai/molmospaces
+    licence: 'CC-BY-4.0 (data, except the Objaverse subset: ODC-BY-1.0); code Apache-2.0'
+    paper: arXiv 2602.11337
+files:
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/Isaac Sim 4.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/Isaac%20Sim%204.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/Isaac Sim 4.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  sha256: 5454a44463d100c648eeec2ae1c2e12ef9d16f0d4caebf675ff65e8427a6b40a
+  size: 1177
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/model_dishwasher_1.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/model_dishwasher_1.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/model_dishwasher_1.usd
+  sha256: 89b6fc28c9d7755949450a73172be19274faccd822f29b963526e0ee4900a240
+  size: 8192957
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/dishwasher_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/dishwasher_control.py
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/dishwasher_control.py
+  sha256: 3c6501700dafc10d41fadc2a86175e0fd9d9b3b517b883b7e650c7207e1ac0e4
+  size: 7663
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/65a87ebc42ba0bf5c8e6dbf6dbc0fd07.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/65a87ebc42ba0bf5c8e6dbf6dbc0fd07.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/65a87ebc42ba0bf5c8e6dbf6dbc0fd07.png
+  sha256: 058f07158c0f5ae31eb9fdc43283186f0b2c0f4fc214ad0f42b3d08b34c2de89
+  size: 4723
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/85c0eb6cc1bb6b155c2e47c605366360.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/85c0eb6cc1bb6b155c2e47c605366360.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/85c0eb6cc1bb6b155c2e47c605366360.png
+  sha256: 058f07158c0f5ae31eb9fdc43283186f0b2c0f4fc214ad0f42b3d08b34c2de89
+  size: 4723
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/f15c057de2aff770622ceae069003627.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/f15c057de2aff770622ceae069003627.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/img/f15c057de2aff770622ceae069003627.png
+  sha256: 058f07158c0f5ae31eb9fdc43283186f0b2c0f4fc214ad0f42b3d08b34c2de89
+  size: 4723
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/material.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/material.usd
+  sha256: ce4c38ead6c9080a75a386ad56884ffb9a1868e337e3638d2b25e84cd7dc6113
+  size: 3424
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/v_0/link_default_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/v_0/link_default_0.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_1/resource/v_0/link_default_0.usd
+  sha256: 176ba15634b402885baca04fcb3cb297be1eb9ea7a56e227efeacee959216293
+  size: 11824282
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: side-hinged door, 2 racks, 0.2 m travel; not chosen)'
+- set: dishwasher
+  asset: dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_2/.collect.mapping.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_2/.collect.mapping.json
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_2/.collect.mapping.json
+  sha256: 22679f364e01a39807b569f211fa573a992c47fe94e94dea32cf7b367392a357
+  size: 383
+  licence: Apache-2.0
+  purpose: 'recommended dishwasher for #11: X-axis door 0-90 deg, two prismatic racks, lightest mesh'
+- set: dishwasher
+  asset: dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_2/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_2/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_2/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  sha256: 5454a44463d100c648eeec2ae1c2e12ef9d16f0d4caebf675ff65e8427a6b40a
+  size: 1177
+  licence: Apache-2.0
+  purpose: 'recommended dishwasher for #11: X-axis door 0-90 deg, two prismatic racks, lightest mesh'
+- set: dishwasher
+  asset: dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_2/model_dishwasher_2.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_2/model_dishwasher_2.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_2/model_dishwasher_2.usda
+  sha256: 705cd1fb79c5a13ab0b2300029edc7d4dcb1ff9df21ac530c4118c32de2ba522
+  size: 2712354
+  licence: Apache-2.0
+  purpose: 'recommended dishwasher for #11: X-axis door 0-90 deg, two prismatic racks, lightest mesh'
+- set: dishwasher
+  asset: dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/dishwasher_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/dishwasher_control.py
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/dishwasher_control.py
+  sha256: 399260e9648dc3c18307afb752f519ef2084191aa405ca9d84b77a0a54b2d5c6
+  size: 9102
+  licence: Apache-2.0
+  purpose: 'recommended dishwasher for #11: X-axis door 0-90 deg, two prismatic racks, lightest mesh'
+- set: dishwasher
+  asset: dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/material.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/material.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/material.usda
+  sha256: b60a50b12bcf6df52ac3c78e66c32408502309e2418937da57ae497e2d8f77e1
+  size: 7001
+  licence: Apache-2.0
+  purpose: 'recommended dishwasher for #11: X-axis door 0-90 deg, two prismatic racks, lightest mesh'
+- set: dishwasher
+  asset: dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/v_0/link_default_0.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/v_0/link_default_0.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_2/resource/v_0/link_default_0.usda
+  sha256: bc1b72bb0467ba687cc13ecc63455af4a39931668d27a2f83c42511170942ec1
+  size: 4293061
+  licence: Apache-2.0
+  purpose: 'recommended dishwasher for #11: X-axis door 0-90 deg, two prismatic racks, lightest mesh'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/Isaac Sim 4.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/Isaac%20Sim%204.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/Isaac Sim 4.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  sha256: 5454a44463d100c648eeec2ae1c2e12ef9d16f0d4caebf675ff65e8427a6b40a
+  size: 1177
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/model_dishwasher_3.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/model_dishwasher_3.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/model_dishwasher_3.usd
+  sha256: 77774962e9af1319cb557ae63208d4bd879d1e9e195bb941236fcd0b5232252b
+  size: 2644174
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/dishwasher_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/dishwasher_control.py
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/dishwasher_control.py
+  sha256: 32e01994e9bb1256cc176c8b872e97644345dd2525521d586119e8bbf76aa521
+  size: 9102
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/458cb765ee01c928272b3b1084a1fd84.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/458cb765ee01c928272b3b1084a1fd84.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/458cb765ee01c928272b3b1084a1fd84.png
+  sha256: feba5d90294459493597050f2bb5f77032c2c7ff219a36f5b45f13b71bc9830c
+  size: 4723
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/ac8104b144314d7b5fcc4be16e4a1e14.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/ac8104b144314d7b5fcc4be16e4a1e14.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/ac8104b144314d7b5fcc4be16e4a1e14.png
+  sha256: 109eba8e66e9c5811cf71530402bd3a2f619b1c890d18e8a5022179744b45a6a
+  size: 6934
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/da6f6636bf2d896281959e07483a55d8.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/da6f6636bf2d896281959e07483a55d8.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/img/da6f6636bf2d896281959e07483a55d8.png
+  sha256: 54df05e00e10796d1a6a3b7c3606f652e3705fa3fdd196a204c6cc794fef40ea
+  size: 4723
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/material.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/material.usd
+  sha256: 8458f0123e507a138f6cf9fd7ad460dcac2e93db9654a7765cea82c8222aef9d
+  size: 3809
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/v_0/link_default_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/v_0/link_default_0.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_3/resource/v_0/link_default_0.usd
+  sha256: ba5f70f6ccd3abd14dcd543b086f890d582db920153e2e8dd55982e569aa0c17
+  size: 3199980
+  licence: Apache-2.0
+  purpose: 'dishwasher candidate for #11 (inspected: shallow racks 0.21 m deep; not chosen)'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/.collect.mapping.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/.collect.mapping.json
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/.collect.mapping.json
+  sha256: 88ad08bb21ac9d19c6bac6983c15797ab3177c8dbd41ec434f16ddf5e2a83b42
+  size: 1499
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  sha256: 5454a44463d100c648eeec2ae1c2e12ef9d16f0d4caebf675ff65e8427a6b40a
+  size: 1177
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/model_dishwasher_4.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/model_dishwasher_4.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/model_dishwasher_4.usda
+  sha256: 7fb86550a141cea7626196804b9cd039cbe2701c7eb761fa39b9f6caf883e1da
+  size: 14558550
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/19d45214e7dfce713d92f8d574a45765.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/19d45214e7dfce713d92f8d574a45765.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/19d45214e7dfce713d92f8d574a45765.png
+  sha256: b22c4e507974301edc98d79ce6c0de43fee4e9cd5f64b19b3de2cabd595a9b7e
+  size: 184008
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/3e68fb9702e6e02782e7cd3a96e5d6f2.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/3e68fb9702e6e02782e7cd3a96e5d6f2.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/3e68fb9702e6e02782e7cd3a96e5d6f2.png
+  sha256: 299135556a8f974447f6cdc408364d5c02e0f4df7e680ed451f8e3e6b8e203ae
+  size: 4722
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/5c497d9e00da966e8c0562622e803278.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/5c497d9e00da966e8c0562622e803278.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/img/5c497d9e00da966e8c0562622e803278.png
+  sha256: 81ab12430b0b75967758c37e2c8440338ed95365dfc3304c5f286b995f0e9f10
+  size: 4723
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/material.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/material.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/material.usda
+  sha256: a87d389562463ea03aa87981a105025ebca7907aa4846a0e9482f82229ce6c3d
+  size: 12953
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: dishwasher_4
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/v_0/link_default_0.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/v_0/link_default_0.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/dishwasher_4/resource/v_0/link_default_0.usda
+  sha256: 4daf806d3a33d3d4071670ac0ea1ab9be8469a0306daf8b9b1ced4a02e7df524
+  size: 24457963
+  licence: Apache-2.0
+  purpose: 'alternate dishwasher for #11: ships door open and racks out, but 264k points'
+- set: dishwasher
+  asset: l_dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/model_l_dishwasher_1.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/model_l_dishwasher_1.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/model_l_dishwasher_1.usd
+  sha256: 40ecc2d3c37df1e83c1bb9406512e32bdf4be6b4a5116ccbb6531b1b860d04e4
+  size: 14315
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/dishwasher_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/dishwasher_control.py
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/dishwasher_control.py
+  sha256: a58fe7ae4b7f19a56de011ba14c2122cd64a7ec2fe85d76c484eb41233998ba4
+  size: 7143
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  sha256: ad69d4a7605ed19b6fb2b3d796bb75800140406c1b6fe822a7264b3ddc5dba95
+  size: 22347
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/material.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/material.usd
+  sha256: d35d021391c3529f6479be885bda5cd967853b01c0fa4fe70ca5cf8104aaed5e
+  size: 2464
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/v_0/element_path.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/v_0/element_path.json
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/v_0/element_path.json
+  sha256: 9894f9f87da09f04c9d5c4f7e6b9c006179265dae8dca377931b8b1fd960f8c0
+  size: 95
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/v_0/link_default_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/v_0/link_default_0.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_1/resource/v_0/link_default_0.usd
+  sha256: 769e49dfecb24004afdd5926dc39781109023cb201d305b36c1a2cb0780769fb
+  size: 1215723
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/model_l_dishwasher_2.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/model_l_dishwasher_2.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/model_l_dishwasher_2.usd
+  sha256: 757aa10daa56581718af5bc6745c54080a6179f14cb28d4e22f9c249c236a897
+  size: 16398
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/dishwasher_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/dishwasher_control.py
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/dishwasher_control.py
+  sha256: 3e57c37d021097ec4880502bb0a68121786b380145a5fb3c7afe6948d5cf855a
+  size: 7143
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  sha256: ad69d4a7605ed19b6fb2b3d796bb75800140406c1b6fe822a7264b3ddc5dba95
+  size: 22347
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/img/21591064c9e753732b0ed74166479a0c.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/img/21591064c9e753732b0ed74166479a0c.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/img/21591064c9e753732b0ed74166479a0c.png
+  sha256: a4832bf47c2d8c6c90ce2a926ab28f8f04acafda8b6971d3467fa6955383d6a3
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/material.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/material.usd
+  sha256: 54c8e9437937d44de2462b48810b5f24293345229eaf640729c181955bcc7fec
+  size: 2942
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/v_0/element_path.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/v_0/element_path.json
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/v_0/element_path.json
+  sha256: 6a65436cdb3c1f302e9e117f43451ae3a3bb03b83011e9c77af80413b649bc7a
+  size: 209
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/v_0/link_default_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/v_0/link_default_0.usd
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_2/resource/v_0/link_default_0.usd
+  sha256: dc020e5f2d981ce08284a4c404853e59b4375fdb2480c4996cabd61175333c40
+  size: 4206361
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/model_l_dishwasher_3.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/model_l_dishwasher_3.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/model_l_dishwasher_3.usda
+  sha256: 41e118dae17f009997887972cd86f15f4465fca81c2fbee20cde57cd476d160d
+  size: 418265
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/dishwasher_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/dishwasher_control.py
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/dishwasher_control.py
+  sha256: 2d861a68862e80c0e6e02915ee8bb5a893b0c3aafb6b9b784da5661eb7407230
+  size: 7143
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/1735d74bc2a9c15c57ab75648107f73c.png
+  sha256: ad69d4a7605ed19b6fb2b3d796bb75800140406c1b6fe822a7264b3ddc5dba95
+  size: 22347
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/525890862a5b0a0a4bb0679b6f3733e8.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/525890862a5b0a0a4bb0679b6f3733e8.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/525890862a5b0a0a4bb0679b6f3733e8.png
+  sha256: 787de61778296ef8df77daafc5ac3c6a294ad4419602520324bad9fd680edfd9
+  size: 25429
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/55046af30434f5546a0208e96580a38a.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/55046af30434f5546a0208e96580a38a.png
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/img/55046af30434f5546a0208e96580a38a.png
+  sha256: b68b2b852cb583aa4eaa2e13dcebcd888cab2cc8bd45b87bf659e808a72ed280
+  size: 16503
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/material.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/material.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/material.usda
+  sha256: de945f0f4b4dc2cc19c3738bd599d756ae6012f7985e42856420233c4f0e5c73
+  size: 10569
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/v_0/element_path.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/v_0/element_path.json
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/v_0/element_path.json
+  sha256: 1dd47ac03c683a9e5b8e730a8e714791f1ec12cc2156bb72a1feff42a469e395
+  size: 93
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: dishwasher
+  asset: l_dishwasher_3
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/v_0/link_default_0.usda
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/v_0/link_default_0.usda
+  dest: artvip/Articulated_objects/major_appliances/dishwasher/l_dishwasher_3/resource/v_0/link_default_0.usda
+  sha256: bb835b331ea1121769e7a8471b19b106fbb85e93c2d4fd1ff7c09f86d7415a3c
+  size: 3171286
+  licence: Apache-2.0
+  purpose: 'inspected: drawer-type dishwasher, two drawers and no door; not chosen'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/.collect.mapping.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/.collect.mapping.json
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/.collect.mapping.json
+  sha256: 8c9dedf5ab02aae4054c28ea97463c74788d0d5e2564a0b88c523553da7da8ca
+  size: 3878
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/Isaac Sim 4.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/Isaac%20Sim%204.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/Isaac Sim 4.5/isaac-sim-assets/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  sha256: 5454a44463d100c648eeec2ae1c2e12ef9d16f0d4caebf675ff65e8427a6b40a
+  size: 1177
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/model_cupboard_1.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/model_cupboard_1.usd
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/model_cupboard_1.usd
+  sha256: 5d835c7b29828cff206014f760e50b151633a23372f3f5019cee476e90c48f3e
+  size: 23428543
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/cupboard_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/cupboard_control.py
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/cupboard_control.py
+  sha256: ece6b0f09e5a01c9a5ab6c38eac2daf8a4eabf1f80757c34b1df2435b9f66d0d
+  size: 9091
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/00d3552442dcaca20cc8f1a455bb576f.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/00d3552442dcaca20cc8f1a455bb576f.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/00d3552442dcaca20cc8f1a455bb576f.png
+  sha256: df3f616d1d8486e3a39e61cba1ab399c7f65c1e60f8d43627cbd3eec266ee6c1
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/2c4a5fc66e02311804c69a2b8c528519.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/2c4a5fc66e02311804c69a2b8c528519.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/2c4a5fc66e02311804c69a2b8c528519.png
+  sha256: 1cd7203264109e820bad246f3525d4a7c9e28709010f59a44e177bd63fba2ff0
+  size: 51977
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/64aadc1eb199bad92ec7119ee5c5fcbd.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/64aadc1eb199bad92ec7119ee5c5fcbd.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/64aadc1eb199bad92ec7119ee5c5fcbd.png
+  sha256: 1145d74acb3eb63619f760f69cafbdf42a94a769183a08dd06eb8999d02dc10e
+  size: 144161
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/8c4d501e06d6abdc7fa9b8b13c1e2348.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/8c4d501e06d6abdc7fa9b8b13c1e2348.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/8c4d501e06d6abdc7fa9b8b13c1e2348.png
+  sha256: cbc99bf9b86503b8753d2b16fd0b68e1edebd6142028509da171d16d0401c8f1
+  size: 160543
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ab4d39615426734ae4a48f9ed08ce956.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ab4d39615426734ae4a48f9ed08ce956.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ab4d39615426734ae4a48f9ed08ce956.png
+  sha256: 950fdd8fb05e23c983b2c516e0ebbed8daf8a6b293a41aa5282ba236e2f8eaf8
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/b51bc6d7df590bdb3ab9a8c9547ca7cf.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/b51bc6d7df590bdb3ab9a8c9547ca7cf.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/b51bc6d7df590bdb3ab9a8c9547ca7cf.png
+  sha256: 1715739f7ebb308cfa2472cdb52e40b487a8d907bc5931ce4f66f596a939e940
+  size: 1477
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/c29c4991c70eb9dad24bf0abf2f9f3f5.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/c29c4991c70eb9dad24bf0abf2f9f3f5.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/c29c4991c70eb9dad24bf0abf2f9f3f5.png
+  sha256: 9419a6491b4a9696149716b28bd72ca185b9970de12870e74ed45304fe870522
+  size: 142560
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ce2d864770f7da59e8d912b997419174.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ce2d864770f7da59e8d912b997419174.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ce2d864770f7da59e8d912b997419174.png
+  sha256: 6c6f14a3f1230f49298e4113f22661a5f1710d7849afeaf03daaf3661d1bbcac
+  size: 5984
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ffb595afe3e8c00020340c3bb652ac81.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ffb595afe3e8c00020340c3bb652ac81.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/img/ffb595afe3e8c00020340c3bb652ac81.png
+  sha256: 37b61f0d237938e7384cb7e084706a510da64eaefb85f2241e5f4e6299c3e204
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/mat_90.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/mat_90.usd
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/mat_90.usd
+  sha256: 167bb672c0d8630592bfa599d700218eab68f84c94a7a6e49bef235fb708a1dc
+  size: 1464
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/material.usd
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/material.usd
+  sha256: c928b4e908369b6ba30cf4aecc09b628deb9c9201615c8775216322a7f8cfac6
+  size: 6379
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_1
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_1/resource/v_0/link_default_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/v_0/link_default_0.usd
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_1/resource/v_0/link_default_0.usd
+  sha256: 56afd0205641d0e36ee8e2e1d4a1e703d39c3d8eb1686eb06ed12d12008c32d1
+  size: 22541605
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 21 joints, 729k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/.collect.mapping.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/.collect.mapping.json
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/.collect.mapping.json
+  sha256: 83de69af82ecaf80fc255a1c7079cfa22b12aa75080943ad1bf6da15d1630186
+  size: 3679
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/NVIDIA/Materials/2023_2_1/Base/Glass/Clear_Glass.mdl
+  sha256: 5454a44463d100c648eeec2ae1c2e12ef9d16f0d4caebf675ff65e8427a6b40a
+  size: 1177
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/model_cupboard_2.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/model_cupboard_2.usd
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/model_cupboard_2.usd
+  sha256: a0f96c59c29cf018d5dacf44d296c0431376051f6730cb5f25bc8ea8384c5300
+  size: 222097
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/cupboard_control.py
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/cupboard_control.py
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/cupboard_control.py
+  sha256: 1d6f1ac3573d532ed059fe442b42f7fb7d26b168778b1f38fe09e39c3cbf8d6c
+  size: 9006
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/00d3552442dcaca20cc8f1a455bb576f.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/00d3552442dcaca20cc8f1a455bb576f.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/00d3552442dcaca20cc8f1a455bb576f.png
+  sha256: df3f616d1d8486e3a39e61cba1ab399c7f65c1e60f8d43627cbd3eec266ee6c1
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/11ec620449fb61c7cc5e9e5c0d76a84b.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/11ec620449fb61c7cc5e9e5c0d76a84b.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/11ec620449fb61c7cc5e9e5c0d76a84b.png
+  sha256: 59bcb24a0be105d28f2e33773181783595d4929cb134c32aeb7f46932052211e
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/8c4d501e06d6abdc7fa9b8b13c1e2348.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/8c4d501e06d6abdc7fa9b8b13c1e2348.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/8c4d501e06d6abdc7fa9b8b13c1e2348.png
+  sha256: cbc99bf9b86503b8753d2b16fd0b68e1edebd6142028509da171d16d0401c8f1
+  size: 160543
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ab4d39615426734ae4a48f9ed08ce956.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ab4d39615426734ae4a48f9ed08ce956.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ab4d39615426734ae4a48f9ed08ce956.png
+  sha256: 950fdd8fb05e23c983b2c516e0ebbed8daf8a6b293a41aa5282ba236e2f8eaf8
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/b51bc6d7df590bdb3ab9a8c9547ca7cf.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/b51bc6d7df590bdb3ab9a8c9547ca7cf.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/b51bc6d7df590bdb3ab9a8c9547ca7cf.png
+  sha256: 1715739f7ebb308cfa2472cdb52e40b487a8d907bc5931ce4f66f596a939e940
+  size: 1477
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/bfc6a65629a9cd682f25058e89576168.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/bfc6a65629a9cd682f25058e89576168.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/bfc6a65629a9cd682f25058e89576168.png
+  sha256: f75ba9b7d57f1d737b3b4c09a6b8164e90821c481b455569a3981579ef81636c
+  size: 32380
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ce2d864770f7da59e8d912b997419174.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ce2d864770f7da59e8d912b997419174.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ce2d864770f7da59e8d912b997419174.png
+  sha256: 6c6f14a3f1230f49298e4113f22661a5f1710d7849afeaf03daaf3661d1bbcac
+  size: 5984
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ffb595afe3e8c00020340c3bb652ac81.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ffb595afe3e8c00020340c3bb652ac81.png
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/img/ffb595afe3e8c00020340c3bb652ac81.png
+  sha256: 37b61f0d237938e7384cb7e084706a510da64eaefb85f2241e5f4e6299c3e204
+  size: 17011
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/material.usd
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/material.usd
+  sha256: 6be0c9b565856ac371c5f7fb75efbd0deeece6b5d3e7b57baacaac2a41914f42
+  size: 5289
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: cupboard_2
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/cupboard/cupboard_2/resource/v_0/link_default_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/v_0/link_default_0.usd
+  dest: artvip/Articulated_objects/large_furniture/cupboard/cupboard_2/resource/v_0/link_default_0.usd
+  sha256: 5452377619bc60c6f454cf806fcb2e63ad7cb965fac14afdcb332f0bc97064db
+  size: 19557559
+  licence: Apache-2.0
+  purpose: 'inspected: whole kitchen run, 22 joints, 698k points, sdf collision; reference only'
+- set: cabinets
+  asset: counter
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/counter/counter/model_cupboard.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/counter/counter/model_cupboard.usd
+  dest: artvip/Articulated_objects/large_furniture/counter/counter/model_cupboard.usd
+  sha256: 52260a414f71a1644cc16790ffb2f96ad0aaa9bfc37fff1f5451ff2531a25b19
+  size: 29924
+  licence: Apache-2.0
+  purpose: 'recommended counter block with 13 hinged doors for #12 (33k points)'
+- set: cabinets
+  asset: counter
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/counter/counter/resource/img/f91769dce698c58340e30044fea518cf.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/counter/counter/resource/img/f91769dce698c58340e30044fea518cf.png
+  dest: artvip/Articulated_objects/large_furniture/counter/counter/resource/img/f91769dce698c58340e30044fea518cf.png
+  sha256: 06c0ee196163e9546a40111beaaf666104b7ccf73e25be9f84cb4b678c74d499
+  size: 74447
+  licence: Apache-2.0
+  purpose: 'recommended counter block with 13 hinged doors for #12 (33k points)'
+- set: cabinets
+  asset: counter
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/counter/counter/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/counter/counter/resource/material.usd
+  dest: artvip/Articulated_objects/large_furniture/counter/counter/resource/material.usd
+  sha256: b81eed1d0016e2c4863e6c24a61f09a56aac10030cd840cf63b171ad4d626a37
+  size: 2672
+  licence: Apache-2.0
+  purpose: 'recommended counter block with 13 hinged doors for #12 (33k points)'
+- set: cabinets
+  asset: counter
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/counter/counter/resource/v_0/element_path.json
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/counter/counter/resource/v_0/element_path.json
+  dest: artvip/Articulated_objects/large_furniture/counter/counter/resource/v_0/element_path.json
+  sha256: 477d478100d648ea30b3349bfaace9ab133043cf81f3ff3effa4711f6e37c895
+  size: 3582
+  licence: Apache-2.0
+  purpose: 'recommended counter block with 13 hinged doors for #12 (33k points)'
+- set: cabinets
+  asset: counter
+  source: artvip
+  kind: hf_file
+  path: Articulated_objects/large_furniture/counter/counter/resource/v_0/link_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Articulated_objects/large_furniture/counter/counter/resource/v_0/link_0.usd
+  dest: artvip/Articulated_objects/large_furniture/counter/counter/resource/v_0/link_0.usd
+  sha256: e45aaa68cec67317c7f39af154d578da753d45cbd52e35088e05834523568057
+  size: 527814
+  licence: Apache-2.0
+  purpose: 'recommended counter block with 13 hinged doors for #12 (33k points)'
+- set: cabinets
+  asset: kitchen_cupboard
+  source: artvip
+  kind: hf_file
+  path: Interactive_scene/kitchen/cupboard/model_cupboard.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Interactive_scene/kitchen/cupboard/model_cupboard.usd
+  dest: artvip/Interactive_scene/kitchen/cupboard/model_cupboard.usd
+  sha256: be73c03de6e7ec9bc62350fc2a6a5c1230797a99b80ebb386bfc9980c0da9b01
+  size: 38038
+  licence: Apache-2.0
+  purpose: 'recommended base cabinet with 9 drawers and 1 door for #12 (4.7k points)'
+- set: cabinets
+  asset: kitchen_cupboard
+  source: artvip
+  kind: hf_file
+  path: Interactive_scene/kitchen/cupboard/resource/img/a1de9af06c43afe3f4fbdd5d9fcfa79a.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Interactive_scene/kitchen/cupboard/resource/img/a1de9af06c43afe3f4fbdd5d9fcfa79a.png
+  dest: artvip/Interactive_scene/kitchen/cupboard/resource/img/a1de9af06c43afe3f4fbdd5d9fcfa79a.png
+  sha256: 37fbaa161883aa2d3061aed223e0ac0b4fb48281af5a96794d6fa44821552ca8
+  size: 5057722
+  licence: Apache-2.0
+  purpose: 'recommended base cabinet with 9 drawers and 1 door for #12 (4.7k points)'
+- set: cabinets
+  asset: kitchen_cupboard
+  source: artvip
+  kind: hf_file
+  path: Interactive_scene/kitchen/cupboard/resource/img/e1ce27d4a18e263cbbe06f765fd4d644.png
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Interactive_scene/kitchen/cupboard/resource/img/e1ce27d4a18e263cbbe06f765fd4d644.png
+  dest: artvip/Interactive_scene/kitchen/cupboard/resource/img/e1ce27d4a18e263cbbe06f765fd4d644.png
+  sha256: a66f5dca0dc4b1ccbec65db18f6fd542bb2670de5ce95f2a4ff9e65f04669af0
+  size: 998966
+  licence: Apache-2.0
+  purpose: 'recommended base cabinet with 9 drawers and 1 door for #12 (4.7k points)'
+- set: cabinets
+  asset: kitchen_cupboard
+  source: artvip
+  kind: hf_file
+  path: Interactive_scene/kitchen/cupboard/resource/material.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Interactive_scene/kitchen/cupboard/resource/material.usd
+  dest: artvip/Interactive_scene/kitchen/cupboard/resource/material.usd
+  sha256: 9da3c48602e4334e620092a6193863cce69e4459fde8a093415032f49854e9af
+  size: 2783
+  licence: Apache-2.0
+  purpose: 'recommended base cabinet with 9 drawers and 1 door for #12 (4.7k points)'
+- set: cabinets
+  asset: kitchen_cupboard
+  source: artvip
+  kind: hf_file
+  path: Interactive_scene/kitchen/cupboard/resource/v_69323/link_0_0.usd
+  url: https://huggingface.co/datasets/x-humanoid-robomind/ArtVIP/resolve/d22f2095bc9db29fdd4b60f4a3c4f8177e1f5e9e/Interactive_scene/kitchen/cupboard/resource/v_69323/link_0_0.usd
+  dest: artvip/Interactive_scene/kitchen/cupboard/resource/v_69323/link_0_0.usd
+  sha256: 0a8177eeddc0b0eeb08124a5e011c9e67a8b9e863fee759dc77105baa0c6cb4b
+  size: 143485
+  licence: Apache-2.0
+  purpose: 'recommended base cabinet with 9 drawers and 1 door for #12 (4.7k points)'
+- set: cabinets
+  asset: thor_Cabinet
+  source: molmospaces
+  kind: hf_range
+  path: isaac/objects/thor/20260128/shards/00000.tar
+  url: https://huggingface.co/datasets/allenai/molmospaces/resolve/5f802a46816ffc3520e59b5ef49fa8dafee8eeca/isaac/objects/thor/20260128/shards/00000.tar
+  range_start: 617164288
+  range_length: 232726
+  dest: molmospaces/thor_Cabinet.tar.zst
+  extract_to: molmospaces/thor_Cabinet
+  sha256: f399c07b5b8d357504d542024f581c3f3ca6f3b3fe7cbb3837dd5a90639f3e85
+  size: 232726
+  licence: CC-BY-4.0
+  purpose: 'static kitchen cabinet variants with primitive and convex colliders, filler dressing for #12'
+- set: cabinets
+  asset: thor_Countertop
+  source: molmospaces
+  kind: hf_range
+  path: isaac/objects/thor/20260128/shards/00000.tar
+  url: https://huggingface.co/datasets/allenai/molmospaces/resolve/5f802a46816ffc3520e59b5ef49fa8dafee8eeca/isaac/objects/thor/20260128/shards/00000.tar
+  range_start: 644896768
+  range_length: 1120506
+  dest: molmospaces/thor_Countertop.tar.zst
+  extract_to: molmospaces/thor_Countertop
+  sha256: 7a2315862de82735f90318a980ddefef1aa8276f89e76f7d447e3f5b695f8975
+  size: 1120506
+  licence: CC-BY-4.0
+  purpose: 'static countertop variants, filler dressing for #12'
