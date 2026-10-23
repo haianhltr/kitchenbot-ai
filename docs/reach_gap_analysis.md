@@ -355,3 +355,35 @@ No constant changes in this issue; `kitchen_dims.py` and `randomization.py` are 
 - The pelvis is held at its nominal pose plus the spec's noise; balance sway, a crouch or a hip
   shift change its height and distance, which `ArmTargetPipeline` compensates in the frame but not
   in reach.
+
+## Update after #59 and #60 (director, 2026-10-23)
+
+Two things changed after the tables above were generated.
+
+**The rack pose is no longer provisional in the same way.** #59 placed the dishwasher as a compact
+unit on a 0.55 m plinth to the robot's right (`kitchen_dims.DISHWASHER_POSE_KITCHEN`), following
+item 4 of the recommendation: with the rack pulled out 0.40 m the rack frame origin sits at
+(0.350, -0.260, 0.650) m in the kitchen frame, yaw -90 deg, slot entries at z = 0.74 m, 0.35 m to
+the robot's right because the open door and the pulled-out rack must clear the right leg. Re-running
+this script with `--rack-pose 0.3502 -0.26 0.6496 -90` (same seeds, same envelopes, 2 cm margin)
+gives, for the S3 slot targets, seen / unseen:
+
+| stand-off | waist at zero | waist lean |
+| --- | --- | --- |
+| 0.25 m | 100 / 100 | 100 / 100 |
+| 0.30 m | 100 / 100 | 100 / 100 |
+| 0.35 m | 100 / 100 | 100 / 100 |
+| 0.40 m | 100 / 100 | 100 / 100 |
+| 0.45 m | 92 / 100 | 100 / 100 |
+
+Every slot, slot 5 included, is reachable without a lean at any stand-off up to 0.40 m. The whole
+S4 task is therefore limited by the plate half alone (the stand-off and lean decision above); the
+"S4 all seven" rows become equal to the "S4 plate half" rows at that rack pose. #11 confirms the
+pose with the asset in simulation and #16 the reach with the real IK.
+
+**The lift target moved 2 cm.** #60's dry run found the planner leaving `lift` at 14.9 cm against
+the judges' 15 cm, so `plan_waypoints` now aims the lift waypoint one position tolerance higher
+(17 cm; `PlannerConfig.lift_height_m` stays the protocol's 0.15 m). Re-generated with that target,
+a few cells of the tables above move by 1 to 2 points (for example the lift column at the 0.25 m
+stand-off 44 / 98 to 43 / 98); no recommendation changes. The committed tables are kept as
+generated for #56; the re-run outputs are in the director's scratch space only.

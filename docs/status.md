@@ -2,10 +2,11 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49 and
-#52 merged, Isaac Sim not yet installed. Actuals: those fifteen issues (42 estimated hours) were
-finished in about six hours of wall-clock by parallel worker sessions, reviewed and merged by the
-director. CI is green on `main`.
+**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
+#56, #57, #58, #59 and #60 merged, Isaac Sim not yet installed. Actuals: those twenty issues
+(55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
+reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
+CI is green on `main`.
 
 ## What exists
 
@@ -29,35 +30,72 @@ director. CI is green on `main`.
   `rack_tines.usda`, `counter.usda` and `floor.usda` as static primitive colliders, each checked
   against the module to 1 mm (#47). Known tension: the tines leave 12 mm per side and stop an
   8.5 degree lean, tighter than the planner's provisional tolerances (noted on #21).
+- Dishwasher placement and drafts (#59): `kitchen_dims.DISHWASHER_POSE_KITCHEN` puts the compact
+  ArtVIP unit on a 0.55 m plinth to the robot's right (provisional; rack base at
+  (0.35, -0.26, 0.65) m with the rack out 0.40 m, slot entries at 0.74 m), with the measured
+  dishwasher constants, `RACK_TINES_POSE_IN_LINK`, `rack_fits_plate` and the tested frame math in
+  `scene/dishwasher_frames.py`; `scripts/make_dishwasher_overrides.py` writes
+  `dishwasher_2_overrides.usda`, a layer that references the git-ignored ArtVIP file, puts the root
+  link at the origin, replaces the `sdf` colliders with convex ones and removes ArtVIP's door
+  script, checked with `usd-core` to 1 mm; `scene/dishwasher_cfg.py`, `scene/kitchen_scene_cfg.py`
+  and `scripts/smoke/load_kitchen.py` are UNTESTED DRAFTS parsed on CI; `docs/isaaclab_3_api_notes.md`
+  section 9 holds the 20-item checklist for #10 and #11. The joint prims are
+  `RevoluteJoint_dishwasher_2_middle` and `PrismaticJoint_dishwasher_2_{up,down}`, not the `E_*`
+  link names the issues quote.
 - Seeded randomization `scene/randomization.py`: every row of `docs/evaluation.md` section 2 as
   `RandomizationRanges`, one deterministic `EpisodeSpec` per (scenario, split, seed), the ten
   `configs/eval/s<N>_<split>.yaml` files generated and checked by `scripts/make_eval_configs.py`,
   and `scripts/evaluate.py --config` recording the YAML's SHA256 in the result (`schema_version`
   2) (#52). #13 wraps the sampler in Isaac Lab event terms.
-- Evaluator: `scripts/evaluate.py` with the protocol's flags, `kitchenbot.evaluation` (scenario
-  registry S0 to S4 with placeholder loaders naming their issues, strict JSON schema, Wilson
-  intervals, failure-tag precedence, seed splits with `seen` as the default and a held-out notice
-  on `unseen`), and a synthetic `fake` scenario that runs on CI (#23). `scripts/plot_results.py`
-  (success rates with intervals, failure histograms, torso error over time from optional traces)
-  and `scripts/update_experiments.py` (idempotent table rows, synthetic documents refused by
-  default) (#24); continuous metrics get mean, median and a bootstrap interval (#40).
-- Hand controller interface `controllers/hand/base.py` (`HandController`: open, pre_grasp, close,
-  is_holding, plus `update(dt)` and the commanded `posture`) with `MockHand` for tests; Dex3, arm
-  and waist joint limits copied from the URDF in `robots/joint_limits.py`; the three Dex3 postures
-  as closing fractions in one table, the two thumb closing directions in one constant marked
-  unverified; `Dex3SynergyHand` logic with sensing injected as callables (#42). #17 adds the
-  kinematic baseline on the same interface, #18 the Isaac Lab wiring and the tuning.
+- Evaluator: `scripts/evaluate.py` with the protocol's flags and `--extra KEY=VALUE`,
+  `kitchenbot.evaluation` (scenario registry S0 to S4 with placeholder loaders naming their issues,
+  strict JSON schema, Wilson intervals, failure-tag precedence, seed splits with `seen` as the
+  default and a held-out notice on `unseen`), a synthetic `fake` scenario (#23) and a synthetic
+  `dry` scenario (#60, below). `scripts/plot_results.py` (success rates with intervals, failure
+  histograms, torso error over time from optional traces) and `scripts/update_experiments.py`
+  (idempotent table rows, synthetic documents refused by default) (#24); continuous metrics get
+  mean, median and a bootstrap interval (#40).
+- Judges `evaluation/judges.py` (#57): the reference implementation of the section 3 definitions
+  from state alone: `plate_in_slot` (the `RackSlotLayout` slot volume, with signed offsets),
+  `vertical_error_deg`, `StabilityWindow`, `GraspJudge` (lifted 15 cm, held 2 s), `PlacementJudge`
+  (in the slot, within 15 deg of vertical, still for 2 s after release; rack contact above 20 N
+  before release as a metric) and `episode_outcome` over the failure-tag precedence. Thresholds that
+  are also planner numbers are read from `PlannerConfig`; the two stability tolerances are
+  provisional. Decisions taken where the protocol was silent are on #22 (falls and timeouts fail S2
+  and S3 too; a collision becomes a tag only when the placement also failed).
+- Hand controllers: the interface `controllers/hand/base.py` (`HandController`: open, pre_grasp,
+  close, is_holding, plus `update(dt)` and the commanded `posture`) with `MockHand`; Dex3, arm and
+  waist joint limits from the URDF in `robots/joint_limits.py`; the three Dex3 postures as closing
+  fractions in one table, the two thumb closing directions in one constant marked unverified;
+  `Dex3SynergyHand` logic with sensing injected as callables (#42); and `KinematicFollowHand`
+  (#58), the labelled attach baseline: `close()` attaches once when the palm is within 3 cm of the
+  rim circle, `update` writes the plate from the palm with the captured offset, `open()` restores
+  dynamics with the palm velocity, sensing and writing injected. #17 wires the baseline to the
+  plate rigid body, #18 the contact sensors and the Dex3 tuning.
 - Plate-to-rack planner core `planning/plate_to_rack.py`: the section 9 FSM (idle to done, plus
   failed), observation in, palm pose target and hand verb out, every number sourced or marked
-  provisional, failure tags from the evaluator's taxonomy. Tested against a fake arm, hand, plate
-  and rack, and against the #42 `MockHand` through the hand verbs (#43). #21 wires it to the
-  simulation, #22 decides on vectorisation.
+  provisional, failure tags from the evaluator's taxonomy (#43). The lift waypoint is aimed one
+  position tolerance above the 15 cm so the exit height meets the judges (#60 found it leaving at
+  14.9 cm). The fakes it is tested against live in `planning/fakes.py` (#60). #21 wires it to the
+  simulation and must fix which rim point the grasp frame is (the #58 tests and the dry run hold the
+  bottom rim, the reach analysis the top rim; the top rim is the physical one).
 - Arm target pipeline `controllers/target_filter.py` (world target → pelvis frame → reachability
   gate → slew at 0.3 m/s and 1 rad/s, returning the planner's `arm_infeasible`), shared pose and
   quaternion helpers in `kitchenbot/geometry.py`, numpy forward kinematics of the right arm from
-  the URDF origins (`robots/kinematics.py`) and a 2 cm voxel reachability envelope sampled from
-  2,000,000 configurations (`controllers/data/right_arm_envelope.npz`, 4 KB, seed 48, waist at
-  zero) (#48). #14 builds the IK on it, #16 validates the envelope against the real IK.
+  the URDF origins (`robots/kinematics.py`) and two 2 cm voxel reachability envelopes:
+  `right_arm_envelope.npz` with the waist at zero (#48) and `right_arm_envelope_waist.npz` with
+  the waist sampled (pitch 0 to 29.8 deg forward, yaw ±20 deg; #56). #14 builds the IK on the
+  pipeline, #16 validates both envelopes against the real IK and decides which gates when.
+- Reach-gap analysis `docs/reach_gap_analysis.md` with `scripts/reach_gap_analysis.py` (#56): the
+  planner's waypoints for every committed seed of the ten (scenario, split) pairs against both
+  envelopes, per stand-off and plate position, with the figure `docs/figures/reach_gap.png`. The
+  result is the operator decision below.
+- Dry run `evaluation/dry_run.py` (#60): scenario `dry` runs the whole chain on CI without a
+  simulator (eval YAML → sampler → planner against the fakes behind the arm target pipeline →
+  judges → result JSON → figures), marked synthetic so it can never enter `docs/experiments.md`.
+  With the reachability gate on and today's constants every episode ends `ik_infeasible` (the reach
+  gap as a number); with `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by
+  construction. It is the template of a `ScenarioBackend` for #21 and #22 (note on #22).
 - Stand environment drafts for #5: `locomotion/stand_env_cfg.py`, `commands.py`,
   `upper_body_action.py`, `rewards.py`, `curriculums.py`, `agents/rsl_rl_ppo_cfg.py`,
   `robots/g1_dex3.py`, `tasks/registry.py` and `configs/train/stand_g1_dex3.yaml`, every file
@@ -69,7 +107,8 @@ director. CI is green on `main`.
   from the architecture text, among them: Isaac Lab 3.0 quaternions are (x, y, z, w) while this
   repository's geometry is (w, x, y, z), PhysX is a CLI preset resolved through a `PresetCfg`
   field, un-actuated joint targets go through `set_position_index` (#46). #5 runs and fixes the
-  drafts against the 15-item checklist in PR #53.
+  drafts against the 15-item checklist in PR #53; if the waist lean below is adopted, the
+  upper-body command must also sample a waist pitch target before #6 trains (notes on #5, #6).
 - Report and video skeletons: `docs/report.md` with every empty slot an HTML comment naming the
   issue that fills it, and `docs/demo_video_script.md` (16 shots, 163 s, selection rules fixed
   before any result exists, overlay specification for `record_demo.py`); `tests/test_docs_skeletons.py`
@@ -79,16 +118,34 @@ director. CI is green on `main`.
   git `core.longpaths` and `uv` (#35). Run on this host on 2026-10-23: GPU, driver 616.92, disk
   and RAM pass; long paths, git option, VS 2022 C++ tools and `uv` fail; a reboot is pending.
 - GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26), the pinned GPU
-  queue #27, and no-simulation issues #28, #29, #30, #35, #40, #42, #43, #46 to #49 and #52 added
-  so work continued before the install.
+  queue #27, and no-simulation issues #28, #29, #30, #35, #40, #42, #43, #46 to #49, #52 and #56
+  to #60 added so work continued before the install.
 
-## Open design question (decided in simulation, not now)
+## Decision waiting on the operator: stand-off and waist lean (measured, not decided)
 
-The sampled plate centres lie 0.61 to 0.84 m ahead of the pelvis (stand-off 0.45 m plus the plate
-box centred 0.30 m into the counter), while the right-palm envelope with the waist at zero reaches
-0.44 m forward; no S4 draw is reachable without leaning or stepping closer. The knobs are
-`ROBOT_STANDOFF_M`, `PLATE_NOMINAL_XY_M` and the waist range in the envelope, one constant each.
-#10 and #14 measure, #16 decides the waist range; recorded on #10, #13, #14 and #16.
+With today's constants (robot 0.45 m from the counter edge, plate box centred 0.30 m into the
+counter) no S1, S2 or S4 plate target is inside the right palm's reach, with the waist at zero or
+leaning: 0 % of 700 sampled episodes (`docs/reach_gap_analysis.md`, forward kinematics only, no
+collision, no palm orientation, so an upper bound). Neither knob alone closes the gap; the slot
+side is fine since #59 (every slot reachable without a lean at any stand-off up to 0.40 m).
+
+| stand-off | waist at zero | commanded lean up to 29.8 deg |
+| --- | --- | --- |
+| 0.45 m (today) | S2 0 / 0 | S2 0 / 30 |
+| 0.30 m | S2 2 / 30 | S2 73 / 96 (98 / 100 if the IK point is the finger bases) |
+| 0.25 m | S2 21 / 58 | S2 97 / 100 |
+
+(seen / unseen percent of S2 episodes with every waypoint reachable, 2 cm margin.)
+
+The recommendation on the table: `ROBOT_STANDOFF_M` 0.45 → 0.25 m and a commanded forward waist
+lean during pre-grasp, grasp and lift, upright again from the counter-edge waypoint on; plate box
+unchanged (moving it closer puts a quarter of the unseen 27 cm plates past the counter edge). Costs:
+the balance policy must be trained with a waist pitch command (0 to 0.52 rad) it does not have
+yet (#5, #6); the torso-to-counter gap shrinks to an estimated 5 cm when leaning at 0.25 m (#10
+measures, the URDF has no collision meshes); at the pitch limit the policy has no margin left to
+counter-lean. The alternative with less balance risk is 0.30 m plus the IK point at the finger
+bases (#14) plus the lean. Until the operator decides, the constants stay and the dry run with the
+gate on fails every episode as `ik_infeasible`. Recorded on #5, #6, #10, #14, #16, #21.
 
 ## What is running
 
@@ -107,6 +164,12 @@ No training run has started. Nothing is in progress: every remaining open issue 
 4. Read the MolmoSpaces dataset card's licence wording ("research and educational use" on top of
    CC BY 4.0) and say whether its two static filler assets may appear in the portfolio video; they
    are optional (D011).
+5. Decide the stand-off and the waist lean (section above): adopt 0.25 m plus the lean, 0.30 m plus
+   the finger-base IK point plus the lean, or wait for #10 and #14 to measure in simulation first.
+   The director changes the constants and records the decision in `docs/decisions.md` on your word.
+6. Say whether a compact dishwasher raised on a plinth beside the counter is acceptable for the
+   portfolio scene (#59, a concession to the arm's reach: an under-counter dishwasher's lower rack
+   is 0.35 to 0.40 m below the pelvis, where the arm cannot go without stepping or crouching).
 
 ## Next critical step
 
