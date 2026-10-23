@@ -10,12 +10,12 @@ reported per run in `docs/experiments.md` and is not estimated here.
 | --- | --- | --- | --- |
 | M0 Environment | kb-sim | 13 | Windows go/no-go gate passed or Ubuntu fallback decided; G1 Dex3 joint map committed; CI green |
 | M1 Standing | kb-controls | 25 | Own lower-body policy meets S0 targets under pushes and scripted arm sweeps; Agile baseline measured alongside |
-| M2 Kitchen | kb-sim | 25 | Full kitchen loads with robot and plate; dishwasher door and rack articulate; randomization terms exist |
+| M2 Kitchen | kb-sim | 26 | Full kitchen loads with robot and plate; dishwasher door and rack articulate; randomization terms exist |
 | M3 Reaching | kb-controls | 20 | S1 targets met with balance policy active, seen and unseen |
 | M4 Grasping | kb-manip | 30 | S2 targets met with Dex3 or the Dex1 fallback decision recorded |
 | M5 Placement | kb-manip | 15 | S4 runs end to end with automatic success detection |
 | M6 Evaluation | kb-eval | 18 | All deliverables in `docs/evaluation.md` section 8 checked |
-| **Total** | | **146** | 4 hours unallocated buffer |
+| **Total** | | **147** | 3 hours unallocated buffer |
 
 Stretch, outside the 150 hours: **M3b** learned right-arm policy replacing DifferentialIK behind the
 same interface, then imitation learning from the scripted planner.
@@ -23,8 +23,8 @@ same interface, then imitation learning from the scripted planner.
 ## Issue plan
 
 Planning IDs map one to one onto GitHub issue numbers: P01 is #1, P26 is #26, and the pinned GPU
-queue is #27 (P27 is unused). P28 and P29 were added on 2026-10-23 as no-simulation work that
-runs while the Isaac Sim install waits on the operator's reboot. `CP` marks the critical path, labelled `milestone-blocker`. "After" lists hard
+queue is #27 (P27 is unused). P28, P29 and P30 were added on 2026-10-23 as no-simulation work
+that runs while the Isaac Sim install waits on the operator's reboot. `CP` marks the critical path, labelled `milestone-blocker`. "After" lists hard
 dependencies, mirrored as "Blocked by" in each issue.
 
 | ID | Milestone | Owner | Title | Hours | After | Flags |
@@ -38,12 +38,13 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P06 | M1 | kb-controls | Train lower-body policy v1; export TorchScript and joint manifest; S0 metrics | 8 | P05, P04 | CP, gpu |
 | P07 | M1 | kb-controls | Lower-body policy action-term wrapper; Agile checkpoint baseline wrapper; S0 comparison under pushes | 6 | P06 | CP |
 | P08 | M1 | kb-controls | Robustness test: scripted arm sweeps while standing; fall rate for own policy and Agile | 5 | P07 | |
-| P09 | M2 | kb-sim | Plate asset: rimmed mesh, convex collision, two seen diameters and one held out | 3 | P03 | |
+| P09 | M2 | kb-sim | Plate asset: drop test of the P30 meshes, `plate_cfg.py` factory, YCB check | 2 | P03, P30 | |
 | P10 | M2 | kb-sim | Counter, sink and floor USD layers; scene config loads with the robot | 4 | P03 | |
 | P11 | M2 | kb-sim | Articulated dishwasher: wrap the ArtVIP twin P29 recommends, else author USD; door and rack joints, authored slot tines with convex collision, door open and rack out by default | 7 | P10, P29 | |
 | P12 | M2 | kb-sim | Articulated cabinets from ArtVIP or MolmoSpaces as scene dressing; full kitchen composition; load time and FPS check | 5 | P11 | |
 | P13 | M2 | kb-sim | Scene randomization event terms per `docs/evaluation.md` section 2 | 3 | P09, P11 | |
 | P29 | M2 | kb-sim | Asset fetch script, licence manifest, `usd-core` inspection of ArtVIP and MolmoSpaces candidates; no simulation | 3 | — | |
+| P30 | M2 | kb-sim | Procedural rimmed plate USD assets, 22, 25 and 27 cm, watertight check; no simulation | 2 | — | |
 | P14 | M3 | kb-controls | Right-arm DifferentialIK term, left-arm posture term, waist hold; fixed pelvis; S1 fixed-base | 6 | P03 | |
 | P15 | M3 | kb-controls | Composite environment: lower-body policy plus arm IK plus hand term; pelvis-frame target transform; S1 with balance | 8 | P07, P14 | CP |
 | P16 | M3 | kb-controls | Target slew and reachability filter; `ik_infeasible` tagging; S1 seen and unseen | 6 | P15 | |
@@ -60,13 +61,13 @@ dependencies, mirrored as "Blocked by" in each issue.
 
 Plus one pinned issue, **GPU queue**, which is a lock, not work.
 
-Hours by owner: kb-sim 35, kb-controls 45, kb-manip 39 (33 without the conditional P19), kb-eval 18.
+Hours by owner: kb-sim 36, kb-controls 45, kb-manip 39 (33 without the conditional P19), kb-eval 18.
 
 ## Week plan (20 hours per week)
 
 | Week | Focus | Issues |
 | --- | --- | --- |
-| 1 | Environment gate, scaffolding, asset load; no-simulation work while the install waits | P01 P02 P03 P04 P28 P29, P23, start P05 |
+| 1 | Environment gate, scaffolding, asset load; no-simulation work while the install waits | P01 P02 P03 P04 P28 P29 P30, P23, start P05 |
 | 2 | First policy training; plate and counter | P05 P06, P09 P10 |
 | 3 | Policy wrapper and robustness; dishwasher; arm IK fixed-base; evaluator | P07 P08, P11, P14, P23 |
 | 4 | Composite env with balance; cabinets; kinematic grasp | P15, P12 P13, P17 |
