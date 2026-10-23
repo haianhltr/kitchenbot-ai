@@ -22,6 +22,14 @@ Physics backend: **`physics=isaacsim_physx`** on every command. Isaac Lab 3.0 de
 
 ## 2. One-time Windows preparation (operator)
 
+Run the host check first. It changes nothing, prints one PASS / WARN / FAIL line per item below with the fix for each FAIL, and exits 1 if any FAIL remains:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\host_check.ps1
+```
+
+`-Fix` (elevated shell) enables long paths, sets the git option and installs `uv`; it never installs Visual Studio or a driver. Re-run the check after the reboot and before #1. The steps below are the manual equivalents.
+
 1. Enable long paths, in an elevated PowerShell, then reboot:
    ```powershell
    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force
