@@ -5,6 +5,7 @@ Entry points. Each is created by the issue named; none exist yet.
 | Script | Purpose | Issue |
 | --- | --- | --- |
 | `smoke/create_empty.py` | Isaac Lab empty-scene tutorial, copied with attribution, for the install check | P01 |
+| `smoke/dump_urdf_joints.py` | parse a URDF with the standard library and dump joints, limits and links to JSON (no simulator) | #28 |
 | `smoke/dump_g1_joints.py` | spawn the G1 + Dex3 asset, print joints, links, DoF, defaults | P03 |
 | `smoke/load_kitchen.py` | load scene layers and step; report FPS | P10 to P12 |
 | `fetch_assets.py` | download third-party assets into `source/kitchenbot/scene/assets/third_party/` with SHA256 manifest | P11 |

@@ -61,6 +61,8 @@ the documented fallback.
 | Actuators | legs and feet `DCMotorCfg`, waist and arms and hands `ImplicitActuatorCfg` | `unitree.py` |
 | Known defect | hip roll effort and velocity limits are the pre-rev-1.0 values (88 N·m, 32 rad/s) instead of 139 N·m, 20 rad/s; fix PR open upstream | IsaacLab issue #8530, PR #8687 |
 
+Joint names and limits below are taken from the URDF in #28 (`robots/joint_maps.py`, fixture `tests/fixtures/g1_dex3_joints_urdf.json`); the check against the Isaac Sim USD is pending in #3.
+
 Joint groups and names (Unitree rev 1.0 naming):
 
 | Group | Count | Names |
