@@ -13,7 +13,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 1
+      "const": 2
     },
     "run": {
       "$ref": "#/$defs/run"
@@ -560,6 +560,16 @@
           "pattern": "^[0-9a-f]{64}$",
           "description": "SHA256 of the canonical JSON of the evaluator options and the resolved scenario config."
         },
+        "config_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional. The configs/eval YAML the run was started from (--config), as given, with forward slashes. Present together with config_sha256."
+        },
+        "config_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Optional. SHA256 of the bytes of that YAML file, taken before the run started."
+        },
         "gpu_name": {
           "type": "string",
           "minLength": 1,
@@ -582,6 +592,14 @@
           "type": "string",
           "minLength": 1
         }
+      },
+      "dependentRequired": {
+        "config_path": [
+          "config_sha256"
+        ],
+        "config_sha256": [
+          "config_path"
+        ]
       },
       "allOf": [
         {

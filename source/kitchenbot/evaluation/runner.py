@@ -38,8 +38,10 @@ from kitchenbot.evaluation.metrics import SCENARIO_NAMES, metrics_for
 from kitchenbot.evaluation.seeds import SPLITS, default_seeds, split_seeds
 from kitchenbot.evaluation.stats import aggregate_episodes
 
-#: Version of the result document layout, ``schema_version`` in the JSON.
-SCHEMA_VERSION = 1
+#: Version of the result document layout, ``schema_version`` in the JSON. Must equal the ``const``
+#: of ``schema_version`` in ``schema.json`` (a test checks it). 2: the optional ``run.config_path``
+#: and ``run.config_sha256`` (#52).
+SCHEMA_VERSION = 2
 
 POLICIES: tuple[str, ...] = ("own", "agile")
 HANDS: tuple[str, ...] = ("kinematic", "dex3", "dex1")
@@ -58,6 +60,12 @@ class EvalConfig:
     :func:`kitchenbot.evaluation.seeds.default_seeds` when left empty.
     The defaults for ``policy``, ``hand`` and ``base`` are the headline configuration: our own
     balance policy, the Dex3 hand, a floating base.
+
+    ``config_path`` optionally names the committed ``configs/eval/*.yaml`` the run was started
+    from (AGENTS.md section 6: a run without a committed config did not happen). The file must
+    exist; ``run_evaluation`` records its path and SHA256 in ``run.config_path`` and
+    ``run.config_sha256``. It is not part of :meth:`to_dict`, so ``run.config_hash`` is the same
+    with and without it. The runner does not read the file's contents.
     """
 
     scenario: str
@@ -68,6 +76,7 @@ class EvalConfig:
     hand: str = "dex3"
     base: str = "floating"
     headless: bool = False
+    config_path: Path | None = None
 
     def __post_init__(self) -> None:
         for field_name, allowed in (
@@ -89,6 +98,11 @@ class EvalConfig:
         if outside:
             raise ValueError(f"seeds {outside[:5]} are not in split {self.split!r}")
         object.__setattr__(self, "seeds", seeds)
+        if self.config_path is not None:
+            path = Path(self.config_path)
+            if not path.is_file():
+                raise ValueError(f"config_path {str(self.config_path)!r} is not a file")
+            object.__setattr__(self, "config_path", path)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -269,6 +283,11 @@ def detect_gpu_name() -> str:
     return names[0] if names else "none"
 
 
+def file_sha256(path: Path | str) -> str:
+    """SHA256 (hex) of the bytes of ``path``. The repository stores text as LF (.gitattributes)."""
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
 def config_hash(options: Mapping[str, Any], scenario_config: Mapping[str, Any]) -> str:
     """SHA256 (hex) of the canonical JSON of the evaluator options plus the scenario config."""
     blob = json.dumps(
@@ -314,6 +333,13 @@ def run_evaluation(config: EvalConfig, *, validate: bool = True) -> dict[str, An
     scenario whose loader is still a placeholder.
     """
     spec = get_scenario(config.scenario)
+    config_file: dict[str, str] = {}
+    if config.config_path is not None:
+        # Hashed before the backend loads, so what is recorded is what the run started with.
+        config_file = {
+            "config_path": config.config_path.as_posix(),
+            "config_sha256": file_sha256(config.config_path),
+        }
     started = datetime.now(UTC)
     t0 = time.perf_counter()
     backend = spec.loader(config)
@@ -341,6 +367,7 @@ def run_evaluation(config: EvalConfig, *, validate: bool = True) -> dict[str, An
             "git_commit": commit,
             "git_dirty": dirty,
             "config_hash": config_hash(options, scenario_config),
+            **config_file,
             "gpu_name": detect_gpu_name() if spec.uses_gpu else "none",
             "host": socket.gethostname(),
             "started_at": started.strftime("%Y-%m-%dT%H:%M:%SZ"),

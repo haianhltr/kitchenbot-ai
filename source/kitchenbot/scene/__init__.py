@@ -9,6 +9,13 @@ Files (docs/architecture.md section 10):
   read it. Created by #47.
 - ``usd_prims.py``: ``pxr`` helpers shared by the generators below (primitive colliders, physics
   material, checks). Created by #47.
+- ``randomization.py``: docs/evaluation.md section 2 as code, numpy and the standard library only.
+  ``RandomizationRanges.for_split`` holds every row for the seen and the unseen split;
+  ``sample_episode(seed, split, scenario)`` returns the plate pose, diameter, rack slot, pelvis
+  noise, frictions and push schedule of one episode as a plain ``EpisodeSpec``, the same every time
+  for the same arguments (the sub-seed rule is in its docstring); ``sample_split`` does it for a
+  scenario's evaluation seeds. ``scripts/make_eval_configs.py`` writes the ranges into
+  ``configs/eval/*.yaml``. Created by #52; the Isaac Lab event terms of #13 wrap it.
 - ``assets/``: authored text USD layers. Third-party assets are fetched into
   ``assets/third_party/`` (git-ignored) by ``scripts/fetch_assets.py``. Committed so far:
 
@@ -23,5 +30,6 @@ Planned files:
 - ``kitchen_scene_cfg.py``: the ``InteractiveSceneCfg`` with selectable layers. Created by P10.
 - ``plate_cfg.py``: ``RigidObjectCfg`` factory for the rimmed plates. Created by P09.
 - ``dishwasher_cfg.py``: ``ArticulationCfg`` and slot pose constants. Created by P11.
-- ``randomization.py``: event terms implementing docs/evaluation.md section 2. Created by P13.
+- The Isaac Lab event terms (reset events and the push) that apply an ``EpisodeSpec`` to the scene,
+  in a file beside ``randomization.py`` whose name P13 chooses. Created by P13.
 """

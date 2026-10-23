@@ -55,7 +55,7 @@ def make_doc(scenario: str) -> dict:
         },
     ]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "run": {
             "scenario": scenario,
             "split": "unseen",
@@ -158,7 +158,8 @@ def _delete(path):
 S4_MUTATIONS = {
     "unknown top-level field": _set(["extra"], 1),
     "missing run": _delete(["run"]),
-    "bad schema_version": _set(["schema_version"], 2),
+    "bad schema_version": _set(["schema_version"], 3),
+    "previous schema_version": _set(["schema_version"], 1),
     "unknown scenario": _set(["run", "scenario"], "S9"),
     "bad split": _set(["run", "split"], "val"),
     "bad policy": _set(["run", "policy"], "random"),
