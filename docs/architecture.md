@@ -235,6 +235,8 @@ Dish props: the plate is authored (section 8). YCB `029_plate` is 258 mm across,
 279 g; whether a USD for it exists under `Props/YCB/Axis_Aligned` in the 6.2 asset root is checked
 in M2 (**VERIFY**), and if so it becomes an extra unseen object, not the training plate.
 
+Plates: `plate_22.usda`, `plate_25.usda` and `plate_27.usda` are authored procedurally by #30 (`scripts/make_plate_usd.py`); physics validation (drop test, `RigidObjectCfg` factory) is #9.
+
 Import commands, when a URDF is involved:
 `uv run --extra importers isaaclab -p scripts/tools/convert_urdf.py <in.urdf> <out_dir> --merge_joints --fix_base`
 (documented for Windows; the `importers` extra has no platform restriction).
