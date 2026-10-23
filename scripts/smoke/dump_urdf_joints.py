@@ -111,7 +111,8 @@ def main(argv: list[str] | None = None) -> int:
         }
     dump = dump_urdf(args.urdf, source)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(dump, indent=2) + "\n", encoding="utf-8")
+    # newline="\n": identical bytes on Windows and Linux, so the committed fixture never churns
+    args.out.write_text(json.dumps(dump, indent=2) + "\n", encoding="utf-8", newline="\n")
     c = dump["counts"]
     print(
         f"{dump['robot']}: {c['joints']} joints ({c['movable']} movable, {c['fixed']} fixed), "
