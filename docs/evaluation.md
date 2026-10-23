@@ -31,6 +31,12 @@ Unseen results are the headline numbers.
 | Floor and object friction | uniform in [0.6, 1.0] | same |
 | External push (S0 only) | 10 N to 30 N impulse at the torso, random horizontal direction, every 3 s | 40 N |
 
+`kitchenbot.scene.randomization` is the implementation of this table: `RandomizationRanges` holds
+the rows, `sample_episode(seed, split, scenario)` draws one episode from a sub-seed of its scenario,
+split and seed, `scripts/make_eval_configs.py` writes the ranges into the ten
+`configs/eval/s<N>_<split>.yaml` files, and the Isaac Lab event terms of #13 wrap the sampler
+rather than re-implementing it.
+
 Ranges are frozen once M4 starts. Changing them resets `docs/experiments.md`.
 
 ## 3. Metrics
