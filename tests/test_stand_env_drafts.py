@@ -60,7 +60,7 @@ def assigned_value(body: list[ast.stmt], name: str):
 def test_draft_parses_and_starts_with_the_header(relative):
     text = (PKG / relative).read_text(encoding="utf-8")
     first = text.splitlines()[0]
-    # The header is 106 characters; a trailing ``# noqa: E501`` keeps ruff's 100-column rule.
+    # The header is 106 characters; a trailing ruff suppression of E501 keeps the 100-column rule.
     assert first.split("  # noqa")[0] == HEADER
     ast.parse(text, filename=relative)
     compile(text, relative, "exec")

@@ -6,10 +6,11 @@ number are planned.
 | Script | Purpose | Issue |
 | --- | --- | --- |
 | `smoke/create_empty.py` | Isaac Lab empty-scene tutorial, copied with attribution, for the install check | P01 |
-| `smoke/dump_urdf_joints.py` | parse a URDF with the standard library and dump joints, limits and links to JSON (no simulator) | #28 |
+| `smoke/dump_urdf_joints.py` | parse a URDF with the standard library and dump joints, origins (`origin_xyz`, `origin_rpy`), limits and links to JSON (no simulator) | #28, #48 |
 | `make_plate_usd.py` | generate the rimmed plate assets under `source/kitchenbot/scene/assets/plates/` and validate them with `--check` (no simulator) | #30 |
 | `make_rack_tines_usd.py` | generate `source/kitchenbot/scene/assets/dishwasher/rack_tines.usda` (base frame, two rows of capsule tines, slot markers; static primitive colliders) from `kitchenbot.scene.kitchen_dims`; `--check FILE` compares a file with it to 1 mm and exits 1 on any mismatch (needs `usd-core`, no simulator) | #47 |
 | `make_counter_usd.py` | generate `source/kitchenbot/scene/assets/kitchen/counter.usda` (counter with a recessed sink) and `floor.usda` (top face z = 0) from `kitchenbot.scene.kitchen_dims`; `--check FILE...` verifies the counter-top height and the floor top (needs `usd-core`, no simulator) | #47 |
+| `make_reach_envelope.py` | sample the right palm's reachability envelope with URDF forward kinematics (2 cm pelvis-frame voxels, waist at zero) into `source/kitchenbot/controllers/data/right_arm_envelope.npz`; `--seed`, `--samples`; `--check FILE` prints fill fraction, bounding box and file size; `--plot` writes `outputs/figures/right_arm_envelope.png` (no simulator) | #48 |
 | `host_check.ps1` | Windows host readiness check for the install: long paths, VS 2022 C++ tools, `uv`, NVIDIA driver, disk, RAM, pending reboot; read-only, `-Fix` for the safe fixes (PowerShell 5.1, no simulator) | #35 |
 | `smoke/dump_g1_joints.py` | spawn the G1 + Dex3 asset, print joints, links, DoF, defaults | P03 |
 | `smoke/load_kitchen.py` | load scene layers and step; report FPS | P10 to P12 |

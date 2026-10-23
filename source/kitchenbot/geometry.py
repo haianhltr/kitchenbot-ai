@@ -4,12 +4,13 @@ Created for the task planner in #43 as ``kitchenbot.planning.geometry`` and move
 the arm controllers can use it without importing the planner; ``kitchenbot.planning.geometry``
 re-exports every name. ``kitchenbot.scene`` imports nothing from here.
 
-Quaternions are ``(w, x, y, z)``, Isaac Lab's order, and are treated as unit rotations: every
-helper normalises its inputs. The planner keeps all its poses in one frame (the world). The frame
-helpers added in #48 move poses between frames for the arm pipeline: a ``Pose`` is read as the
-transform from its own frame to the frame it is expressed in, :func:`pose_compose` chains two such
-transforms, :func:`pose_inverse` reverses one, and :func:`to_frame` expresses a world pose in a
-moving frame such as the pelvis (docs/architecture.md section 5, "Frames").
+Quaternions are ``(w, x, y, z)``, this repository's order (Isaac Lab 3.0 itself stores ``(x, y, z,
+w)``, see docs/isaaclab_3_api_notes.md; convert at the simulator boundary), and are treated as unit
+rotations: every helper normalises its inputs. The planner keeps all its poses in one frame (the
+world). The frame helpers added in #48 move poses between frames for the arm pipeline: a ``Pose`` is
+read as the transform from its own frame to the frame it is expressed in, :func:`pose_compose`
+chains two such transforms, :func:`pose_inverse` reverses one, and :func:`to_frame` expresses a
+world pose in a moving frame such as the pelvis (docs/architecture.md section 5, "Frames").
 
 Frame conventions used by :mod:`kitchenbot.planning.plate_to_rack`:
 
@@ -203,7 +204,7 @@ def tilt_from_vertical(q) -> float:
 class Pose:
     """A position and an orientation in one frame. Arrays are copied and made read-only.
 
-    ``position`` has shape ``(3,)``; ``quat_wxyz`` has shape ``(4,)`` in Isaac Lab's order and is
+    ``position`` has shape ``(3,)``; ``quat_wxyz`` has shape ``(4,)``, ``(w, x, y, z)``, and is
     normalised on construction.
     """
 
