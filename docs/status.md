@@ -2,7 +2,7 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #28, #29 and #30 merged, Isaac Sim not yet installed.
+**As of:** 2026-10-23, #2, #23, #28, #29 and #30 merged, Isaac Sim not yet installed.
 
 ## What exists
 
@@ -20,6 +20,10 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
   MolmoSpaces THOR objects, 195 MB, already downloaded into the main checkout's git-ignored
   `third_party/` directory) and `scripts/usd_inspect.py`. Finding: ArtVIP `dishwasher_2` has a
   separately articulated door and racks (0.2 m travel), so #11 wraps it (D011) (#29).
+- Evaluator: `scripts/evaluate.py` with the protocol's flags, `kitchenbot.evaluation` (scenario
+  registry S0 to S4 with placeholder loaders naming their issues, strict JSON schema, Wilson
+  intervals, failure-tag precedence, seed splits with `seen` as the default and a held-out notice
+  on `unseen`), and a synthetic `fake` scenario that runs on CI (#23). 160 unit tests pass.
 - GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26), the pinned GPU
   queue #27, and no-simulation issues #28, #29, #30 added so work continues before the install.
 
@@ -30,11 +34,10 @@ none needing Isaac Sim:
 
 | Issue | Owner | What |
 | --- | --- | --- |
-| #23 | kb-eval | Evaluator runner, schema, fake scenario on CI: PR #36 under review, one change requested |
+| #24 | kb-eval | Plot script and `docs/experiments.md` table generation from result JSONs |
 | #35 | kb-sim | Windows host check script (long paths, build tools, uv, driver, disk) |
 
-#1 (the install) is on hold without `status:ready` until the operator reboots. #24 becomes ready
-when #23 merges; #3 when #1 closes.
+#1 (the install) is on hold without `status:ready` until the operator reboots; #3 follows it.
 
 ## What needs the operator
 
@@ -48,5 +51,5 @@ when #23 merges; #3 when #1 closes.
 ## Next critical step
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
-(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #23 and #35 finish
-without a simulator, then #24.
+(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #24 and #35 finish
+without a simulator; after them nothing is left that does not need Isaac Sim.
