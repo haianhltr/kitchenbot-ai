@@ -7,8 +7,9 @@
   ``HandAction`` naming a ``HandController`` method); it never calls the arm or the hand. Built and
   tested against a fake arm and hand in #43; the slot constants, rack force sensor and S3 runs
   in simulation are #21's.
-- ``geometry.py``: ``Pose`` and the wxyz quaternion helpers the planner uses, including the
-  plate-vertical orientation derived from the slot yaw.
+- ``geometry.py``: re-export of :mod:`kitchenbot.geometry` (``Pose`` and the wxyz quaternion
+  helpers, including the plate-vertical orientation derived from the slot yaw), which moved to the
+  package root in #48 so the arm controllers share it.
 
 Single-environment pure Python with numpy; no simulator import. Whether the composite environment
 vectorises it across ``num_envs`` is #22's decision.

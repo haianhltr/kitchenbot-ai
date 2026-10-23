@@ -10,3 +10,4 @@
 *.usdz binary
 *.pt binary
 *.onnx binary
+*.npz binary

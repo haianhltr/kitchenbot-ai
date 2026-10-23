@@ -6,8 +6,12 @@ Usage::
         [--source-url URL --source-commit SHA --source-licence SPDX --source-fetched YYYY-MM-DD]
 
 Joints are listed in file order (the order of the ``<joint>`` elements, commented-out ones are
-ignored) with name, type, parent link, child link, axis, lower, upper, effort and velocity. Fixed
-joints are listed too; they carry ``null`` for axis and limits and are never "movable". Movable
+ignored) with name, type, parent link, child link, origin, axis, lower, upper, effort and velocity.
+The origin is the joint's ``<origin xyz rpy>``, the transform from the parent link frame to the
+joint (child link) frame, as ``origin_xyz`` (m) and ``origin_rpy`` (rad, fixed-axis roll, pitch,
+yaw); a missing element or attribute is the URDF default, zeros (added in #48 so the forward
+kinematics in ``kitchenbot.robots.kinematics`` can be built from the dump). Fixed joints are listed
+too, with their origins; they carry ``null`` for axis and limits and are never "movable". Movable
 joints are the revolute, prismatic and continuous ones: those are the joints that become degrees of
 freedom in a simulator, and the ones ``kitchenbot.robots.joint_maps`` partitions into groups.
 
@@ -37,6 +41,17 @@ def _opt_float(value: str | None) -> float | None:
     return None if value is None else float(value)
 
 
+def _origin(element: ET.Element) -> tuple[list[float], list[float]]:
+    """``(xyz, rpy)`` of a joint's ``<origin>``; the URDF default for anything missing is zeros."""
+    origin_el = element.find("origin")
+    attrib = origin_el.attrib if origin_el is not None else {}
+    xyz = _floats(attrib.get("xyz")) or [0.0, 0.0, 0.0]
+    rpy = _floats(attrib.get("rpy")) or [0.0, 0.0, 0.0]
+    if len(xyz) != 3 or len(rpy) != 3:
+        raise ValueError(f"joint {element.get('name')!r}: origin needs 3 values in xyz and rpy")
+    return xyz, rpy
+
+
 def parse_joint(element: ET.Element) -> dict:
     """Return one joint as a plain dict (JSON serialisable)."""
     jtype = element.get("type", "")
@@ -49,12 +64,15 @@ def parse_joint(element: ET.Element) -> dict:
     limit = limit_el.attrib if limit_el is not None else {}
     parent_el = element.find("parent")
     child_el = element.find("child")
+    origin_xyz, origin_rpy = _origin(element)
     return {
         "name": element.get("name"),
         "type": jtype,
         "movable": movable,
         "parent": parent_el.get("link") if parent_el is not None else None,
         "child": child_el.get("link") if child_el is not None else None,
+        "origin_xyz": origin_xyz,
+        "origin_rpy": origin_rpy,
         "axis": axis,
         # continuous joints have no lower/upper; fixed joints have no <limit> at all
         "lower": _opt_float(limit.get("lower")),
