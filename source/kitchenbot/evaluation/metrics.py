@@ -2,8 +2,14 @@
 
 This is the single place that says which per-episode metrics exist and which scenarios they apply
 to. ``schema.json`` repeats the same sets in JSON Schema form and a unit test checks that the two
-agree. Success predicates and collision tagging from simulation state are added by the scenarios
-that own them (P22 and later); this module only names the metrics.
+agree. This module only names the metrics.
+
+Deciding them is :mod:`kitchenbot.evaluation.judges` (#57), the reference implementation of the
+section 3 definitions, written from state alone: ``GraspJudge`` gives ``grasp_success``,
+``PlacementJudge`` gives ``placement_success``, ``rack_collision`` and ``completion_time_s``, and
+``episode_outcome`` turns those and the fall, IK, drop and timeout signals into ``success`` and
+the primary failure tag. The simulation backends (#22) feed the judges scene state; the CI dry run
+(#60) feeds them synthetic trajectories; both therefore mean the same thing by success.
 
 Per-episode ``metrics`` keys
 ----------------------------
