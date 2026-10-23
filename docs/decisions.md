@@ -78,3 +78,18 @@ is Apache-2.0 USD and MolmoSpaces is CC BY 4.0 with Isaac exports.
 Decision: ArtVIP first, MolmoSpaces second, authored USD as the guaranteed fallback; rack tines are
 authored in every case.
 Consequences: the portfolio carries no non-commercial asset licence.
+
+## D011 — ArtVIP `dishwasher_2` as the dishwasher base; MolmoSpaces only as static filler (2026-10-23)
+
+Context: #29 inspected seven ArtVIP dishwashers and the MolmoSpaces THOR set with `usd-core`, before
+Isaac Sim was installed. `dishwasher_2` (7 MB, 52k points) has a bottom-hinged door (0 to 90
+degrees) and two prismatic racks with 0.2 m travel; every ArtVIP dishwasher uses `sdf` collision
+and has no tines. MolmoSpaces has no dishwasher, its THOR cabinets are static, and its dataset card
+adds "research and educational use" wording on top of CC BY 4.0.
+Decision: #11 wraps `dishwasher_2` (alternate `dishwasher_4`), replaces its collision with convex
+shapes, authors the tines, and scales the unit uniformly if a 25 cm plate does not fit; "rack out"
+means its full 0.2 m travel, not the 0.4 m first assumed. MolmoSpaces assets are optional static
+filler, dropped if the operator reads the licence wording as restrictive.
+Consequences: #11 is a wrapping job (7 hours) rather than authoring from scratch; architecture
+section 10a and issue #11 now say 0.2 m; one licence line for the operator to read before the demo
+video uses a MolmoSpaces asset.
