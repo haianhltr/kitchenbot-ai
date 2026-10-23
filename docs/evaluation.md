@@ -54,6 +54,10 @@ Ranges are frozen once M4 starts. Changing them resets `docs/experiments.md`.
 | Task success rate | grasp and placement both succeed, no fall, within the 30 s timeout | S4 |
 
 Success detection is automatic, from simulation state. No metric is read off a video.
+`kitchenbot.evaluation.judges` is the reference implementation of the grasp, placement, collision
+and completion-time definitions above, and of how they become `success` and the primary failure
+tag; the simulation backends (#22) feed it simulation state and the CI dry run feeds it synthetic
+state, so both apply the same definitions.
 
 ## 4. Protocol
 
