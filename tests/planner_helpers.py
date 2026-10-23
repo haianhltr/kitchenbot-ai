@@ -196,6 +196,8 @@ class Fakes:
     ``hand`` is any object with the ``HandController`` verbs, ``is_holding()`` and ``update(dt)``,
     e.g. the #42 ``MockHand``. With ``hand_reach_from_geometry`` the harness sets the hand's
     ``plate_in_reach`` from the palm-to-plate distance each step; off keeps the hand's own.
+    ``plate_follows_palm`` lets ``FakePlate`` carry the plate with the palm while the hand holds;
+    turn it off for a hand that writes the plate pose itself (the #58 ``KinematicFollowHand``).
     """
 
     arm: FakeArm = field(default_factory=lambda: FakeArm(PALM_START))
@@ -206,6 +208,7 @@ class Fakes:
     counter_edge_pose: Pose = field(default_factory=lambda: COUNTER_EDGE)
     plate_observation_offset: tuple[float, float, float] = (0.0, 0.0, 0.0)
     slot_observation_offset: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    plate_follows_palm: bool = True
 
     def observe(self) -> PlannerObservation:
         plate = Pose(self.plate.pose.position + self.plate_observation_offset,
@@ -231,7 +234,8 @@ class Fakes:
             palm_to_plate = position_distance(self.arm.palm.position, self.plate.pose.position)
             self.hand.plate_in_reach = palm_to_plate <= ATTACH_RADIUS_M
         self.hand.update(dt)
-        self.plate.advance(self.arm.palm, self.hand.is_holding())
+        if self.plate_follows_palm:
+            self.plate.advance(self.arm.palm, self.hand.is_holding())
 
 
 @dataclass
