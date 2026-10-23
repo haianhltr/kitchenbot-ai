@@ -53,13 +53,15 @@ DEFAULT_OUTPUT_DIR = Path("outputs") / "eval"
 class EvalConfig:
     """One evaluator invocation. Validated on construction.
 
-    ``seeds`` defaults to :func:`kitchenbot.evaluation.seeds.default_seeds` when left empty.
+    ``split`` defaults to ``seen``: the held-out ``unseen`` split (report only, never tune on
+    it) has to be asked for. ``seeds`` defaults to
+    :func:`kitchenbot.evaluation.seeds.default_seeds` when left empty.
     The defaults for ``policy``, ``hand`` and ``base`` are the headline configuration: our own
     balance policy, the Dex3 hand, a floating base.
     """
 
     scenario: str
-    split: str = "unseen"
+    split: str = "seen"
     seeds: tuple[int, ...] = ()
     num_envs: int = 50
     policy: str = "own"

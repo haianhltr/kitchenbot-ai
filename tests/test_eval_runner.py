@@ -84,10 +84,10 @@ def test_fake_run_is_schema_valid_and_marked_synthetic():
     validate_result(doc)
     run = doc["run"]
     assert run["synthetic"] is True and run["gpu_name"] == "none"
-    assert run["scenario"] == "fake" and run["split"] == "unseen"
-    assert run["seeds"] == split_seeds("unseen")
+    assert run["scenario"] == "fake" and run["split"] == "seen"
+    assert run["seeds"] == split_seeds("seen")
     assert [e["seed"] for e in doc["episodes"]] == run["seeds"]
-    assert doc["aggregates"]["num_episodes"] == 50
+    assert doc["aggregates"]["num_episodes"] == 100
 
 
 def test_fake_is_deterministic_and_independent_of_num_envs():
@@ -101,7 +101,7 @@ def test_fake_is_deterministic_and_independent_of_num_envs():
 
 
 def test_fake_output_is_pinned():
-    """CI output must not drift: a digest of the episodes for the default unseen and seen runs."""
+    """CI output must not drift: a digest of the episodes for the unseen and seen runs."""
 
     def digest(doc):
         blob = json.dumps(doc["episodes"], sort_keys=True, separators=(",", ":"))
@@ -175,7 +175,14 @@ def test_eval_config_rejects(kwargs):
 def test_eval_config_defaults_to_the_default_seeds():
     assert EvalConfig(scenario="S4", split="seen").seeds == tuple(range(50))
     assert EvalConfig(scenario="S0", split="seen").seeds == tuple(range(100))
-    assert EvalConfig(scenario="S0").seeds == tuple(range(1000, 1050))
+    assert EvalConfig(scenario="S0", split="unseen").seeds == tuple(range(1000, 1050))
+
+
+def test_eval_config_split_defaults_to_seen():
+    """The held-out split is never the default, for the Python API as for the CLI."""
+    assert EvalConfig(scenario="S0").split == "seen"
+    assert EvalConfig(scenario="S0").seeds == tuple(range(100))
+    assert EvalConfig(scenario="S4").seeds == tuple(range(50))
 
 
 # ----------------------------------------------------------------------------- custom backend
@@ -311,7 +318,7 @@ def test_git_info(monkeypatch):
 
 
 def test_default_output_path_and_write_result(tmp_path):
-    doc = run_evaluation(EvalConfig(scenario="fake", seeds=(1000,)))
+    doc = run_evaluation(EvalConfig(scenario="fake", split="unseen", seeds=(1000,)))
     doc["run"]["started_at"] = "2026-10-23T08:09:10Z"
     doc["run"]["git_commit"] = "abcdef0123456789abcdef0123456789abcdef01"
     path = default_output_path(doc, tmp_path)

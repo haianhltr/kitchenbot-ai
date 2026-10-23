@@ -129,7 +129,9 @@ def test_valid_document_for_every_scenario(scenario):
 
 
 def test_a_produced_document_validates():
-    doc = run_evaluation(EvalConfig(scenario="fake", seeds=(1000, 1001, 1002)), validate=False)
+    doc = run_evaluation(
+        EvalConfig(scenario="fake", split="unseen", seeds=(1000, 1001, 1002)), validate=False
+    )
     validate_result(doc)
 
 
