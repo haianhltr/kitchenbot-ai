@@ -231,6 +231,13 @@ furniture comes from outside. Order of preference, by licence and format:
 | Authored USD | Dishwasher body, door hinge, rack slide, tines | USD authored in this repo | ours | Guaranteed fallback for the dishwasher; the rack tines are authored in every case so slot geometry is under our control |
 | PartNet-Mobility | 48 dishwashers, 345 cabinets | URDF plus OBJ | non-commercial research only, gated access | Not used: the licence would restrict the portfolio and access requires an institutional e-mail |
 
+Inspected 2026-10-23 with `usd-core` (#29, not yet loaded in Sim 6.2): ArtVIP `dishwasher_2`
+(alternate `dishwasher_4`) has a separately articulated door (revolute, 0 to 90 degrees) and two
+prismatic racks with 0.2 m travel (#11 assumes 0.4 m), all with `sdf` collision, no tines or slot
+geometry, so `rack_tines.usda` stays authored. MolmoSpaces has no dishwasher and its THOR cabinets
+are static. Cabinet dressing: ArtVIP `kitchen/cupboard` and `counter`, MolmoSpaces `thor_Cabinet` as
+static filler; files and licences are in `scene/assets/third_party/MANIFEST.md`.
+
 Dish props: the plate is authored (section 8). YCB `029_plate` is 258 mm across, 24 mm tall and
 279 g; whether a USD for it exists under `Props/YCB/Axis_Aligned` in the 6.2 asset root is checked
 in M2 (**VERIFY**), and if so it becomes an extra unseen object, not the training plate.
