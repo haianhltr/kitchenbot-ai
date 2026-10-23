@@ -11,5 +11,6 @@ Planned files (docs/architecture.md section 4):
   (``UrdfChain``), and ``right_arm_chain`` from the pelvis to the right palm link with the waist
   held at zero by default. Exists since #48; P03 checks the chain against the USD.
 - ``g1_dex3.py``: a copy of Isaac Lab's ``G1_29DOF_CFG`` with the rev 1.0 hip-roll limits
-  (139 N·m, 20 rad/s) and switchable ``fix_root_link``. Created by P03.
+  (139 N·m, 20 rad/s) and switchable ``fix_root_link``. An untested draft exists since #46 (it
+  imports Isaac Lab, so nothing imports it on CI); P03 verifies it against the USD.
 """
