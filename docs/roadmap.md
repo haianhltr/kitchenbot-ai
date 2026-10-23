@@ -8,14 +8,14 @@ reported per run in `docs/experiments.md` and is not estimated here.
 
 | Milestone | Owner | Hours | Exit criterion |
 | --- | --- | --- | --- |
-| M0 Environment | kb-sim | 13 | Windows go/no-go gate passed or Ubuntu fallback decided; G1 Dex3 joint map committed; CI green |
+| M0 Environment | kb-sim | 15 | Windows go/no-go gate passed or Ubuntu fallback decided; G1 Dex3 joint map committed; CI green |
 | M1 Standing | kb-controls | 25 | Own lower-body policy meets S0 targets under pushes and scripted arm sweeps; Agile baseline measured alongside |
 | M2 Kitchen | kb-sim | 26 | Full kitchen loads with robot and plate; dishwasher door and rack articulate; randomization terms exist |
 | M3 Reaching | kb-controls | 20 | S1 targets met with balance policy active, seen and unseen |
 | M4 Grasping | kb-manip | 30 | S2 targets met with Dex3 or the Dex1 fallback decision recorded |
 | M5 Placement | kb-manip | 15 | S4 runs end to end with automatic success detection |
-| M6 Evaluation | kb-eval | 18 | All deliverables in `docs/evaluation.md` section 8 checked |
-| **Total** | | **147** | 3 hours unallocated buffer |
+| M6 Evaluation | kb-eval | 19 | All deliverables in `docs/evaluation.md` section 8 checked |
+| **Total** | | **150** | no unallocated buffer; actuals in `docs/status.md` are running far under estimate |
 
 Stretch, outside the 150 hours: **M3b** learned right-arm policy replacing DifferentialIK behind the
 same interface, then imitation learning from the scripted planner.
@@ -23,8 +23,9 @@ same interface, then imitation learning from the scripted planner.
 ## Issue plan
 
 Planning IDs map one to one onto GitHub issue numbers: P01 is #1, P26 is #26, and the pinned GPU
-queue is #27 (P27 is unused). P28, P29 and P30 were added on 2026-10-23 as no-simulation work
-that runs while the Isaac Sim install waits on the operator's reboot. `CP` marks the critical path, labelled `milestone-blocker`. "After" lists hard
+queue is #27 (P27 is unused). P28, P29, P30, P35 and P40 were added on 2026-10-23 as no-simulation
+work that ran while the Isaac Sim install waited on the operator's reboot (P31 to P34 and P36 to
+P39 are unused: those numbers went to pull requests). `CP` marks the critical path, labelled `milestone-blocker`. "After" lists hard
 dependencies, mirrored as "Blocked by" in each issue.
 
 | ID | Milestone | Owner | Title | Hours | After | Flags |
@@ -34,6 +35,7 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P03 | M0 | kb-sim | Load G1 Dex3 asset; dump joint and link names; diff against the P28 map and correct `joint_maps.py`; fixed and floating base spawn tests | 2 | P01, P28 | CP |
 | P04 | M0 | kb-sim | Windows go/no-go gate: pretrained play and 100-iteration training run; record FPS and VRAM; decision comment | 3 | P01 | CP, gpu |
 | P28 | M0 | kb-sim | Provisional G1 Dex3 joint map and limits from the Unitree URDF; partition test; no simulation | 2 | — | |
+| P35 | M0 | kb-sim | Windows host check script with `-Fix` for long paths, git option and uv; no simulation | 2 | — | |
 | P05 | M1 | kb-controls | Stand environment config: legs-only action, upper-body randomization event, rewards, terminations; zero-agent smoke | 6 | P03 | CP |
 | P06 | M1 | kb-controls | Train lower-body policy v1; export TorchScript and joint manifest; S0 metrics | 8 | P05, P04 | CP, gpu |
 | P07 | M1 | kb-controls | Lower-body policy action-term wrapper; Agile checkpoint baseline wrapper; S0 comparison under pushes | 6 | P06 | CP |
@@ -56,18 +58,19 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P22 | M5 | kb-manip | Success detection, rack collision force tagging; full S4 with balance | 7 | P21, P20 | CP |
 | P23 | M6 | kb-eval | Evaluator runner, JSON schema, seed splits, failure tags | 6 | — | usable from M3; unblocked 2026-10-23, CI already exists |
 | P24 | M6 | kb-eval | Plot script and `docs/experiments.md` generation | 3 | P23 | |
+| P40 | M6 | kb-eval | Experiments table rows for continuous metrics: mean, median, bootstrap interval | 1 | P24 | |
 | P25 | M6 | kb-eval | Demo video recording with on-screen controller labels | 3 | P22 | CP |
 | P26 | M6 | kb-eval | Technical report, README results, reused versus developed table, failure analysis | 6 | P24, P25 | CP |
 
 Plus one pinned issue, **GPU queue**, which is a lock, not work.
 
-Hours by owner: kb-sim 36, kb-controls 45, kb-manip 39 (33 without the conditional P19), kb-eval 18.
+Hours by owner: kb-sim 38, kb-controls 45, kb-manip 39 (33 without the conditional P19), kb-eval 19.
 
 ## Week plan (20 hours per week)
 
 | Week | Focus | Issues |
 | --- | --- | --- |
-| 1 | Environment gate, scaffolding, asset load; no-simulation work while the install waits | P01 P02 P03 P04 P28 P29 P30, P23, start P05 |
+| 1 | Environment gate, scaffolding, asset load; no-simulation work while the install waits | P01 P02 P03 P04 P28 P29 P30 P35, P23 P24 P40, start P05 |
 | 2 | First policy training; plate and counter | P05 P06, P09 P10 |
 | 3 | Policy wrapper and robustness; dishwasher; arm IK fixed-base; evaluator | P07 P08, P11, P14, P23 |
 | 4 | Composite env with balance; cabinets; kinematic grasp | P15, P12 P13, P17 |

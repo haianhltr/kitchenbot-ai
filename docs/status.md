@@ -2,7 +2,9 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30 and #35 merged, Isaac Sim not yet installed.
+**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35 and #40 merged, Isaac Sim not yet
+installed. Actuals: those eight issues (21 estimated hours) were finished in about two hours of
+wall-clock by parallel worker sessions, reviewed and merged by the director.
 
 ## What exists
 
@@ -26,7 +28,8 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
   on `unseen`), and a synthetic `fake` scenario that runs on CI (#23). `scripts/plot_results.py`
   (success rates with intervals, failure histograms, torso error over time from optional traces)
   and `scripts/update_experiments.py` (idempotent table rows, synthetic documents refused by
-  default) (#24). 237 unit tests pass.
+  default) (#24); continuous metrics get mean, median and a bootstrap interval (#40). 248 unit
+  tests pass.
 - `scripts/host_check.ps1`: read-only Windows readiness check with a `-Fix` mode for long paths,
   git `core.longpaths` and `uv` (#35). Run on this host on 2026-10-23: GPU, driver 616.92, disk
   and RAM pass; long paths, git option, VS 2022 C++ tools and `uv` fail; a reboot is pending.
@@ -35,12 +38,7 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
 
 ## What is running
 
-No training run has started. In progress now, each by a worker session in its own worktree,
-none needing Isaac Sim:
-
-| Issue | Owner | What |
-| --- | --- | --- |
-| #40 | kb-eval | Experiments table rows for continuous metrics (mean, median, bootstrap interval) |
+No training run has started. Nothing is in progress: every remaining open issue needs Isaac Sim.
 
 #1 (the install) is on hold without `status:ready` until the operator reboots; #3 follows it.
 
@@ -59,5 +57,5 @@ none needing Isaac Sim:
 ## Next critical step
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
-(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #40 finishes without a
-simulator; after it nothing is left that does not need Isaac Sim.
+(now a diff against the #28 map) and #4 (the Windows gate). Nothing that does not need Isaac Sim is
+left; the next move is the operator's.
