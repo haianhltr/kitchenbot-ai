@@ -7,8 +7,8 @@
 One row per aggregate rate of each result document and one per continuous metric it carries
 (mean with the median in parentheses, bootstrap interval of the mean, number of episodes with the
 metric). A document already listed (keyed by its file name in the JSON column) is
-skipped, so the script is idempotent. Synthetic results (the fake scenario) are refused unless
---allow-synthetic is given: never commit those rows. Run from the repository root.
+skipped, so the script is idempotent. Synthetic results (the fake and dry scenarios) are refused
+unless --allow-synthetic is given: never commit those rows. Run from the repository root.
 Exit status: 0 ok, 1 a named file was refused, 2 bad input or table not found.
 """
 
@@ -42,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--allow-synthetic",
         action="store_true",
-        help="also add synthetic (fake scenario) results; use only with --doc on a scratch copy",
+        help="also add synthetic (fake or dry) results; use only with --doc on a scratch copy",
     )
     return parser
 
