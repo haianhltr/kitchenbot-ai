@@ -302,3 +302,144 @@ imports only `gymnasium`; the drafts load when a CLI command resolves the config
   `{left,right}_hand_{thumb_0..2,middle_0..1,index_0..1}_joint`
   (`source/isaaclab_tasks/isaaclab_tasks/contrib/assemble_trocar/g129_dex3_env_cfg.py:61-74`), the
   same names as `robots/joint_maps.py`. Independent support for #28's map; #3 still checks the USD.
+
+## 9. Kitchen scene drafts (#59)
+
+Added for the #59 drafts `scene/dishwasher_cfg.py`, `scene/kitchen_scene_cfg.py` and
+`scripts/smoke/load_kitchen.py` (each headed UNTESTED DRAFT, parsed on CI and never imported).
+The same v3.0.0 clone (commit `e3f7d9f`), read on 2026-10-23; nothing was run. The numbers the
+drafts use come from `scene/kitchen_dims.py` and `scene/dishwasher_frames.py`, which are tested
+on CI. `scripts/make_dishwasher_overrides.py` writes `dishwasher_2_overrides.usda` and checks it
+with usd-core.
+
+### 9.1 Assets and spawners
+
+| Symbol | Where (v3.0.0) | What the drafts rely on |
+| --- | --- | --- |
+| `ArticulationCfg` | `source/isaaclab/isaaclab/assets/articulation/articulation_cfg.py:21` | `InitialStateCfg` (:25) with `joint_pos` (:35, a dict of name regexes); `articulation_root_prim_path` (:46, None = search for `ArticulationRootAPI`); `init_state` (:58), `soft_joint_pos_limit_factor` (:61), `actuators` (:103) |
+| `AssetBaseCfg` | `source/isaaclab/isaaclab/assets/asset_base_cfg.py:19` | `InitialStateCfg` (:27): `pos` (:40), `rot` (:42, "(x, y, z, w)"); `prim_path` (:63), `spawn` (:73), `init_state` (:80). Default `class_type` is `Asset` (:46), "authors the asset without creating a runtime simulation view": used for the floor, counter, plinth, light and the tines |
+| `Asset.__init__` | `source/isaaclab/isaaclab/assets/asset.py:24`, spawn at `:45-51` | Calls `spawn.func(spawn_path or prim_path, spawn, translation=init_state.pos, orientation=init_state.rot)`, i.e. the pose is relative to the parent prim |
+| `RigidObjectCfg` | `source/isaaclab/isaaclab/assets/rigid_object/rigid_object_cfg.py:16` | `InitialStateCfg` (:20); the plates (`RigidBodyAPI`, mass and colliders are authored in `plate_*.usda`, #30) |
+| `ImplicitActuatorCfg` | `source/isaaclab/isaaclab/actuators/actuator_pd_cfg.py:21` | `joint_names_expr` (`actuator_base_cfg.py:32`), `stiffness` (:100), `damping` (:110); "If None, the stiffness is set to the value from the USD joint prim" (:106). Both are required fields (`MISSING`) |
+| `FileCfg` / `UsdFileCfg` | `source/isaaclab/isaaclab/sim/spawners/from_files/from_files_cfg.py:30` / `:238` | `scale` (:45), `fix_root_link` (:80), `usd_path` (:265); `activate_contact_sensors` (`spawners/spawner_cfg.py:165`, "Activate contact reporting on all rigid bodies") |
+| `spawn_from_usd` / `spawn_from_usd_file` | `source/isaaclab/isaaclab/sim/spawners/from_files/from_files.py:54` / `:650` | "In case a prim already exists at the given prim path, then the function does not create a new prim" (:659); otherwise `create_prim(prim_path, usd_path=..., translation, orientation, scale)` |
+| `create_prim` | `source/isaaclab/isaaclab/sim/utils/prims.py:46` | Adds the USD as a reference (`add_usd_reference`, :894) and writes translate, orient, scale ops; "The scale is always applied in the local frame" (:70) |
+| `MultiUsdFileCfg` | `source/isaaclab/isaaclab/sim/spawners/wrappers/wrappers_cfg.py:56` | `usd_path: str \| list[str]` (:69), `random_choice` (:80): one variant per environment, fixed at clone time. Not used: a per-episode plate diameter needs all three plates present |
+| `CuboidCfg` | `source/isaaclab/isaaclab/sim/spawners/shapes/shapes_cfg.py:75` | `size` (:83); static when it has `collision_props` and no `rigid_props` (the plinth) |
+| `UsdPhysicsCollisionCfg` | `source/isaaclab/isaaclab/sim/schemas/schemas_cfg.py:293` | `collision_enabled` (:306); the 3.0 fragment form of `collision_props`, as in `contrib/drone_arl/.../obstacle_scene.py:80` |
+| `PreviewSurfaceCfg` | `source/isaaclab/isaaclab/sim/spawners/materials/visual_materials_cfg.py:22` | Plinth colour |
+| `DomeLightCfg` | `source/isaaclab/isaaclab/sim/spawners/lights/lights_cfg.py:108` | `intensity` (`LightCfg`, :63), `color` (:33) |
+| `GroundPlaneCfg` | `source/isaaclab/isaaclab/sim/spawners/from_files/from_files_cfg.py:373` | The alternative to `floor.usda` that #10 may pick |
+| `clone`, `replace`, `instantiate` | `source/isaaclab/isaaclab/utils/configclass.py:158`, `:142`, `:127` | `replace(cfg, init_state=replace(cfg.init_state, pos=...))` moves the robot without touching `G1_29DOF_CFG`; `instantiate(scene_cfg)` builds the scene (tutorial `create_scene.py:127`) |
+
+### 9.2 Scene, cloning and the child prim under a link
+
+| Symbol | Where (v3.0.0) | What the drafts rely on |
+| --- | --- | --- |
+| `InteractiveSceneCfg` | `source/isaaclab/isaaclab/scene/interactive_scene_cfg.py:22` | `num_envs` (:86), `env_spacing` (:89), `replicate_physics` (:103, default True), `filter_collisions` (:126, default True) |
+| `InteractiveScene` | `source/isaaclab/isaaclab/scene/interactive_scene.py:58` | `env_origins` (:336), `articulations` (:359), `reset` (:437), `write_data_to_sim` (:461), `update` (:477), `__getitem__` (:720) |
+| entity order | same file, `:765-773` | "Parent prototypes must exist before anything spawned below them; sensors initialize last": entities are sorted by prim-path depth, so the dishwasher spawns before `.../E_shelf_1_04/RackTines` |
+| None fields | same file, `:767` (and `_collect_asset_cfgs`, :175) | Fields whose value is None are skipped: that is how `make_kitchen_scene_cfg(layers=...)` removes a layer |
+| USD replication | `source/isaaclab/isaaclab/cloner/usd.py:49` and `:109-123` | "Parents must be copied before independently declared descendants"; a descendant whose source is the parent's source plus the same suffix is skipped because the parent copy carries it |
+| prototype paths | `source/isaaclab/isaaclab/cloner/clone_plan.py:225` | The source of a per-environment asset is its path in the first environment that has it, so the tines are authored at `/World/envs/env_0/Dishwasher/ArtVIP/E_shelf_1_04/RackTines` |
+| default root pose | `source/isaaclab_physx/isaaclab_physx/assets/articulation/articulation.py:4056` | `default_root_pose` is `init_state.pos + init_state.rot`; resets write it to the **root link** (`write_root_link_pose_to_sim_index`, :507). The spawner writes the same `init_state.pos` to the **spawned prim**. The two agree only if the root link frame is the prim's frame, which is why the overrides layer moves ArtVIP's `E_body_5` (authored at (-0.236, -0.202, 0) in the asset) to the layer origin |
+| `create_world_fixed_joint` | `source/isaaclab/isaaclab/sim/schemas/schemas.py:405` | Isaac Lab's own fixed root joint anchors `localPos0` at the root link's world pose at spawn (:447-449). An existing world fixed joint is only enabled or disabled, never re-anchored (:519-526) |
+
+**The tine attachment: a nested `AssetBaseCfg`, no dedicated API.** Isaac Lab 3.0.0 has no
+"attach this USD to that link" call; the sensors that live on links (`FrameTransformerCfg`,
+`SurfaceGripperCfg`, e.g. `contrib/stack/config/ur10_gripper/stack_joint_pos_env_cfg.py:169`) are
+views, not spawned geometry. Spawned geometry under a link works through the general rules above:
+`AssetBaseCfg(prim_path="{ENV_REGEX_NS}/Dishwasher/ArtVIP/E_shelf_1_04/RackTines",
+spawn=UsdFileCfg(rack_tines.usda, scale=...), init_state=...)`. The scene spawns it after the
+dishwasher (depth order), `spawn_from_usd_file` adds a reference under the link, and the cloner
+copies it with the dishwasher. Its colliders have no `RigidBodyAPI`, so by the UsdPhysics rules
+they become shapes of the nearest rigid-body ancestor, the rack link. The link's authored
+transform scales x by 0.9191, so the tines prim carries the inverse scale and the composed capsule
+scale is exactly 1. `make_dishwasher_overrides.py --check` composes the same Xform with usd-core and
+measures it: slot markers on the computed poses (0.000 mm), tine scale 1.000000. **Fallback**, if
+#11 finds that the runtime path fails (cloning, or PhysX ignoring shapes that were added after the
+parse): `make_dishwasher_overrides.py --with-tines` writes the same reference into the overrides
+layer, which then carries the tines itself. Its composition is tested.
+
+### 9.3 Standalone script, physics, joints
+
+| Symbol | Where (v3.0.0) | What the drafts rely on |
+| --- | --- | --- |
+| `add_launcher_args`, `launch_simulation` | `source/isaaclab/isaaclab/app/sim_launcher.py:72`, `:595` | The 3.0 standalone pattern: parse, `with launch_simulation(sim_cfg, args_cli):`, then `SimulationContext(sim_cfg)` (tutorial `scripts/tutorials/02_scene/create_scene.py:27`, `:120`) |
+| `SimulationCfg` | `source/isaaclab/isaaclab/sim/simulation_cfg.py:36` | `device` (:43), `dt` (:53; 1/200 here), `physics` (:114) |
+| `PhysxCfg` | `source/isaaclab_physx/isaaclab_physx/physics/physx_manager_cfg.py:33` | Imported as `isaaclab_physx.physics.PhysxCfg` (`physics/__init__.pyi:9`); set directly in `SimulationCfg` because the smoke script is not an `isaaclab` CLI task (section 1) |
+| `SimulationContext` | `source/isaaclab/isaaclab/sim/simulation_context.py:59` | `set_camera_view` (:660), `reset` (:705), `step(render=...)` (:724) |
+| articulation writes | `source/isaaclab/isaaclab/assets/articulation/base_articulation.py:641`, `:811`, `:997`, `:1051` | `write_root_pose_to_sim_index`, `write_root_velocity_to_sim_index`, `write_joint_position_to_sim_index`, `write_joint_velocity_to_sim_index` (keyword-only), with the env origins added as in `create_scene.py:85` |
+| lookups | same file, `find_bodies` (:531), `find_joints` (:555), `joint_names` (:195), `body_names` (:221), `actuators` (:120) | Joint and body names are the prim names |
+| data | `base_articulation_data.py`: `default_root_pose` (:307), `default_root_vel` (:318), `default_joint_pos` (:336), `default_joint_vel` (:348), `body_link_pose_w` (:777, quaternion x, y, z, w), `joint_pos` (:964) | Read with `.torch` (section 8) |
+| `set_position_index` | `source/isaaclab/isaaclab/actuators/actuator_collection.py:715` | Scripted door and rack targets (section 3) |
+| `quat_apply` | `source/isaaclab/isaaclab/utils/math.py:623` | Quaternion "(x, y, z, w)"; composes slot poses from the simulated rack link |
+| drive units | `source/isaaclab/isaaclab/sim/schemas/schemas_cfg.py:377`, `:389`; `schemas.py:1490-1492` | Angular drive gains are per radian in Isaac Lab and per degree in USD: ArtVIP's door k = 20, d = 10 (per degree) are 1145.9 and 573.0 per radian in `ImplicitActuatorCfg`. The drive type (`drive_type`, `schemas_cfg.py:344`) is not touched by the actuator, so ArtVIP's `acceleration` drives stay acceleration drives |
+
+**Not found: a `--headless` flag.** The 3.0.0 Kit launcher adds `--livestream`, `--xr`,
+`--device`, `--visualizer`/`--viz`, `--verbose`, `--info`, `--experience`, `--deterministic`,
+`--kit_args` and recording flags (`source/isaaclab_physx/isaaclab_physx/app/kit_launcher.py:340-440`),
+no `--headless`. Headless comes from a `headless` key in the launcher arguments or `HEADLESS=1`
+(`kit_launcher.py:48`, `:498-504`). The smoke script defines its own `--headless`, which reaches the
+launcher as that key; `scripts/README.md` asks every simulation script for `--headless`.
+
+**Not found: joints named `E_door_4`, `E_shelf_03`, `E_shelf_1_04`.** Those are ArtVIP's link
+(rigid body) names, which #29's table and #59's issue use for the joints. The joint prims are
+`RevoluteJoint_dishwasher_2_middle`, `PrismaticJoint_dishwasher_2_up` and
+`PrismaticJoint_dishwasher_2_down`, and those are what `find_joints` and `joint_names_expr` match.
+The draft keys its actuator groups by the link names and matches the joint prims.
+
+### 9.4 Checklist for #10 and #11
+
+Run these against the drafts in Isaac Sim 6.2, in this order; each is a place where a draft is
+expected to be wrong. Items 1 to 7 are #10's (`--layers counter`, `--layers counter,plates`),
+8 to 20 are #11's (`--layers counter,dishwasher`).
+
+1. `load_kitchen.py` starts: `add_launcher_args` accepts our `--headless`, `--num_envs`,
+   `--steps`, `--fixed-base` next to its own flags, and the run is headless; otherwise use
+   `HEADLESS=1` or `--viz none`.
+2. The PhysX backend is used (`PhysxCfg()` in `SimulationCfg`), at 200 Hz.
+3. `make_kitchen_scene_cfg(layers=("counter",))` builds: the None fields are skipped, `floor.usda`
+   and `counter.usda` spawn at every environment origin, floors tile at `env_spacing` 6 m and
+   collisions between environments are filtered.
+4. The robot spawns at (0, -0.45, 0.75) facing +y in both base modes; `--fixed-base` holds the
+   pelvis; the floating base falls without a policy (expected).
+5. The counter-top face is at 0.90 m and the floor friction material is bound (drop a plate).
+6. FPS at 1 and 64 environments, both base modes, recorded in the REPORT.
+7. Plates: the active 25 cm plate rests on the counter at (0.15, 0.30, 0.90), the two parked plates
+   lie flat behind the counter and do not reach a neighbouring environment.
+8. `dishwasher_2_overrides.usda` opens: the relative reference into `third_party/` resolves from
+   the spawned prim; the materials resolve (UsdPreviewSurface, and `Clear_Glass.mdl` collected
+   next to the asset; ArtVIP targets Isaac Sim 5.0). Log any unresolved asset.
+9. No `dishwasher_control.py` behaviour script runs (the overrides delete `OmniScriptingAPI`), and
+   the door does not snap open or shut on its own.
+10. No `sdf` cooking: 11 convex hulls and 2 convex decompositions. Record the decomposition hull
+    count and cooking time of the wire racks. The convex hull makes the body a solid block, which is
+    fine while nothing enters the tub; consider disabling the upper rack's collider.
+11. One articulation, root `E_body_5` at `init_state.pos` + the env origin right after spawn **and**
+    after writing `default_root_pose` (no 0.31 m jump; the layer moved the root link to its origin).
+12. ArtVIP's own world fixed joint has `localPos0` = (-0.236, -0.202, 0), authored for the asset at
+    the world origin. Check that the body stays at the spawn pose in every environment. If PhysX
+    pulls it back, deactivate that joint in the layer and set `fix_root_link=True`, so that Isaac Lab
+    authors a new joint at the spawned pose (`schemas.py:405`, `:519-526`).
+13. `dishwasher.joint_names` are the three joint prims; the three actuator groups resolve.
+14. The door gains read back as 1145.9 and 573.0 per radian, the racks as 10 and 10. The drives are
+    `acceleration` type: decide whether to switch them to `force` in the layer. Retune the racks for
+    the scripted targets, because k = 10 N/m is weak. `maxForce` is infinite.
+15. The door starts at pi/2, exactly on its upper limit. Check for chatter; if there is any, start it
+    at 89 deg.
+16. The tines (nested `AssetBaseCfg`) exist in every environment under `.../E_shelf_1_04/RackTines`,
+    move with the rack, are capsules with no non-uniform scale warning, and collide with a plate.
+    If any of these fails, use `make_dishwasher_overrides.py --with-tines`.
+17. Raise the lower-rack travel to `DISHWASHER_RACK_TRAVEL_M` (0.40 m) with
+    `make_dishwasher_overrides.py --rack-travel 0.4` and `make_dishwasher_cfg(lower_rack_init=-0.4)`.
+    Check that the joint coordinate is in world metres, and that at 0.40 m a 25 cm plate standing in
+    the slot row is entirely in front of the body.
+18. Scripted targets: the door follows 90 <-> 60 deg and the rack follows -0.2 <-> 0 m, in a log or
+    video. Record FPS at 64 environments with `--layers counter,dishwasher`.
+19. Slot poses: the smoke script's "sim vs kitchen_dims" distance is under 1 cm in every environment.
+20. The pose: with the robot standing at either stand-off, the open door's tip (x = 0.231 m) and the
+    rack's near edge (x = 0.207 m) clear the right thigh and hip. The leg surface was estimated at
+    0.17 m from the URDF joint line, so measure the real meshes. Contact sensors report on the
+    dishwasher links, and the masses PhysX derives without `MassAPI` (default density) are sane for
+    the door and the racks.

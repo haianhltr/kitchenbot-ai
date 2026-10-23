@@ -23,13 +23,21 @@ Files (docs/architecture.md section 10):
     (#30);
   - ``kitchen/counter.usda`` and ``kitchen/floor.usda`` by ``scripts/make_counter_usd.py`` (#47);
   - ``dishwasher/rack_tines.usda`` by ``scripts/make_rack_tines_usd.py`` (#47); #11 attaches it to
-    the rack link of the ArtVIP dishwasher.
+    the rack link of the ArtVIP dishwasher;
+  - ``dishwasher/dishwasher_2_overrides.usda`` by ``scripts/make_dishwasher_overrides.py`` (#59):
+    references the git-ignored ArtVIP ``dishwasher_2`` and overrides its colliders, limits, default
+    targets and root-link offset; ``--check`` composes it with usd-core.
+- ``dishwasher_frames.py``: the dishwasher's frames as numbers, standard library only (#59): slot
+  poses in the kitchen frame, the slot row from the pelvis, the tine attachment scale, footprints
+  and the plinth. Every number is a ``kitchen_dims`` constant (``DISHWASHER_*``).
+- ``dishwasher_cfg.py`` and ``kitchen_scene_cfg.py``: UNTESTED DRAFTS written against the Isaac Lab
+  v3.0.0 source (#59), parsed on CI and never imported there. The ``ArticulationCfg`` of the
+  dishwasher with its tines and a slot-pose helper, and the ``InteractiveSceneCfg`` with selectable
+  layers (``counter``, ``dishwasher``, ``plates``) and a fixed or floating G1. #10 and #11 run them.
 
 Planned files:
 
-- ``kitchen_scene_cfg.py``: the ``InteractiveSceneCfg`` with selectable layers. Created by P10.
 - ``plate_cfg.py``: ``RigidObjectCfg`` factory for the rimmed plates. Created by P09.
-- ``dishwasher_cfg.py``: ``ArticulationCfg`` and slot pose constants. Created by P11.
 - The Isaac Lab event terms (reset events and the push) that apply an ``EpisodeSpec`` to the scene,
   in a file beside ``randomization.py`` whose name P13 chooses. Created by P13.
 """
