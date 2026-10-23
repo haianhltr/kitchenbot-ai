@@ -65,6 +65,19 @@ Migration note: Isaac Lab 3.0 removed the `isaaclab.bat --install/--conda/--uv` 
 the `isaaclab` CLI (`isaaclab list_envs`, `isaaclab train`, `isaaclab play`). Do not follow 2.x
 tutorials that call `isaaclab.bat -i`.
 
+### Pre-commit hook (once per clone)
+
+Lint runs locally before each commit with the same check CI runs (`ruff check .`), pinned in
+`.pre-commit-config.yaml`:
+
+```bat
+uv pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+CI does not check formatting, so the hook only lints. It does not replace running `pytest -q`.
+
 ## 4. Verify (M0 acceptance, in order)
 
 | Step | Command | Pass when |
