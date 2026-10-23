@@ -144,3 +144,5 @@ discusses the top two causes per scenario.
 - [ ] `docs/experiments.md` with measured values, dates, commits, seeds, GPU time
 - [ ] Reused vs developed table in the README
 - [ ] Failure analysis section in the technical report
+
+Skeletons for the technical report and the demo video, every empty slot bound to the issue that fills it: [report.md](report.md) and [demo_video_script.md](demo_video_script.md).
