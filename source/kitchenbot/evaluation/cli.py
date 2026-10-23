@@ -6,10 +6,11 @@ Example (docs/evaluation.md section 4)::
         --num_envs 50 --headless --config configs/eval/s4_unseen.yaml
 
 ``--config`` names the committed ``configs/eval`` YAML the run was started from; its path and
-SHA256 go into the result (``run.config_path``, ``run.config_sha256``). The file is not read.
+SHA256 go into the result (``run.config_path``, ``run.config_sha256``). The evaluator does not
+read the file; a scenario's loader may (``dry`` does, for the sampler scenario and ranges).
 
-Exit status: 0 on success, 2 for invalid arguments, 3 for a scenario that is registered but not
-implemented yet.
+Exit status: 0 on success, 2 for invalid arguments or a configuration the scenario rejects, 3 for
+a scenario that is registered but not implemented yet.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from kitchenbot.evaluation.runner import (
     HANDS,
     POLICIES,
     EvalConfig,
+    ScenarioConfigError,
     default_output_path,
     run_evaluation,
     scenario_names,
@@ -52,7 +54,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--scenario",
         required=True,
         choices=scenario_names(),
-        help="S0 to S4, or fake (synthetic, no simulation, CI only)",
+        help=(
+            "S0 to S4, or fake or dry (synthetic, no simulation, CI only; dry chains the sampler, "
+            "the planner against fakes and the judges)"
+        ),
     )
     parser.add_argument(
         "--split",
@@ -97,7 +102,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "the committed configs/eval/*.yaml this run was started from (optional): its path "
-            "and SHA256 are recorded in the result. The file is hashed, not read"
+            "and SHA256 are recorded in the result. The file is hashed, not read, by the "
+            "evaluator (the dry scenario reads it too)"
         ),
     )
     parser.add_argument(
@@ -184,6 +190,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except NotImplementedError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_NOT_IMPLEMENTED
+    except ScenarioConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_USAGE
 
     path = write_result(doc, _resolve_out(args.out, doc))
     if config.split == "unseen":

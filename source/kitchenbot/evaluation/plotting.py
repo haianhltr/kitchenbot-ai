@@ -67,7 +67,7 @@ STYLE = {
     "lines.linewidth": 1.6,
 }
 
-SYNTHETIC_NOTE = "SYNTHETIC DATA (fake scenario): not a measurement"
+SYNTHETIC_NOTE = "SYNTHETIC DATA (fake or dry scenario): not a measurement"
 
 #: A variant is the part of the configuration that distinguishes baselines.
 Variant = tuple[str, str, str]  # (policy, hand, base)

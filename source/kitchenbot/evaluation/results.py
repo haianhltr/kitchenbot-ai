@@ -1,8 +1,8 @@
 """Reading result files for ``scripts/plot_results.py`` and ``scripts/update_experiments.py``.
 
 Every document is parsed and checked with :func:`kitchenbot.evaluation.schema.validate_result`
-before anyone uses it. Documents with ``run.synthetic`` true (the ``fake`` scenario) are refused
-unless the caller opts in: their numbers describe a generator, not the robot.
+before anyone uses it. Documents with ``run.synthetic`` true (the ``fake`` and ``dry`` scenarios)
+are refused unless the caller opts in: their numbers describe a generator, not the robot.
 """
 
 from __future__ import annotations

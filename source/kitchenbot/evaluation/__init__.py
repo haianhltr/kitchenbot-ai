@@ -21,6 +21,16 @@ Created by P57:
   ``plate_in_slot``, ``vertical_error_deg``, ``StabilityWindow`` and ``episode_outcome`` (success
   and the primary failure tag). P22 feeds them simulation state, P60's CI dry run synthetic state.
 
+Created by P60 (the CI dry run, no simulation):
+
+- ``dry_run.py``: the ``dry`` scenario. ``DryRunBackend`` draws each episode with
+  ``kitchenbot.scene.randomization``, runs the plate-to-rack planner against the test doubles of
+  ``kitchenbot.planning.fakes`` (the arm behind the #48 reachability gate, a fake hand, plate and
+  rack) and judges it with ``judges.py``, reporting the S4 metric set; synthetic like ``fake``. It
+  is the template of the S3 and S4 backends of P21 and P22, which replace the fakes with the
+  simulation and keep its shape. Reads the ``--config`` YAML; ``EvalConfig.extras`` carries its
+  ``reach_gate`` option.
+
 Created by P24 (``scripts/plot_results.py`` and ``scripts/update_experiments.py``):
 
 - ``results.py``: reads and validates result JSONs, refuses synthetic ones unless told otherwise.

@@ -30,8 +30,8 @@ from kitchenbot.evaluation.seeds import split_seeds
 # ----------------------------------------------------------------------------- registry
 
 
-def test_registry_has_s0_to_s4_and_fake():
-    assert scenario_names() == ["S0", "S1", "S2", "S3", "S4", "fake"]
+def test_registry_has_s0_to_s4_fake_and_dry():
+    assert scenario_names() == ["S0", "S1", "S2", "S3", "S4", "fake", "dry"]
     assert scenario_names() == list(SCENARIO_NAMES)
 
 
