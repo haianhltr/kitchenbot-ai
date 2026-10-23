@@ -45,7 +45,8 @@ wandb/
 *.tar.gz
 
 # Third-party assets fetched by scripts/fetch_assets.py
-source/kitchenbot/scene/assets/third_party/
+source/kitchenbot/scene/assets/third_party/*
+!source/kitchenbot/scene/assets/third_party/MANIFEST.md
 assets/third_party/
 
 # Secrets and local config

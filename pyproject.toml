@@ -23,6 +23,7 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
 ]
+assets = ["huggingface_hub>=0.25", "usd-core>=24.11", "zstandard>=0.22"]
 
 [tool.setuptools.packages.find]
 where = ["source"]
