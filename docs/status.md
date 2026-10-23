@@ -2,7 +2,7 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2 and #28 merged, Isaac Sim not yet installed.
+**As of:** 2026-10-23, #2, #28 and #30 merged, Isaac Sim not yet installed.
 
 ## What exists
 
@@ -13,6 +13,9 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
 - Provisional joint map `source/kitchenbot/robots/joint_maps.py` and URDF fixture: 43 movable
   joints, 12 legs / 3 waist / 7 per arm / 7 per Dex3 hand, Dex3 limits sign-mirrored between
   hands (#28). The Isaac Sim USD check is still #3's job.
+- Three rimmed plate assets (22, 25, 27 cm) as watertight text USD with rigid-body, mass,
+  convex-decomposition collision and a friction-1.0 physics material, generated and validated by
+  `scripts/make_plate_usd.py`; `usd-core` now installs on CI (#30). PhysX behaviour is #9's job.
 - GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26), the pinned GPU
   queue #27, and no-simulation issues #28, #29, #30 added so work continues before the install.
 
@@ -24,7 +27,6 @@ none needing Isaac Sim:
 | Issue | Owner | What |
 | --- | --- | --- |
 | #29 | kb-sim | Asset fetch script, licence manifest, inspect ArtVIP and MolmoSpaces candidates |
-| #30 | kb-sim | Procedural rimmed plate USD assets, three diameters |
 | #23 | kb-eval | Evaluator runner, schema, fake scenario on CI |
 
 #1 (the install) is on hold without `status:ready` until the operator reboots. #24 becomes ready
@@ -39,5 +41,5 @@ when #23 merges; #3 when #1 closes.
 ## Next critical step
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
-(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #29, #30 and #23
-run in parallel without a simulator.
+(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #29 and #23 run in
+parallel without a simulator.
