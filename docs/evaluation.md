@@ -84,6 +84,13 @@ causes of section 7 occur in one trial, the one listed first there is the primar
 `register_scenario` in `kitchenbot/evaluation/runner.py`, whose loader imports its environment
 config inside the function body and returns a backend with `run_batch(seeds)`.
 
+Figures and the results table are regenerated from the JSON files, never edited by hand:
+`python scripts/plot_results.py` writes `success_rates.png`, `failure_tags.png` and
+`torso_error.png` to `outputs/figures/`, and `python scripts/update_experiments.py` appends the
+rows of every file in `outputs/eval/` that `docs/experiments.md` does not list yet (keyed by file
+name, so it is safe to run twice). Both refuse synthetic `fake` results unless `--allow-synthetic`
+is given, which is only for CI and scratch copies (`--doc`); never commit such rows.
+
 ## 5. Targets
 
 Targets, not results. They are what "the MVP works" means.

@@ -12,4 +12,10 @@ Files, all created by P23 unless noted:
 - ``metrics.py``: which per-episode metrics each scenario reports. Success predicates and rack
   collision tagging from simulation state join it in P22.
 - ``fake.py``: the synthetic scenario CI runs instead of a simulation.
+
+Created by P24 (``scripts/plot_results.py`` and ``scripts/update_experiments.py``):
+
+- ``results.py``: reads and validates result JSONs, refuses synthetic ones unless told otherwise.
+- ``plotting.py``: the three figures, one shared style, matplotlib only.
+- ``experiments.py``: the rows of the "Evaluation results" table in ``docs/experiments.md``.
 """

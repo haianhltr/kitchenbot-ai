@@ -101,18 +101,49 @@ def test_fake_is_deterministic_and_independent_of_num_envs():
 
 
 def test_fake_output_is_pinned():
-    """CI output must not drift: a digest of the episodes for the unseen and seen runs."""
+    """CI output must not drift: digests of the episodes (without traces) and of the traces."""
 
-    def digest(doc):
-        blob = json.dumps(doc["episodes"], sort_keys=True, separators=(",", ":"))
+    def digest(obj):
+        blob = json.dumps(obj, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(blob.encode()).hexdigest()
+
+    def episodes(doc):
+        return [{k: v for k, v in e.items() if k != "traces"} for e in doc["episodes"]]
+
+    def traces(doc):
+        return [e["traces"] for e in doc["episodes"]]
 
     unseen = run_evaluation(EvalConfig(scenario="fake", split="unseen"))
     seen = run_evaluation(EvalConfig(scenario="fake", split="seen"))
     assert unseen["aggregates"]["success"]["count"] == 36
     assert seen["aggregates"]["success"]["count"] == 78
-    assert digest(unseen) == "17932ae46108aff6dfad831ae421ab0e7ebef46c9ed528424be0cd5fbc3118a3"
-    assert digest(seen) == "dad901e830398e3502a69b1d8b7743f2e928f7a413a83775b82922991270926d"
+    # Unchanged since the first version of the fake scenario: traces were added after these draws.
+    assert digest(episodes(unseen)) == (
+        "17932ae46108aff6dfad831ae421ab0e7ebef46c9ed528424be0cd5fbc3118a3"
+    )
+    assert digest(episodes(seen)) == (
+        "dad901e830398e3502a69b1d8b7743f2e928f7a413a83775b82922991270926d"
+    )
+    assert digest(traces(unseen)) == (
+        "29826f6278c7b46d4e0ccabf23ed11f840c43116316ba0f07cc6d9e3b89ae844"
+    )
+    assert digest(traces(seen)) == (
+        "a605e86cff33129040f6be0ec7aaf5fb541449d6b6f881edbfb0863254a39453"
+    )
+
+
+def test_fake_traces_are_well_formed():
+    doc = run_evaluation(EvalConfig(scenario="fake", split="unseen"))
+    for e in doc["episodes"]:
+        trace = e["traces"]["torso_orientation_error_deg"]
+        assert e["traces"]["sample_rate_hz"] == 10.0
+        assert len(trace) == max(2, int(e["duration_s"] * 10))
+        assert min(trace) >= 0.0
+        if e["metrics"]["fell"]:
+            assert trace[-1] > 40.0  # a fall ends with a large tilt
+            assert trace[-1] > max(trace[: len(trace) // 2])
+        else:
+            assert max(trace) < 10.0
 
 
 def test_fake_exercises_the_taxonomy_and_both_outcomes():
@@ -334,3 +365,39 @@ def test_default_output_path_and_write_result(tmp_path):
     doc["run"]["wall_clock_s"] = float("nan")
     with pytest.raises(ValueError):
         write_result(doc, tmp_path / "nan.json")
+
+
+def test_write_result_keeps_number_lists_on_one_line(tmp_path):
+    doc = run_evaluation(EvalConfig(scenario="fake", split="unseen", seeds=(1000, 1001)))
+    text = write_result(doc, tmp_path / "r.json").read_text(encoding="utf-8")
+    assert '"seeds": [1000, 1001]' in text
+    trace = doc["episodes"][0]["traces"]["torso_orientation_error_deg"]
+    line = '"torso_orientation_error_deg": [' + ", ".join(json.dumps(x) for x in trace) + "]"
+    assert line in text
+    assert json.loads(text) == doc
+    assert len(text.splitlines()) < 150  # one line per field, not one per sample
+
+
+def test_dumps_matches_json_for_structures():
+    from kitchenbot.evaluation.runner import _dumps
+
+    for obj in (
+        {},
+        [],
+        {"a": [], "b": {}, "c": [1, 2.5, -3], "d": [True, False], "e": [{"x": 1}, {"y": [1]}]},
+        [[1, 2], [3]],
+        "text",
+        None,
+    ):
+        assert json.loads(_dumps(obj)) == obj
+    assert _dumps({"a": [1, 2]}) == "{" + chr(10) + '  "a": [1, 2]' + chr(10) + "}"
+
+
+def test_default_output_path_never_overwrites(tmp_path):
+    doc = run_evaluation(EvalConfig(scenario="fake", split="unseen", seeds=(1000,)))
+    first = default_output_path(doc, tmp_path)
+    first.write_text("{}", encoding="utf-8")
+    second = default_output_path(doc, tmp_path)
+    assert second.name == first.name.replace(".json", "-2.json")
+    second.write_text("{}", encoding="utf-8")
+    assert default_output_path(doc, tmp_path).name == first.name.replace(".json", "-3.json")
