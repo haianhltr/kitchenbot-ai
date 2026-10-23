@@ -57,7 +57,7 @@ def test_fake_results_flow_into_figures_and_table_rows(tmp_path):
     lines = doc.read_text(encoding="utf-8").splitlines()
     first, end = locate_table(lines)
     rows = lines[first:end]
-    assert len(rows) == 12  # six rows per document
+    assert len(rows) == 14  # seven rows per document: five rates and two continuous metrics
     for row in rows:
         cells = [c.strip() for c in row.strip().strip("|").split("|")]
         assert len(cells) == len(COLUMNS) and cells[COLUMNS.index("Scenario")] == "fake"

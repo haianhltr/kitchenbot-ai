@@ -1,9 +1,10 @@
 """docs/experiments.md table generation: rows, idempotence, refusal of synthetic results."""
 
 import copy
+import statistics
 
 import pytest
-from eval_helpers import REPO, as_real_s4, fake_doc, load_script, write_doc
+from eval_helpers import REPO, as_real_s4, fake_doc, load_script, scenario_doc, write_doc
 
 from kitchenbot.evaluation.experiments import (
     COLUMNS,
@@ -14,6 +15,7 @@ from kitchenbot.evaluation.experiments import (
     locate_table,
     rows_for,
 )
+from kitchenbot.evaluation.stats import bootstrap_mean_interval
 
 DOC = REPO / "docs" / "experiments.md"
 
@@ -50,7 +52,8 @@ def test_rows_of_a_real_s4_document():
         "grasp_success_rate",
         "placement_success_rate",
         "collision_rate",
-        "completion_time_s (median)",
+        "torso_orientation_error_deg",
+        "completion_time_s",
     ]
     for row in rows:
         cells = _cells(row)
@@ -69,22 +72,119 @@ def test_rows_of_a_real_s4_document():
     assert success[COLUMNS.index("Value")] == "72.0%"
     assert success[COLUMNS.index("95% CI")] == "58.3% to 82.5%"
     assert success[COLUMNS.index("Trials")] == "50"
+    torso = _cells(rows[-2])
+    assert torso[COLUMNS.index("Value")] == "mean 3.33 (median 2.90)"
+    assert torso[COLUMNS.index("95% CI")] == "2.80 to 3.97"
+    assert torso[COLUMNS.index("Trials")] == "50"  # every episode carries it
     completion = _cells(rows[-1])
-    assert completion[COLUMNS.index("Value")].endswith(" s")
-    assert completion[COLUMNS.index("95% CI")] == "n/a"
-    assert completion[COLUMNS.index("Trials")] == "36 of 50"
+    assert completion[COLUMNS.index("Value")] == "mean 11.95 (median 11.52)"
+    assert completion[COLUMNS.index("95% CI")] == "11.07 to 12.83"
+    assert completion[COLUMNS.index("Trials")] == "36 of 50"  # successes only
 
 
-def test_no_completion_row_without_successful_episodes():
-    doc = copy.deepcopy(as_real_s4(fake_doc("unseen")))
-    doc["aggregates"]["continuous"]["completion_time_s"] = {
+def _values(doc, name):
+    return [e["metrics"][name] for e in doc["episodes"] if e["metrics"][name] is not None]
+
+
+def test_continuous_row_follows_the_reporting_rule():
+    """Value, interval and trials come from the episodes, whatever the metric."""
+    doc = as_real_s4(fake_doc("seen"))
+    by_metric = {_cells(r)[COLUMNS.index("Metric")]: _cells(r) for r in rows_for(doc, "x.json")}
+    for name in ("torso_orientation_error_deg", "completion_time_s"):
+        values = _values(doc, name)
+        low, high = bootstrap_mean_interval(values, resamples=2000, seed=0, level=0.95)
+        cells = by_metric[name]
+        mean, median = statistics.fmean(values), statistics.median(values)
+        assert cells[COLUMNS.index("Value")] == f"mean {mean:.2f} (median {median:.2f})"
+        assert cells[COLUMNS.index("95% CI")] == f"{low:.2f} to {high:.2f}"
+        n = len(values)
+        assert cells[COLUMNS.index("Trials")] == (str(n) if n == 100 else f"{n} of 100")
+
+
+def _s0_episode(duration, torso, fell):
+    return {
+        "success": not fell,
+        "failure_tag": "fall" if fell else "success",
+        "duration_s": duration,
+        "metrics": {
+            "fell": fell,
+            "standing_duration_s": duration,
+            "torso_orientation_error_deg": torso,
+        },
+    }
+
+
+def test_s0_rows_use_the_standing_duration_and_torso_error():
+    doc = scenario_doc(
+        "S0",
+        [
+            _s0_episode(60.0, 2.0, False),
+            _s0_episode(60.0, 4.0, False),
+            _s0_episode(12.0, 30.0, True),
+            _s0_episode(20.0, 6.0, True),
+        ],
+    )
+    rows = {_cells(r)[COLUMNS.index("Metric")]: _cells(r) for r in rows_for(doc, "x.json")}
+    assert list(rows) == [
+        "success_rate",
+        "fall_rate",
+        "standing_duration_s",
+        "torso_orientation_error_deg",
+    ]
+    standing = rows["standing_duration_s"]
+    assert standing[COLUMNS.index("Value")] == "mean 38.00 (median 40.00)"
+    # Hand-checked: a resample mean of [60, 60, 12, 20] is at most 16 with probability 0.043 and
+    # at most 14 with probability 0.0195, so the 2.5th percentile is 16; it is 60 with
+    # probability 0.0625, so the 97.5th percentile is 60.
+    assert standing[COLUMNS.index("95% CI")] == "16.00 to 60.00"
+    assert standing[COLUMNS.index("Trials")] == "4"
+    assert rows["torso_orientation_error_deg"][COLUMNS.index("Value")] == "mean 10.50 (median 5.00)"
+
+
+def test_s1_rows_include_the_hand_target_error_and_its_rate_under_3_cm():
+    errors = [0.5, 2.9, 3.0, 8.0]
+    doc = scenario_doc(
+        "S1",
+        [
+            {
+                "success": e < 3.0,
+                "failure_tag": "success" if e < 3.0 else "timeout",
+                "duration_s": 5.0,
+                "metrics": {
+                    "fell": False,
+                    "torso_orientation_error_deg": 1.0,
+                    "hand_target_error_cm": e,
+                },
+            }
+            for e in errors
+        ],
+    )
+    rows = {_cells(r)[COLUMNS.index("Metric")]: _cells(r) for r in rows_for(doc, "x.json")}
+    assert rows["hand_target_under_3cm_rate"][COLUMNS.index("Value")] == "50.0%"
+    hand = rows["hand_target_error_cm"]
+    assert hand[COLUMNS.index("Value")] == "mean 3.60 (median 2.95)"
+    low, high = bootstrap_mean_interval(errors)
+    assert hand[COLUMNS.index("95% CI")] == f"{low:.2f} to {high:.2f}"
+
+
+def test_a_single_value_has_no_interval_and_no_values_has_no_row():
+    one = scenario_doc("S0", [_s0_episode(60.0, 2.0, False)])
+    rows = {_cells(r)[COLUMNS.index("Metric")]: _cells(r) for r in rows_for(one, "x.json")}
+    standing = rows["standing_duration_s"]
+    assert standing[COLUMNS.index("Value")] == "mean 60.00 (median 60.00)"
+    assert standing[COLUMNS.index("95% CI")] == "n/a"  # one value has no spread to resample
+    assert standing[COLUMNS.index("Trials")] == "1"
+
+    nobody = copy.deepcopy(as_real_s4(fake_doc("unseen")))
+    nobody["aggregates"]["continuous"]["completion_time_s"] = {
         "n": 0,
         "mean": None,
         "std": None,
         "median": None,
     }
-    metrics = [_cells(r)[COLUMNS.index("Metric")] for r in rows_for(doc, "x.json")]
-    assert "completion_time_s (median)" not in metrics and len(metrics) == 5
+    metrics = [_cells(r)[COLUMNS.index("Metric")] for r in rows_for(nobody, "x.json")]
+    assert "completion_time_s" not in metrics and len(metrics) == 6
+    assert not any("(median)" in m for m in metrics)  # the old completion-time row is gone
 
 
 def test_commit_cell_marks_a_dirty_tree_and_a_missing_commit():
@@ -120,7 +220,7 @@ def test_add_documents_is_idempotent_and_keyed_by_file_name():
     assert twice == once and added == [] and skipped == ["a_S4_unseen.json"]
     # A different file name is a different result, even with identical content.
     thrice, added, _ = add_documents(twice, [("b_S4_unseen.json", real)])
-    assert added == ["b_S4_unseen.json"] and thrice.count("b_S4_unseen.json") == 6
+    assert added == ["b_S4_unseen.json"] and thrice.count("b_S4_unseen.json") == 7
     # The same name twice in one call is added once.
     both, added, skipped = add_documents(text, [("c.json", real), ("c.json", real)])
     assert added == ["c.json"] and skipped == ["c.json"]
@@ -173,7 +273,7 @@ def test_script_adds_rows_once(script, tmp_path, doc_copy, capsys):
 
     assert script.main([str(results), "--doc", str(doc_copy)]) == 0
     rows = _rows(doc_copy)
-    assert len(rows) == 12
+    assert len(rows) == 14
     assert {_cells(r)[4] for r in rows} == {"own", "agile"}
     assert "2 document(s) added" in capsys.readouterr().out
 
@@ -202,7 +302,7 @@ def test_script_refuses_synthetic_results(script, tmp_path, doc_copy, capsys):
 
     # Only with the flag are the rows added (to a scratch copy).
     assert script.main([str(fake_file), "--doc", str(doc_copy), "--allow-synthetic"]) == 0
-    assert len(_rows(doc_copy)) == 6
+    assert len(_rows(doc_copy)) == 7
     assert all(_cells(r)[2] == "fake" for r in _rows(doc_copy))
 
 

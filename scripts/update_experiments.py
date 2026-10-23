@@ -4,8 +4,9 @@
     python scripts/update_experiments.py outputs/eval/x.json    # one file
     python scripts/update_experiments.py --doc /tmp/copy.md     # another file, never the real one
 
-One row per aggregate rate of each result document, plus the median completion time where the
-document has one. A document already listed (keyed by its file name in the JSON column) is
+One row per aggregate rate of each result document and one per continuous metric it carries
+(mean with the median in parentheses, bootstrap interval of the mean, number of episodes with the
+metric). A document already listed (keyed by its file name in the JSON column) is
 skipped, so the script is idempotent. Synthetic results (the fake scenario) are refused unless
 --allow-synthetic is given: never commit those rows. Run from the repository root.
 Exit status: 0 ok, 1 a named file was refused, 2 bad input or table not found.
