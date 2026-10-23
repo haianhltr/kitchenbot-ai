@@ -1,0 +1,61 @@
+# Balance-policy training run family (docs/architecture.md section 6).
+# Status: UNTESTED DRAFT from #46; #5 runs it. Every number mirrors the section 6 table and the
+# drafts in source/kitchenbot/locomotion (stand_env_cfg.py, upper_body_targets.py,
+# agents/rsl_rl_ppo_cfg.py); tests/test_stand_env_drafts.py checks the ones that are importable.
+#
+# Intended command (flags per docs/isaaclab_3_api_notes.md section 7):
+#   isaaclab train --rl_library rsl_rl --task KitchenBot-Stand-G1-Dex3 --num_envs 1024
+#     --max_iterations 1500 --seed 42 --viz none physics=isaacsim_physx
+
+task: KitchenBot-Stand-G1-Dex3
+physics: isaacsim_physx
+rl_library: rsl_rl
+num_envs: 1024
+max_iterations: 1500
+seed: 42
+
+timing:
+  physics_dt_s: 0.005        # 200 Hz
+  decimation: 4              # 50 Hz policy
+  episode_length_s: 20.0
+
+action:
+  joints: legs (12) + waist (3)
+  scale: 0.25
+  offset: default pose
+
+observation:
+  frame_dim: 138
+  history_length: 5
+  history_order: time        # oldest frame first
+  flat_dim: 690
+
+agent:
+  algorithm: PPO
+  actor_hidden_dims: [256, 128, 128]
+  critic_hidden_dims: [256, 128, 128]
+  num_steps_per_env: 24
+
+commands:
+  velocity:
+    lin_vel_x: [-0.3, 0.3]   # m/s
+    lin_vel_y: [-0.3, 0.3]   # m/s
+    ang_vel_z: [-0.3, 0.3]   # rad/s
+    standing_fraction: 0.6   # episodes with exactly zero command
+  upper_body:
+    resampling_time_s: [1.0, 3.0]
+    range_factor_start: 0.2
+    range_factor_end: 1.0
+    reach_episode_fraction: 0.2
+    reach_duration_s: [3.0, 5.0]
+
+randomization:
+  friction: [0.6, 1.0]
+  added_base_mass_kg: [-1.0, 3.0]
+  push_force_n: [-30.0, 30.0]  # per axis, redrawn every 3 s; the docs' 10 N floor is not expressible
+  push_interval_s: 3.0
+  actuator_gain_scale: [0.9, 1.1]
+
+terminations:
+  max_tilt_deg: 60.0
+  illegal_contact_bodies: [pelvis, torso_link]
