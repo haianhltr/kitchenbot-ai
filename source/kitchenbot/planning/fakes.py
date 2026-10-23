@@ -21,8 +21,11 @@ Frames (used by :meth:`Fakes.from_episode`; the hand-built defaults below are in
   episode (no balance model), so the pelvis pose is a constant of the episode.
 - **Rack frame** (:class:`~kitchenbot.scene.kitchen_dims.RackSlotLayout`): ``x`` across the tines,
   ``y`` along the rows, ``z`` up. Where it sits in the kitchen is #11's decision;
-  :data:`DRY_RUN_RACK_FRAME` is a placeholder for the dry run (yaw 0, in front of the counter edge
-  and to the robot's right), to be replaced by the dishwasher pose of #59 and #11.
+  :data:`DRY_RUN_RACK_FRAME` is a placeholder for the dry run: the provisional pose derived in
+  ``docs/reach_gap_analysis.md`` (#56) from architecture section 10, a floor-standing
+  ``dishwasher_2`` to the robot's right with its front flush with the counter's front edge and the
+  lower rack pulled out, yaw 0. #59 adds the dishwasher pose to ``kitchen_dims`` and #11 checks it;
+  then this constant goes.
 - **Plate poses.** ``FakePlate.pose`` is the plate's **grasp frame** on the rim, what the planner
   observes (docs/architecture.md section 9). The judges (:mod:`kitchenbot.evaluation.judges`) take
   the plate **body** pose, origin at the centre of the underside. The conversion is
@@ -30,7 +33,11 @@ Frames (used by :meth:`Fakes.from_episode`; the hand-built defaults below are in
   the body's local ``+x``, same orientation. **That is the convention of #58's tests**
   (``tests/test_planner_kinematic_follow.py``, ``CENTRE_IN_GRASP``), not a measured rule: it puts
   the grasp frame on the underside plane of the rim, and #21's environment layer decides the real
-  rim point.
+  rim point. Two consequences to reconcile there: the planner's quarter turn to vertical
+  (``plate_vertical_quat``) sends the local ``+x`` rim point to the *bottom* of the plate, so with
+  this convention the slot pose is at the tine tops; and ``docs/reach_gap_analysis.md`` (#56)
+  assumes another one, the rim point nearest the robot, 2 cm up, with the slot pose a diameter
+  above the tine tops (the hand on the top rim).
 - **Slot entry.** :meth:`FakeRack.from_layout` puts the grasp frame at the slot entry shifted by
   half a plate thickness against the slot's ``x`` so that the plate stands centred in the gap once
   the planner has turned it vertical (its normal then points along ``+x``; the judge's mid-plane is
@@ -117,9 +124,10 @@ PELVIS_HEIGHT_M = 0.75
 #: turned so that its world heading is that of the world ``x`` axis at the nominal pelvis yaw.
 #: Provisional (#60); inside the committed envelope, a test checks it.
 PALM_START_IN_PELVIS = Pose((0.25, -0.20, 0.25), quat_from_yaw(-math.pi / 2.0))
-#: Rack frame in the kitchen frame for the dry run: below the counter top, in front of the counter
-#: edge, to the robot's right. Provisional placeholder (see the module docstring).
-DRY_RUN_RACK_FRAME = Pose((0.45, -0.20, 0.51))
+#: Rack frame in the kitchen frame for the dry run: ``(x, y, z) = (0.55, 0.0, 0.09)``, yaw 0, the
+#: provisional pose of ``PROVISIONAL_RACK_POSE`` in ``scripts/reach_gap_analysis.py`` (#56). Not a
+#: measurement; see the module docstring.
+DRY_RUN_RACK_FRAME = Pose((0.55, 0.0, 0.09))
 
 
 def body_pose_from_grasp(grasp: Pose, diameter_m: float) -> Pose:
