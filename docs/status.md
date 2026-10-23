@@ -2,7 +2,7 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #28 and #30 merged, Isaac Sim not yet installed.
+**As of:** 2026-10-23, #2, #28, #29 and #30 merged, Isaac Sim not yet installed.
 
 ## What exists
 
@@ -16,6 +16,10 @@ Rewritten by kb-director after every merge. Newest state only; history is in git
 - Three rimmed plate assets (22, 25, 27 cm) as watertight text USD with rigid-body, mass,
   convex-decomposition collision and a friction-1.0 physics material, generated and validated by
   `scripts/make_plate_usd.py`; `usd-core` now installs on CI (#30). PhysX behaviour is #9's job.
+- `scripts/fetch_assets.py` with a 93-file manifest (ArtVIP dishwashers and cabinets, two
+  MolmoSpaces THOR objects, 195 MB, already downloaded into the main checkout's git-ignored
+  `third_party/` directory) and `scripts/usd_inspect.py`. Finding: ArtVIP `dishwasher_2` has a
+  separately articulated door and racks (0.2 m travel), so #11 wraps it (D011) (#29).
 - GitHub labels, milestones M0 to M6, issues #1 to #26 (planning IDs P01 to P26), the pinned GPU
   queue #27, and no-simulation issues #28, #29, #30 added so work continues before the install.
 
@@ -26,8 +30,8 @@ none needing Isaac Sim:
 
 | Issue | Owner | What |
 | --- | --- | --- |
-| #29 | kb-sim | Asset fetch script, licence manifest, inspect ArtVIP and MolmoSpaces candidates |
-| #23 | kb-eval | Evaluator runner, schema, fake scenario on CI |
+| #23 | kb-eval | Evaluator runner, schema, fake scenario on CI: PR #36 under review, one change requested |
+| #35 | kb-sim | Windows host check script (long paths, build tools, uv, driver, disk) |
 
 #1 (the install) is on hold without `status:ready` until the operator reboots. #24 becomes ready
 when #23 merges; #3 when #1 closes.
@@ -37,9 +41,12 @@ when #23 merges; #3 when #1 closes.
 1. Install Visual Studio 2022 Build Tools with the C++ workload and `uv` (no reboot needed).
 2. Enable Windows long paths, then reboot (`docs/setup.md` section 2).
 3. After the reboot, tell the director; it re-adds `status:ready` to #1.
+4. Read the MolmoSpaces dataset card's licence wording ("research and educational use" on top of
+   CC BY 4.0) and say whether its two static filler assets may appear in the portfolio video; they
+   are optional (D011).
 
 ## Next critical step
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
-(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #29 and #23 run in
-parallel without a simulator.
+(now a diff against the #28 map) and #4 (the Windows gate). Until the reboot, #23 and #35 finish
+without a simulator, then #24.
