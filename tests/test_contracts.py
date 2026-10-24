@@ -17,6 +17,7 @@ from __future__ import annotations
 import ast
 import dataclasses
 import inspect
+import json
 import math
 import re
 from pathlib import Path
@@ -31,6 +32,7 @@ from kitchenbot.controllers.hand import kinematic_follow
 from kitchenbot.controllers.hand.dex3_synergy import Dex3SynergyHand
 from kitchenbot.controllers.hand.mock import MockHand
 from kitchenbot.evaluation import dry_run, fake, judges, metrics, stats
+from kitchenbot.evaluation.cli import main as evaluate_main
 from kitchenbot.evaluation.failure_tags import FAILURE_TAG_VALUES, FailureTag
 from kitchenbot.evaluation.runner import EvalConfig, get_scenario, scenario_names
 from kitchenbot.evaluation.schema import load_schema
@@ -255,6 +257,20 @@ def test_eval_yaml_randomization_block_is_the_sampler_ranges(scenario, split):
     assert ranges == RandomizationRanges.for_split(split)
     if scenario in dry_run.MIRRORABLE_SCENARIOS:
         assert dry_run.read_eval_yaml(path, split) == (scenario, ranges)
+
+
+@pytest.mark.parametrize("path", sorted(EVAL_CONFIGS.glob("*.yaml")), ids=lambda p: p.name)
+def test_a_config_run_without_the_flag_uses_the_yaml_num_envs(path, tmp_path):
+    """#69 B7, #78: ``evaluate.py --config`` without ``--num_envs`` runs with the YAML's value."""
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    out = tmp_path / "result.json"
+    argv = ["--scenario", "fake", "--split", data["split"], "--seeds", "2", "--base",
+            data["base"], "--config", str(path), "--out", str(out)]  # fmt: skip
+    assert evaluate_main(argv) == 0
+    run = json.loads(out.read_text(encoding="utf-8"))["run"]
+    assert run["num_envs"] == data["num_envs"] == data["seeds"]["count"]
+    assert data["seeds"]["count"] == len(default_seeds(data["scenario"], data["split"]))
+    assert (run["base"], run["config_path"]) == (data["base"], path.as_posix())
 
 
 def test_dry_run_extra_keys_are_registered_and_are_not_eval_config_fields():
