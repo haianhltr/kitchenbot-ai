@@ -1,13 +1,15 @@
-# UNTESTED DRAFT (#46): written against Isaac Lab v3.0.0 source without a simulator; #5 runs and fixes it.  # noqa: E501
+# UNTESTED DRAFT (#46 and #68): written against Isaac Lab v3.0.0 source without a simulator; #5 runs and fixes it.  # noqa: E501
 """``KitchenBot-Stand-G1-Dex3``: the balance-policy training environment (architecture s. 6).
 
 Structure follows Isaac Lab's velocity task (``core/velocity/velocity_env_cfg.py`` and the G1 flat
 config), with the differences section 6 lists: G1 + Dex3 asset, flat plane, 15 policy actions over
 legs and waist, the upper body driven by ``UpperBodyCommand`` through ``UpperBodyFollowAction``,
 a 5-frame time-major observation history laid out by ``obs_layout``, a standing-heavy velocity
-command, and the section 6 randomization. Every Isaac Lab symbol used here is listed with its
-v3.0.0 file and line in docs/isaaclab_3_api_notes.md. Reward weights are copied from the G1 flat
-and rough configs where the term exists there and are provisional otherwise; #5 tunes them.
+command, a commanded forward waist pitch that the policy observes and the waist reward tracks
+(``WaistLeanCommand``, D012, #68), and the section 6 randomization. Every Isaac Lab symbol used
+here is listed with its v3.0.0 file and line in docs/isaaclab_3_api_notes.md. Reward weights are
+copied from the G1 flat and rough configs where the term exists there and are provisional
+otherwise; #5 tunes them.
 
 Physics: ``StandPhysicsCfg`` declares only ``isaacsim_physx`` and makes it the default, so
 ``physics=isaacsim_physx`` on the command line resolves and forgetting it still runs PhysX.
@@ -41,9 +43,9 @@ from isaaclab_physx.sim.spawners.materials import PhysxRigidBodyMaterialCfg
 from isaaclab_tasks.utils import PresetCfg
 
 from kitchenbot.locomotion import obs_layout
-from kitchenbot.locomotion.commands import UpperBodyCommandCfg
+from kitchenbot.locomotion.commands import UpperBodyCommandCfg, WaistLeanCommandCfg
 from kitchenbot.locomotion.curriculums import UpperBodyRangeCurriculum
-from kitchenbot.locomotion.rewards import feet_planted_when_standing, waist_deviation_l1
+from kitchenbot.locomotion.rewards import feet_planted_when_standing, waist_tracking_l1
 from kitchenbot.locomotion.upper_body_action import UpperBodyFollowActionCfg
 from kitchenbot.robots.g1_dex3 import G1_DEX3_CFG
 from kitchenbot.robots.joint_maps import WAIST
@@ -98,7 +100,8 @@ class StandSceneCfg(InteractiveSceneCfg):
 
 @configclass
 class CommandsCfg:
-    """Planar velocity (60 percent of episodes exactly zero) and the upper-body targets."""
+    """Planar velocity (60 percent of episodes exactly zero), the upper-body targets and the
+    forward waist pitch (D012: zero for half of the targets, a 1 rad/s ramp to each)."""
 
     # One resample per episode, so ``rel_standing_envs`` is a per-episode fraction.
     base_velocity = mdp.UniformVelocityCommandCfg(
@@ -112,6 +115,7 @@ class CommandsCfg:
         ),
     )
     upper_body = UpperBodyCommandCfg(asset_name="robot", joint_names=UPPER)
+    waist_lean = WaistLeanCommandCfg(asset_name="robot")
 
 
 @configclass
@@ -142,6 +146,9 @@ class ObservationsCfg:
         )
         velocity_commands = ObsTerm(
             func=mdp.generated_commands, params={"command_name": "base_velocity"}
+        )
+        waist_lean_command = ObsTerm(
+            func=mdp.generated_commands, params={"command_name": "waist_lean"}
         )
         lower_joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
@@ -194,8 +201,11 @@ class RewardsCfg:
     )
     base_height_l2 = RewTerm(func=mdp.base_height_l2, weight=-10.0, params={"target_height": 0.75})
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-1.0)
+    # D012: tracks the waist lean command (pitch) and holds yaw and roll at zero; provisional weight
     waist_deviation = RewTerm(
-        func=waist_deviation_l1, weight=-0.1, params={"asset_cfg": _joints(list(WAIST))}
+        func=waist_tracking_l1,
+        weight=-0.1,
+        params={"command_name": "waist_lean", "asset_cfg": _joints(list(WAIST))},
     )
     dof_torques_l2 = RewTerm(
         func=mdp.joint_torques_l2, weight=-2.0e-6, params={"asset_cfg": _joints(LOWER)}

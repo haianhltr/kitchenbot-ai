@@ -1,4 +1,4 @@
-# UNTESTED DRAFT (#46): written against Isaac Lab v3.0.0 source without a simulator; #5 runs and fixes it.  # noqa: E501
+# UNTESTED DRAFT (#46 and #68): written against Isaac Lab v3.0.0 source without a simulator; #5 runs and fixes it.  # noqa: E501
 """Reward terms specific to standing with a moving upper body (docs/architecture.md section 6).
 
 Every other reward of the stand environment is reused from ``isaaclab.envs.mdp`` or the velocity
@@ -11,8 +11,13 @@ from __future__ import annotations
 import torch
 from isaaclab.managers import SceneEntityCfg
 
-#: Default selection for ``waist_deviation_l1``: the three waist joints.
-WAIST_JOINTS = SceneEntityCfg("robot", joint_names="waist_.*_joint")
+from kitchenbot.locomotion import waist_lean_targets as wlt
+from kitchenbot.robots.joint_maps import WAIST
+
+#: Default selection for ``waist_tracking_l1``: the three waist joints in ``joint_maps.WAIST``
+#: order (yaw, roll, pitch). ``preserve_order=True`` matters: the reward reads the columns by
+#: position, and a regex selection would follow the articulation's own order instead.
+WAIST_JOINTS = SceneEntityCfg("robot", joint_names=list(WAIST), preserve_order=True)
 
 
 def feet_planted_when_standing(
@@ -37,11 +42,23 @@ def feet_planted_when_standing(
     return (in_contact.all(dim=1) & standing).float()
 
 
-def waist_deviation_l1(env, asset_cfg: SceneEntityCfg = WAIST_JOINTS) -> torch.Tensor:
-    """Sum of absolute waist joint angles, measured from zero (not from the default pose).
+def waist_tracking_l1(
+    env, command_name: str, asset_cfg: SceneEntityCfg = WAIST_JOINTS
+) -> torch.Tensor:
+    """``|pitch - command| + |yaw| + |roll|`` of the waist, in rad (D012, #68).
 
-    Equal to ``mdp.joint_deviation_l1`` while the waist default is zero, as it is in
-    ``G1_29DOF_CFG``; kept separate so a non-zero waist default does not change the meaning.
+    Replaces the #46 reward that pulled the whole waist to zero: the pitch now tracks the lean
+    command (``WaistLeanCommand``, shape ``(num_envs, 1)``), yaw and roll stay at zero. Angles are
+    measured from zero, not from the default pose, which are the same while the waist default is
+    zero as in ``G1_29DOF_CFG``. ``asset_cfg`` must select the three waist joints in
+    ``joint_maps.WAIST`` order, as ``WAIST_JOINTS`` does. Use as a penalty (negative weight).
     """
     asset = env.scene[asset_cfg.name]
-    return asset.data.joint_pos.torch[:, asset_cfg.joint_ids].abs().sum(dim=1)
+    joint_pos = asset.data.joint_pos.torch[:, asset_cfg.joint_ids]
+    command = env.command_manager.get_command(command_name)[:, 0]
+    return wlt.tracking_error(
+        joint_pos[:, wlt.WAIST_PITCH_INDEX],
+        joint_pos[:, wlt.WAIST_YAW_INDEX],
+        joint_pos[:, wlt.WAIST_ROLL_INDEX],
+        command,
+    )
