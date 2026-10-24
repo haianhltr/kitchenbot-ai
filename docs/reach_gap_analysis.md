@@ -393,3 +393,23 @@ commanded lean and the IK point at the finger bases (98 / 100 on paper), 0.25 m 
 #14 and #16 measure short in simulation, the plate box unchanged. `kitchen_dims.ROBOT_STANDOFF_M`
 is 0.30 m from that date; the tables above were generated at 0.45 m and 0.25 m and are kept as
 generated. The balance policy takes the waist pitch command from its first training run (#5, #6).
+
+**Finger-base envelopes (#66, 2026-10-24).** Both committed envelopes now sample the finger-base
+point (0.0777, -0.0016, 0) m in the palm link frame, with the seeds, sample counts and waist ranges
+of #48 and #56 (`right_arm_envelope.npz` 66,901 voxels, 0.535 m³, 5,778 B;
+`right_arm_envelope_waist.npz` 84,469 voxels, 0.676 m³, 7,367 B); the tables above are #56's
+palm-link tables and were not regenerated. `py -3.12 scripts/reach_gap_analysis.py --standoffs 0.30
+--plate-ys 0.30 --no-resample --rack-pose 0.3502 -0.26 0.6496 -90` gives, at the 0.30 m stand-off
+with the 2 cm margin, `waist0 / waist`, seen then unseen: S2 33 / 98 and 72 / 100 (the finger-base
+row of the sensitivity table, reproduced), S4 all seven 20 / 96 and 80 / 100 (equal to the plate
+half: every `counter_edge` and slot target is in both envelopes), and per waypoint over the ten
+pairs `pre_grasp` 54 / 100, `grasp` 49 / 99, `lift` 58 / 100; without the margin S2 is 47 / 100 and
+84 / 100. The dry run (`scripts/evaluate.py --scenario dry`, 50 seeds per split) still ends every
+gate-on episode `ik_infeasible` with either envelope (gate off: 50 / 50 successes), because its
+fakes differ from this analysis: the grasp frame is the plate's local +x rim on the underside plane
+(#58's convention, not the near top rim), the counter-edge waypoint is above the slot's x, and the
+rack is the provisional floor-standing `DRY_RUN_RACK_FRAME`, not #59's pose. With the waist
+envelope the first refused target is in `pre_grasp`, `grasp` or `transport`, the plate targets
+0.1 to 12.5 cm outside it; with #59's rack frame in the fakes every transport and slot target is
+inside both envelopes and 15 / 50 seen and 36 / 50 unseen episodes keep every target inside the
+waist envelope. #67 moves the rim point; #16 measures the reach with the real IK.

@@ -1,18 +1,22 @@
-"""Reachability envelope of the right palm, sampled with URDF forward kinematics (#48, #56).
+"""Reachability envelope of the right palm, sampled with URDF forward kinematics (#48, #56, #66).
 
 docs/architecture.md section 7: targets outside a precomputed workspace envelope are rejected and
 reported as ``ik_infeasible``, so an unreachable target is not mistaken for a controller failure.
 This module builds that envelope without a simulator and answers ``contains`` queries; the gate
 itself is :class:`kitchenbot.controllers.target_filter.ArmTargetPipeline`.
 
-Two envelopes are committed:
+Two envelopes are committed, both of the finger-base point :data:`FINGER_BASE_OFFSET_M` (D012, the
+IK's controlled point; regenerated in #66 with the seeds, sample counts and waist ranges of #48 and
+#56, which sampled the palm link origin), each with a name for :meth:`ReachabilityEnvelope.load`:
 
-- ``data/right_arm_envelope.npz`` (#48, :data:`DEFAULT_PATH`): the waist held at zero. This is the
-  one ``ArmTargetPipeline`` loads by default.
-- ``data/right_arm_envelope_waist.npz`` (#56, :data:`WAIST_PATH`): the waist sampled too, waist
-  pitch 0 to +29.79 deg (forward lean), yaw -20 to +20 deg, roll 0. It answers "what would a waist
-  lean buy" for #10, #14 and #16 (``scripts/reach_gap_analysis.py``); it is not a gate the arm
-  controller can rely on, because the arm controller does not command the waist (below).
+- ``waist0``, ``data/right_arm_envelope.npz`` (#48, :data:`DEFAULT_PATH`): the waist held at zero.
+  This is the one ``ArmTargetPipeline`` loads by default.
+- ``waist``, ``data/right_arm_envelope_waist.npz`` (#56, :data:`WAIST_PATH`): the waist sampled
+  too, waist pitch 0 to +29.79 deg (forward lean), yaw -20 to +20 deg, roll 0. It answers "what
+  would a waist lean buy" for #10, #14 and #16 (``scripts/reach_gap_analysis.py``) and is the dry
+  run's gate with ``gate_envelope=waist``. Neither the arm controller nor the balance policy
+  guarantees a posture in that range yet (the planner's lean command is #21's), so it is an upper
+  bound, not a gate the arm controller can rely on.
 
 What is sampled:
 
@@ -28,7 +32,7 @@ What is sampled:
   with ``tip_offset_m``, a point fixed in that link's frame (the IK's ``body_offset``, #14's).
   Finger bases sit 7.8 cm along the link's ``x`` (``right_hand_index_0_joint`` and
   ``right_hand_middle_0_joint`` origins in the URDF), so the offset moves the envelope by up to a
-  few centimetres.
+  few centimetres. The committed files use :data:`FINGER_BASE_OFFSET_M` and record it.
 - **Configurations:** the seven arm joints uniform in the URDF limits
   (``joint_limits.ARM_RIGHT_LIMITS``), with the 5 degree margin of section 7 taken off both ends of
   the wrist roll, pitch and yaw ranges, drawn from ``numpy.random.default_rng(seed)``. The waist,
@@ -74,6 +78,8 @@ __all__ = [
     "DEFAULT_PATH",
     "DEFAULT_SAMPLES",
     "DEFAULT_SEED",
+    "ENVELOPE_PATHS",
+    "FINGER_BASE_OFFSET_M",
     "VOXEL_SIZE_M",
     "WAIST_ENVELOPE_RANGE_DEG",
     "WAIST_ENVELOPE_SAMPLES",
@@ -101,6 +107,13 @@ DEFAULT_SAMPLES = 2_000_000
 DEFAULT_PATH = Path(__file__).resolve().parent / "data" / "right_arm_envelope.npz"
 #: The committed envelope with the waist sampled (#56).
 WAIST_PATH = Path(__file__).resolve().parent / "data" / "right_arm_envelope_waist.npz"
+#: The committed envelopes by name, for :meth:`ReachabilityEnvelope.load` and the dry run's
+#: ``gate_envelope`` extra: ``waist0`` the waist at zero, ``waist`` the waist sampled.
+ENVELOPE_PATHS: dict[str, Path] = {"waist0": DEFAULT_PATH, "waist": WAIST_PATH}
+#: The point both committed envelopes sample, in the ``right_hand_palm_link`` frame, metres: the
+#: finger bases, the mean of the ``right_hand_index_0_joint`` and ``right_hand_middle_0_joint``
+#: origins in the URDF fixture, which D012 makes the IK's controlled point (#14's ``body_offset``).
+FINGER_BASE_OFFSET_M: tuple[float, float, float] = (0.0777, -0.0016, 0.0)
 
 #: Waist yaw, roll and pitch ranges ``(lower, upper)`` in degrees of the #48 envelope: all zero.
 ZERO_WAIST_DEG: tuple[tuple[float, float], ...] = ((0.0, 0.0), (0.0, 0.0), (0.0, 0.0))
@@ -302,10 +315,23 @@ class ReachabilityEnvelope:
         grid[idx[:, 0], idx[:, 1], idx[:, 2]] = True
         return cls(grid, origin, spacing, **meta)
 
+    @staticmethod
+    def resolve(path_or_name: str | Path = DEFAULT_PATH) -> Path:
+        """The file of a committed envelope's name (:data:`ENVELOPE_PATHS`: ``waist0``,
+        ``waist``), or ``path_or_name`` itself as a path. A name wins over a file of that name in
+        the working directory."""
+        if isinstance(path_or_name, str) and path_or_name in ENVELOPE_PATHS:
+            return ENVELOPE_PATHS[path_or_name]
+        return Path(path_or_name)
+
     @classmethod
     def load(cls, path: str | Path = DEFAULT_PATH) -> ReachabilityEnvelope:
-        """Read an envelope written by :meth:`save` (no pickles); absent waist keys mean zero."""
-        with np.load(Path(path), allow_pickle=False) as data:
+        """Read an envelope written by :meth:`save` (no pickles); absent waist keys mean zero.
+
+        ``path`` is a file, or the name of a committed envelope (``"waist0"``, ``"waist"``; see
+        :meth:`resolve`).
+        """
+        with np.load(cls.resolve(path), allow_pickle=False) as data:
             shape = tuple(int(v) for v in data["shape"])
             count = int(np.prod(shape))
             occupied = np.unpackbits(data["packed"], count=count).astype(bool).reshape(shape)

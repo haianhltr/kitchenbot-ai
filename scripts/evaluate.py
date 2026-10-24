@@ -7,10 +7,12 @@
         # synthetic: the sampler, the planner against fakes and the judges, no simulation
     python scripts/evaluate.py --scenario dry --config configs/eval/s4_seen.yaml \
         --extra reach_gate=false    # the same without the reachability gate
+    python scripts/evaluate.py --scenario dry --config configs/eval/s4_seen.yaml \
+        --extra gate_envelope=waist    # gated on the waist envelope (default waist0)
 
 ``--extra KEY=VALUE`` is repeatable and fills ``EvalConfig.extras``, the options one scenario
-reads (the value is a YAML scalar: ``false``, ``0.3`` or text); today only ``dry`` reads one,
-``reach_gate``. A key the scenario does not read is a usage error.
+reads (the value is a YAML scalar: ``false``, ``0.3`` or text); today only ``dry`` reads them,
+``reach_gate`` and ``gate_envelope``. A key the scenario does not read is a usage error.
 
 The logic lives in ``kitchenbot.evaluation.cli`` so tests and other scripts can import it. Run from
 the repository root so ``outputs/eval/`` lands in the git-ignored output directory.

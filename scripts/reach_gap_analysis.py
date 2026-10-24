@@ -43,10 +43,13 @@ episode: the pelvis stands at ``(dx, -standoff + dy, h)`` with yaw ``90 deg + dy
 margin if ``margin_contains(p, 0.02)``.
 
 The point: the planner's palm target is the grasp frame itself (``palm_pose`` "coincides with the
-grasp frame" at the grasp); the envelopes are of the ``right_hand_palm_link`` origin, and
-``ArmTargetPipeline`` compares the two directly. #14's IK ``body_offset`` moves the controlled
-point to the palm centre; the sensitivity table measures that with an envelope of the finger-base
-point (:data:`FINGER_BASE_OFFSET_M` in the palm link frame) built in memory with the same seeds.
+grasp frame" at the grasp), and ``ArmTargetPipeline`` compares it directly with the envelope's
+point. #56 ran with envelopes of the ``right_hand_palm_link`` origin and measured the finger-base
+point (:data:`FINGER_BASE_OFFSET_M` in the palm link frame, D012's IK ``body_offset``) in the
+sensitivity table, with an envelope built in memory with the same seeds. Since #66 the committed
+envelopes are of the finger-base point, so the main tables are the finger-base point and the
+sensitivity row re-samples the palm link origin instead (``"palm-link point"``); the tables of
+``docs/reach_gap_analysis.md`` are #56's and were not regenerated.
 
 Target sets per scenario (:data:`SCENARIO_TARGETS`): S1 has no reach-target distribution of its
 own yet (docs/evaluation.md: "a reach target appears in the front workspace"), so its stand-in is
@@ -71,6 +74,7 @@ import numpy as np
 
 from kitchenbot.controllers.reachability import (
     DEFAULT_PATH,
+    FINGER_BASE_OFFSET_M,
     WAIST_PATH,
     ReachabilityEnvelope,
     build_envelope,
@@ -106,10 +110,6 @@ PELVIS_HEIGHT_M = 0.75
 #: body, pulled out by its full 0.2 m travel to y = 0; its base at the inspected z = 0.088 m (#29,
 #: scale 1.0, rounded to 0.09); rack x along the counter, so yaw 0.
 PROVISIONAL_RACK_POSE: tuple[float, float, float, float] = (0.55, 0.0, 0.09, 0.0)
-
-#: The palm link to the finger bases: the mean of the ``right_hand_index_0_joint`` and
-#: ``right_hand_middle_0_joint`` origins in ``right_hand_palm_link`` (URDF fixture), metres.
-FINGER_BASE_OFFSET_M: tuple[float, float, float] = (0.0777, -0.0016, 0.0)
 
 #: ``plan_waypoints`` keys, in execution order.
 WAYPOINTS: tuple[str, ...] = (
@@ -334,7 +334,8 @@ def run_analysis(
     """The stand-off by plate-box sweep, the provisional rack sweep and the sensitivity rows.
 
     ``extra_envelopes`` maps a sensitivity label to more envelopes (by name) evaluated under the
-    base setup: the finger-base point and the smaller waist ranges of :func:`resampled_envelopes`.
+    base setup: the other point (palm link origin or finger bases) and the smaller waist ranges
+    of :func:`resampled_envelopes`.
     """
     base = base or Setup()
     envs = dict(envelopes)
@@ -811,7 +812,8 @@ def plot_figure(analysis: Analysis, out: Path, focus_standoff: float | None = No
 def _resample(
     chain, like: ReachabilityEnvelope, waist_range=None, tip_offset_m=None
 ) -> ReachabilityEnvelope:
-    """``like``'s sampling (seed, samples, spacing, wrist margin) with another waist or point."""
+    """``like``'s sampling (seed, samples, spacing, wrist margin, waist range, point) with another
+    waist range or point."""
     return build_envelope(
         chain,
         samples=like.samples,
@@ -820,7 +822,7 @@ def _resample(
         wrist_margin_deg=like.wrist_margin_deg,
         joint_source=like.joint_source,
         waist_range=like.waist_range_deg if waist_range is None else waist_range,
-        tip_offset_m=tip_offset_m,
+        tip_offset_m=like.tip_offset_m if tip_offset_m is None else tip_offset_m,
     )
 
 
@@ -830,15 +832,22 @@ def resampled_envelopes(
     offset: Sequence[float] = FINGER_BASE_OFFSET_M,
     waist_variants: Mapping[str, Sequence[Sequence[float]]] = WAIST_VARIANTS_DEG,
 ) -> dict[str, dict[str, ReachabilityEnvelope]]:
-    """The sensitivity envelopes, in memory: both envelopes for the finger-base point, and the
-    waist envelope's sampling with each smaller waist range."""
+    """The sensitivity envelopes, in memory: both envelopes for the other point, and the waist
+    envelope's sampling (its point too) with each smaller waist range.
+
+    The other point is ``offset`` (the finger bases) for envelopes of the palm link origin, as in
+    #56, and the palm link origin for envelopes that already sample ``offset``, as the committed
+    ones do since #66.
+    """
     joints = json.loads(Path(joints_path).read_text(encoding="utf-8"))["joints"]
     chain = right_arm_chain(joints)
+    offset = tuple(float(v) for v in offset)
+    if all(env.tip_offset_m == offset for env in envelopes.values()):
+        label, other = "palm-link point", (0.0, 0.0, 0.0)
+    else:
+        label, other = "finger-base point", offset
     out = {
-        "finger-base point": {
-            name: _resample(chain, env, tip_offset_m=tuple(offset))
-            for name, env in envelopes.items()
-        }
+        label: {name: _resample(chain, env, tip_offset_m=other) for name, env in envelopes.items()}
     }
     like = envelopes["waist"]
     for label, waist in waist_variants.items():
@@ -891,7 +900,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--margin", type=float, default=MARGIN_M, help="margin_contains, m")
     parser.add_argument("--max-seeds", type=int, default=None, help="first N seeds per pair")
     parser.add_argument("--no-resample", action="store_true",
-                        help="skip the re-sampled envelopes of the sensitivity table (finger-base "
+                        help="skip the re-sampled envelopes of the sensitivity table (the other "
                         "point, smaller waist ranges)")
     parser.add_argument("--focus-standoff", type=float, default=None,
                         help="stand-off drawn filled in the figure (default the smallest)")

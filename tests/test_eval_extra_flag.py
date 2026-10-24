@@ -116,8 +116,12 @@ def test_extra_true_is_the_default(tmp_path):
     ("args", "message"),
     [
         (["--extra", "reach_gate=maybe"], "must be a bool, got 'maybe'"),
-        (["--extra", "speed=1"], "unknown extras \\['speed'\\].*reads \\['reach_gate'\\]"),
+        (
+            ["--extra", "speed=1"],
+            "unknown extras \\['speed'\\].*reads \\['reach_gate', 'gate_envelope'\\]",
+        ),
         (["--extra", "reach_gate=false", "--extra", "speed=1"], "unknown extras"),
+        (["--extra", "gate_envelope=waist30"], "gate_envelope'\\] must be one of"),
     ],
 )
 def test_a_value_or_key_the_scenario_rejects_is_a_usage_error(tmp_path, capsys, args, message):
@@ -165,7 +169,7 @@ def test_the_script_takes_the_flag(tmp_path):
 
 
 def test_the_dry_scenario_lists_the_extras_it_reads():
-    assert get_scenario("dry").extra_keys == dry_run.EXTRA_KEYS == ("reach_gate",)
+    assert get_scenario("dry").extra_keys == dry_run.EXTRA_KEYS == ("reach_gate", "gate_envelope")
     assert get_scenario("fake").extra_keys == () and get_scenario("S4").extra_keys == ()
 
 
