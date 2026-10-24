@@ -204,7 +204,9 @@ class RackSlotLayout:
 
     @property
     def slot_entry_z(self) -> float:
-        """Top of the tines, the height the planner's ``slot_pose`` means (#43)."""
+        """Top of the tines: the height of :meth:`slot_pose`, where a plate at the slot entry has
+        its lowest point (#43). The planner's ``slot_pose`` is the grasp frame on the top rim, one
+        plate diameter above it (``planning.geometry.slot_entry_grasp_pose``, #67)."""
         return self.base_thickness + self.tine_height
 
     # Positions in the rack frame -------------------------------------------------------------

@@ -42,9 +42,19 @@ def assert_pose_close(a: Pose, b: Pose, atol: float = 1e-12) -> None:
 
 
 def test_planning_geometry_re_exports_the_same_objects():
-    assert planning_geo.__all__ == geo.__all__
+    assert planning_geo.__all__[: len(geo.__all__)] == geo.__all__
     for name in geo.__all__:
         assert getattr(planning_geo, name) is getattr(geo, name), name
+    # what planning.geometry adds on top is the plate grasp convention of #67, nothing else
+    assert set(planning_geo.__all__) - set(geo.__all__) == {
+        "GRASP_RIM_HEIGHT_M",
+        "TOWARD_ROBOT_KITCHEN",
+        "approach_body_pose",
+        "body_pose_from_grasp",
+        "grasp_in_body",
+        "grasp_pose_from_body",
+        "slot_entry_grasp_pose",
+    }
 
 
 def test_quat_to_matrix_agrees_with_quat_apply_and_is_a_rotation():
