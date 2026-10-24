@@ -3,7 +3,7 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56 to #60 and #66 to #71 merged, D012 (amended) and D013 decided, #77 and #78 open, Isaac Sim
+#56 to #60, #66 to #71 and #78 merged, D012 (amended) and D013 decided, #77 open, Isaac Sim
 not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
@@ -45,7 +45,9 @@ CI is green on `main`.
   link names the issues quote.
 - Seeded randomization `scene/randomization.py`: every row of `docs/evaluation.md` section 2 as
   `RandomizationRanges`, one deterministic `EpisodeSpec` per (scenario, split, seed), the ten
-  `configs/eval/s<N>_<split>.yaml` files generated and checked by `scripts/make_eval_configs.py`,
+  `configs/eval/s<N>_<split>.yaml` files and, since #78, the four fixed-pelvis variants
+  `s2_<split>_fixed.yaml` and `s3_<split>_fixed.yaml` (`base: fixed`, evaluation section 1)
+  generated and checked by `scripts/make_eval_configs.py`,
   and `scripts/evaluate.py --config` recording the YAML's SHA256 in the result (`schema_version`
   2) (#52). #13 wraps the sampler in Isaac Lab event terms.
 - Evaluator: `scripts/evaluate.py` with the protocol's flags and `--extra KEY=VALUE`,
@@ -55,7 +57,11 @@ CI is green on `main`.
   `dry` scenario (#60, below). `scripts/plot_results.py` (success rates with intervals, failure
   histograms, torso error over time from optional traces) and `scripts/update_experiments.py`
   (idempotent table rows, synthetic documents refused by default) (#24); continuous metrics get
-  mean, median and a bootstrap interval (#40).
+  mean, median and a bootstrap interval (#40). Since #78 `--config` also supplies `num_envs` when
+  `--num_envs` is not given (the flag overrides it; `run.num_envs` records the value used);
+  `base` and the other options are still not read from the file, so a fixed-pelvis run passes
+  `--base fixed` (#69 S8, #22); the fake's success duration equals its completion time
+  (`fake-v3`).
 - Judges `evaluation/judges.py` (#57): the reference implementation of the section 3 definitions
   from state alone: `plate_in_slot` (the `RackSlotLayout` slot volume, with signed offsets),
   `vertical_error_deg`, `StabilityWindow`, `GraspJudge` (lifted 15 cm, held 2 s), `PlacementJudge`
@@ -179,10 +185,10 @@ Recorded on #5, #6, #10, #11, #14, #16, #21.
 ## What is running
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
-D013, all six are merged (#66 to #71). Two follow-ups from the #69 audit are in progress, one
-worker each: #77 (lean capped at the soft limit and the waist envelope regenerated, kb-controls)
-and #78 (evaluator contract fixes, kb-eval). Every other open issue needs Isaac Sim. The
-director is pre-downloading the
+D013, all six are merged (#66 to #71), as is #78 (evaluator contract fixes). One follow-up from
+the #69 audit is in progress: #77 (lean capped at the soft limit and the waist envelope
+regenerated, kb-controls). Every other open issue needs Isaac Sim. The director is
+pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
 
@@ -204,4 +210,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #77 and #78 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #77 nothing that does not need Isaac Sim is left; the next move is the operator's.
