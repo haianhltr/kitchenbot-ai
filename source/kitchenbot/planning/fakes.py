@@ -20,12 +20,16 @@ Frames (used by :meth:`Fakes.from_episode`; the hand-built defaults below are in
   ``pelvis_yaw_offset_deg`` turns it, as the sampler defines. The pelvis does not move during an
   episode (no balance model), so the pelvis pose is a constant of the episode.
 - **Rack frame** (:class:`~kitchenbot.scene.kitchen_dims.RackSlotLayout`): ``x`` across the tines,
-  ``y`` along the rows, ``z`` up. Where it sits in the kitchen is #11's decision;
-  :data:`DRY_RUN_RACK_FRAME` is a placeholder for the dry run: the provisional pose derived in
-  ``docs/reach_gap_analysis.md`` (#56) from architecture section 10, a floor-standing
-  ``dishwasher_2`` to the robot's right with its front flush with the counter's front edge and the
-  lower rack pulled out, yaw 0. #59 adds the dishwasher pose to ``kitchen_dims`` and #11 checks it;
-  then this constant goes.
+  ``y`` along the rows, ``z`` up. :data:`DRY_RUN_RACK_FRAME` puts it where #59 placed the raised
+  compact dishwasher (D013): ``kitchen_dims.DISHWASHER_POSE_KITCHEN`` with the lower rack pulled out
+  ``DISHWASHER_RACK_TRAVEL_M``, composed by :mod:`kitchenbot.scene.dishwasher_frames`. That is the
+  origin ``(0.350, -0.260, 0.650)`` m, yaw -90 deg, so the slot row runs along kitchen ``-y`` to the
+  robot's right and a seated plate faces the robot (since #67; before, a floor-standing
+  placeholder at ``(0.55, 0, 0.09)``, yaw 0). Provisional until #10 and #11 confirm the pose in
+  simulation.
+- **Counter edge.** The counter-edge waypoint is on the counter's front edge (``y = 0``,
+  counter-top height) at the grasp frame's ``x``, the shortest way off the counter, as in #56's
+  reach analysis (since #67; before, at the slot's ``x``).
 - **Plate poses.** ``FakePlate.pose`` is the plate's **grasp frame**, what the planner observes
   (docs/architecture.md section 9). The judges (:mod:`kitchenbot.evaluation.judges`) take the
   plate **body** pose, origin at the centre of the underside. The rule between the two was decided
@@ -84,6 +88,7 @@ from kitchenbot.planning.plate_to_rack import (
     PlannerState,
     PlateToRackPlanner,
 )
+from kitchenbot.scene import dishwasher_frames
 from kitchenbot.scene import kitchen_dims as kd
 
 if TYPE_CHECKING:
@@ -135,10 +140,16 @@ PELVIS_HEIGHT_M = 0.75
 #: turned so that its world heading is that of the world ``x`` axis at the nominal pelvis yaw.
 #: Provisional (#60); inside the committed envelope, a test checks it.
 PALM_START_IN_PELVIS = Pose((0.25, -0.20, 0.25), quat_from_yaw(-math.pi / 2.0))
-#: Rack frame in the kitchen frame for the dry run: ``(x, y, z) = (0.55, 0.0, 0.09)``, yaw 0, the
-#: provisional pose of ``PROVISIONAL_RACK_POSE`` in ``scripts/reach_gap_analysis.py`` (#56). Not a
-#: measurement; see the module docstring.
-DRY_RUN_RACK_FRAME = Pose((0.55, 0.0, 0.09))
+#: Rack frame in the kitchen frame for the dry run: the #59 dishwasher pose with the lower rack out
+#: ``DISHWASHER_RACK_TRAVEL_M``, about ``(0.350, -0.260, 0.650)`` m, yaw -90 deg (module
+#: docstring). Composed from ``kitchen_dims`` through ``dishwasher_frames``, the calculation the
+#: scene drafts use, so it follows the constants. Not a measurement.
+DRY_RUN_RACK_FRAME = Pose(
+    dishwasher_frames.root_to_kitchen(
+        dishwasher_frames.rack_frame_in_root(kd.RACK_SCALE, -kd.DISHWASHER_RACK_TRAVEL_M)
+    ),
+    quat_from_yaw(kd.DISHWASHER_POSE_KITCHEN[3]),
+)
 
 
 def pelvis_pose(
@@ -418,7 +429,7 @@ class Fakes:
 
         The plate, its grasp frame, the slot (``spec.rack_slot`` of ``layout`` at ``rack_frame``)
         and the counter edge come from the spec; the counter-edge waypoint is the front edge of
-        the counter (``y = 0``, counter-top height) above the slot's ``x``. The arm starts at
+        the counter (``y = 0``, counter-top height) at the grasp frame's ``x``. The arm starts at
         :data:`PALM_START_IN_PELVIS` of the episode's pelvis. ``gate`` true routes the arm
         through an :class:`ArmTargetPipeline` on ``envelope`` (the committed right-palm envelope
         by default), so a target outside the pelvis-frame envelope shows up as ``arm_infeasible``;
@@ -437,11 +448,12 @@ class Fakes:
         rack = FakeRack.from_layout(
             layout, spec.rack_slot, rack_frame, diameter_m=spec.plate_diameter_m
         )
-        edge = Pose((float(rack.slot_entry.position[0]), 0.0, kd.COUNTER_HEIGHT_M))
+        plate = FakePlate.from_spec(spec)
+        edge = Pose((float(plate.pose.position[0]), 0.0, kd.COUNTER_HEIGHT_M))
         return cls(
             arm=FakeArm(palm, pipeline=pipeline, pelvis=pelvis),
             hand=FakeHand(),
-            plate=FakePlate.from_spec(spec),
+            plate=plate,
             rack=rack,
             counter_edge_pose=edge,
         )

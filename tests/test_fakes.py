@@ -42,6 +42,7 @@ from kitchenbot.planning.fakes import (
     run_episode,
 )
 from kitchenbot.planning.plate_to_rack import PlannerState
+from kitchenbot.scene import dishwasher_frames
 from kitchenbot.scene import kitchen_dims as kd
 from kitchenbot.scene.randomization import sample_episode
 
@@ -234,6 +235,19 @@ def test_the_slot_index_is_validated_by_the_layout():
         FakeRack.from_layout(LAYOUT, 6, DRY_RUN_RACK_FRAME, diameter_m=0.25)
 
 
+def test_the_dry_run_rack_frame_is_the_dishwasher_pose_with_the_rack_pulled_out():
+    # #67: the #59 raised compact dishwasher (D013), not the old floor-standing placeholder
+    np.testing.assert_allclose(DRY_RUN_RACK_FRAME.position, (0.3502, -0.2600, 0.6496), atol=1e-4)
+    assert math.degrees(yaw_from_quat(DRY_RUN_RACK_FRAME.quat_wxyz)) == pytest.approx(-90.0)
+    # the fakes' slot entries are the dishwasher_frames slot poses, lifted by the convention
+    for slot, (x, y, z, yaw) in enumerate(dishwasher_frames.slot_poses_kitchen(), start=1):
+        rack = FakeRack.from_layout(LAYOUT, slot, DRY_RUN_RACK_FRAME, diameter_m=0.25)
+        # rack +x (across the tines, half a thickness) is kitchen -y at yaw -90 deg
+        expected = (x, y - kd.PLATE_HEIGHT_M / 2.0, z + 0.25)
+        np.testing.assert_allclose(rack.slot_entry.position, expected, atol=1e-9)
+        assert yaw_from_quat(rack.slot_entry.quat_wxyz) == pytest.approx(yaw)
+
+
 def test_the_rack_needs_the_plate_diameter():
     # the slot entry of the grasp frame depends on it, so it has no default
     with pytest.raises(TypeError):
@@ -265,7 +279,7 @@ def test_from_episode_puts_everything_in_one_frame(spec):
     assert LAYOUT.slot_pose(spec.rack_slot) == pytest.approx(spec.rack_slot_pose)  # same rack
     edge = fk.counter_edge_pose.position
     assert edge[1] == 0.0 and edge[2] == pytest.approx(kd.COUNTER_HEIGHT_M)  # the counter's edge
-    assert edge[0] == pytest.approx(fk.rack.slot_entry.position[0])
+    assert edge[0] == pytest.approx(fk.plate.pose.position[0])  # at the grasp x (#67)
     assert fk.hand_reach_from_geometry and fk.plate_follows_palm
     obs = fk.observe()
     assert not obs.hand_holding and not obs.arm_infeasible and not obs.plate_in_slot
