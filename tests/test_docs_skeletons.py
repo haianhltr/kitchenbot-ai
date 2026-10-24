@@ -252,7 +252,7 @@ def test_report_lists_every_decision_by_title():
     )
     titles = dict(headings)
     section = sections(REPORT)["Decisions taken"]
-    for number in range(1, 12):
+    for number in range(1, 14):
         key = f"D{number:03d}"
         assert key in titles, f"docs/decisions.md lost {key}"
         assert f"{key}: {titles[key]}" in section, f"report does not list {key} by its title"

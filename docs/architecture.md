@@ -287,6 +287,11 @@ FPS; #11 attaches the tines to the rack link, decides the ArtVIP scale (it scale
 length, the pitch included) and checks the slot poses against simulation to 1 cm; whether a plate
 stays upright on the flat base is not measured yet.
 
+The compact dishwasher stands on a 0.55 m plinth to the robot's right
+(`kitchen_dims.DISHWASHER_POSE_KITCHEN`, #59), dressed as a low cabinet (D013, #70): on paper every
+slot is reachable at stand-offs up to 0.40 m without a lean (#56, #59); #11 checks the pose
+against the loaded asset.
+
 ### 10a. Asset sources
 
 Isaac Sim 6.2 ships no kitchen environment and no articulated cabinet or dishwasher, so articulated

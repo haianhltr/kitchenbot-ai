@@ -3,8 +3,8 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56, #57, #58, #59 and #60 merged, D012 and D013 decided, #66 to #71 open and in progress, Isaac
-Sim not yet installed. Actuals: those twenty issues
+#56, #57, #58, #59, #60 and #71 merged, D012 and D013 decided, #66 to #70 open and in progress,
+Isaac Sim not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
 CI is green on `main`.
@@ -115,6 +115,9 @@ CI is green on `main`.
   before any result exists, overlay specification for `record_demo.py`); `tests/test_docs_skeletons.py`
   keeps result rows digit-free (#49). Protocol gaps it exposed were added as tasks to #7, #20, #21,
   #22 and #26 (unseen-split runs, committed figures, the Agile checkpoint licence).
+- The reach-gap story in `docs/report.md` and `README.md` (#71): a Method subsection with the
+  paper numbers and their caveats, D012 and D013 in the decision list, the README section "What
+  has been checked without a simulator", and the demo script's raised dishwasher and lean.
 - `scripts/host_check.ps1`: read-only Windows readiness check with a `-Fix` mode for long paths,
   git `core.longpaths` and `uv` (#35). Run on this host on 2026-10-23: GPU, driver 616.92, disk
   and RAM pass; long paths, git option, VS 2022 C++ tools and `uv` fail; a reboot is pending.
@@ -150,12 +153,12 @@ Recorded on #5, #6, #10, #11, #14, #16, #21.
 
 ## What is running
 
-No training run has started. Six no-simulation issues opened on 2026-10-24 after D012 and D013
-are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
+No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
+D013, #71 is merged and five are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
 kb-controls), #67 (planner waist-lean command and the top-rim grasp frame, kb-manip), #68
 (waist pitch command in the stand environment drafts, kb-controls), #69 (contract audit with
-`tests/test_contracts.py`, kb-eval), #70 (plinth as a low cabinet, kb-sim), #71 (report and
-README, kb-eval). Every other open issue needs Isaac Sim. The director is pre-downloading the
+`tests/test_contracts.py`, kb-eval), #70 (plinth as a low cabinet, kb-sim). Every other open
+issue needs Isaac Sim. The director is pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
 
@@ -177,4 +180,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #66 to #71 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #66 to #70 nothing that does not need Isaac Sim is left; the next move is the operator's.

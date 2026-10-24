@@ -97,8 +97,10 @@ video uses a MolmoSpaces asset.
 ## D012 — Stand-off 0.30 m with a commanded waist lean and the IK point at the finger bases (2026-10-23)
 
 Context: #56's reach-gap analysis (forward kinematics against both envelopes, no collision, no palm
-orientation) found no S1, S2 or S4 plate target inside the right palm's reach at the 0.45 m
-stand-off, leaning or not, and neither the stand-off nor the lean alone closes the gap. On paper,
+orientation) found no S1, S2 or S4 episode with every plate waypoint inside the right palm's
+reach at the 0.45 m stand-off with the waist at zero, and at most 3 percent of the seen and 42
+percent of the unseen episodes with the lean; neither the stand-off nor the lean alone closes the
+gap. On paper,
 0.25 m with a lean gives S2 97 / 100 (seen / unseen) with the torso about 5 cm from the counter
 edge; 0.30 m with the lean and the IK's controlled point at the finger bases gives 98 / 100 with
 about 10 cm. The slot side is reachable without a lean at either stand-off since #59.
