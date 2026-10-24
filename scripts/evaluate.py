@@ -10,6 +10,10 @@
     python scripts/evaluate.py --scenario dry --config configs/eval/s4_seen.yaml \
         --extra gate_envelope=waist    # gated on the waist envelope (default waist0)
 
+Without ``--num_envs`` a run started from ``--config`` takes the YAML's ``num_envs`` (the trial
+count of its scenario and split); the flag overrides it, without either the default is 50, and the
+result's ``run.num_envs`` records the value used (#78).
+
 ``--extra KEY=VALUE`` is repeatable and fills ``EvalConfig.extras``, the options one scenario
 reads (the value is a YAML scalar: ``false``, ``0.3`` or text); today only ``dry`` reads them,
 ``reach_gate`` and ``gate_envelope``. A key the scenario does not read is a usage error.

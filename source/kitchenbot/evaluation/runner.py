@@ -49,6 +49,10 @@ POLICIES: tuple[str, ...] = ("own", "agile")
 HANDS: tuple[str, ...] = ("kinematic", "dex3", "dex1")
 BASES: tuple[str, ...] = ("fixed", "floating")
 
+#: ``num_envs`` of a run that names neither ``--num_envs`` nor a ``--config`` YAML with a
+#: ``num_envs`` (docs/evaluation.md section 4, step 1: ``--num_envs 50``).
+DEFAULT_NUM_ENVS = 50
+
 #: Default output directory (git-ignored, AGENTS.md section 6).
 DEFAULT_OUTPUT_DIR = Path("outputs") / "eval"
 
@@ -67,7 +71,8 @@ class EvalConfig:
     from (AGENTS.md section 6: a run without a committed config did not happen). The file must
     exist; ``run_evaluation`` records its path and SHA256 in ``run.config_path`` and
     ``run.config_sha256``. It is not part of :meth:`to_dict`, so ``run.config_hash`` is the same
-    with and without it. The runner does not read the file's contents; a scenario's loader may.
+    with and without it. The runner does not read the file's contents; a scenario's loader may,
+    and the command line takes the file's ``num_envs`` when ``--num_envs`` is not given (#78).
 
     ``extras`` are options only one scenario's loader reads (``dry``: ``reach_gate`` and
     ``gate_envelope``, see :mod:`kitchenbot.evaluation.dry_run`). They are not part of
@@ -81,7 +86,7 @@ class EvalConfig:
     scenario: str
     split: str = "seen"
     seeds: tuple[int, ...] = ()
-    num_envs: int = 50
+    num_envs: int = DEFAULT_NUM_ENVS
     policy: str = "own"
     hand: str = "dex3"
     base: str = "floating"
