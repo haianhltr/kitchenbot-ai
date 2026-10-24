@@ -17,8 +17,10 @@ Rules, all deterministic given a ``numpy.random.Generator``:
   (``controllers/target_filter.py``: 0.3 m/s and 1 rad/s). Why: the deployed command comes from a
   slewed planner and does not jump, so a step would train the policy on a transient it never
   meets, and the tracking reward would charge it for the waist's unavoidable lag after a jump (the
-  joint is a PD loop, it cannot arrive in one 20 ms step). A full 0.52 rad lean takes 0.52 s, well
-  inside the 1 s minimum between targets, so every ramp has arrived before the next target.
+  joint is a PD loop, it cannot arrive in one 20 ms step: a 0.52 rad error asks 2,600 N·m of the
+  waist actuator, stiffness 5000 N·m/rad, whose limit is 50 N·m, ``unitree.py:506-531``). A full
+  0.52 rad lean takes 0.52 s, well inside the 1 s minimum between targets, so every ramp has
+  arrived before the next target.
   ``max_rate_rad_s=None`` in the config gives the step, for an ablation in #5. The planner
   contract that follows: #21 slews the lean command at no more than 1 rad/s; a commanded jump is
   outside the training distribution.
