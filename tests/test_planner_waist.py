@@ -21,13 +21,13 @@ from kitchenbot.planning.plate_to_rack import (
     PlannerState,
     PlateToRackPlanner,
 )
-from kitchenbot.robots.joint_limits import WAIST_LIMITS
+from kitchenbot.robots.joint_limits import WAIST_LEAN_MAX_RAD, WAIST_LIMITS
 from kitchenbot.scene import kitchen_dims as kd
 from kitchenbot.scene.randomization import sample_episode
 
 S = PlannerState
 LAYOUT = kd.RackSlotLayout()
-LEAN = 0.52
+LEAN = 0.468  # D012 as amended 2026-10-24: the soft limit, 0.9 x 0.52 rad
 #: The per-state table of the issue: the commanded waist pitch in every state, radians.
 EXPECTED_LEAN = {
     S.IDLE: 0.0,
@@ -43,12 +43,15 @@ EXPECTED_LEAN = {
 }
 
 
-def test_the_lean_is_sourced_to_d012_and_inside_the_waist_limit():
+def test_the_lean_is_the_soft_limit_sourced_to_the_amended_d012():
     cfg = PlannerConfig()
-    assert cfg.waist_lean_rad == LEAN
+    assert cfg.waist_lean_rad == LEAN == WAIST_LEAN_MAX_RAD
     field = {f.name: f for f in dataclasses.fields(PlannerConfig)}["waist_lean_rad"]
-    assert field.metadata["source"] == "docs/decisions.md D012"
-    assert cfg.waist_lean_rad <= WAIST_LIMITS["waist_pitch_joint"].upper  # 0.52 rad, the URDF
+    assert field.metadata["source"] == "docs/decisions.md D012 as amended 2026-10-24"
+    # derived, not typed: 0.9 of the URDF's upper limit of waist_pitch_joint, to 3 decimals
+    upper = WAIST_LIMITS["waist_pitch_joint"].upper
+    assert upper == 0.52 and WAIST_LEAN_MAX_RAD == round(0.9 * upper, 3)
+    assert cfg.waist_lean_rad < upper  # never at the hard limit
     # inside the range the balance policy is trained on (#68), which ramps at the 1 rad/s the
     # deployment layer has to slew the planner's target at
     assert cfg.waist_lean_rad <= wlt.MAX_LEAN_RAD

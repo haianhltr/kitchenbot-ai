@@ -67,6 +67,14 @@ WAIST_LIMITS: dict[str, JointLimit] = {
     "waist_pitch_joint": JointLimit(-0.52, 0.52, 35.0, 30.0),
 }
 
+#: Share of a joint's hard limit that a commanded target may use: the soft limit. Training a
+#: policy to hold a joint at its hard limit is bad practice (#69 audit, E8).
+SOFT_LIMIT_FRACTION = 0.9
+
+#: Largest forward waist pitch the planner commands, rad: the soft limit of ``waist_pitch_joint``,
+#: 0.9 x its 0.52 rad upper limit, rounded to 0.468 (D012 as amended 2026-10-24).
+WAIST_LEAN_MAX_RAD = round(SOFT_LIMIT_FRACTION * WAIST_LIMITS["waist_pitch_joint"].upper, 3)
+
 #: The 7 left-arm joints in ``joint_maps.ARM_LEFT`` order.
 ARM_LEFT_LIMITS: dict[str, JointLimit] = {
     "left_shoulder_pitch_joint": JointLimit(-3.0892, 2.6704, 25.0, 37.0),

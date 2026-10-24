@@ -27,7 +27,9 @@ Waist lean (D012)
 -----------------
 :attr:`PlannerCommand.waist_pitch_rad` is the forward waist pitch the planner asks the lower-body
 policy for (positive leans the torso forward, the URDF ``waist_pitch_joint``). It is
-:attr:`PlannerConfig.waist_lean_rad` in ``pre_grasp``, ``grasp`` and ``lift``, and zero in every
+:attr:`PlannerConfig.waist_lean_rad` in ``pre_grasp``, ``grasp`` and ``lift``. That value is
+0.468 rad by default, the joint's soft limit ``robots.joint_limits.WAIST_LEAN_MAX_RAD`` (0.9 x
+the URDF's 0.52 rad; D012 as amended 2026-10-24). The command is zero in every
 other state: from ``transport``, whose first waypoint is the counter edge, on, and in ``idle``,
 ``failed`` and ``done``. It is a target per state, not a trajectory: it steps at the state
 changes. The balance policy is trained on a lean command that ramps toward its target at 1 rad/s
@@ -60,6 +62,7 @@ from kitchenbot.geometry import (
     quat_angle,
     tilt_from_vertical,
 )
+from kitchenbot.robots.joint_limits import WAIST_LEAN_MAX_RAD
 
 __all__ = [
     "LEANING_STATES",
@@ -76,7 +79,7 @@ __all__ = [
 #: Source tags for :class:`PlannerConfig` field metadata.
 ARCH_7 = "docs/architecture.md section 7"
 ARCH_9 = "docs/architecture.md section 9"
-D012 = "docs/decisions.md D012"
+D012 = "docs/decisions.md D012 as amended 2026-10-24"
 EVAL_3 = "docs/evaluation.md section 3"
 PROVISIONAL = "provisional"
 
@@ -160,10 +163,11 @@ class PlannerConfig:
 
     # Waist
     waist_lean_rad: float = _src(
-        0.52,
+        WAIST_LEAN_MAX_RAD,
         D012,
         "forward waist pitch commanded in pre_grasp, grasp and lift, zero from the counter-edge "
-        "waypoint on; the top of the policy's [0, 0.52] rad command range and the URDF limit",
+        "waypoint on; robots.joint_limits.WAIST_LEAN_MAX_RAD, the soft limit of waist_pitch_joint "
+        "(0.9 x the URDF's 0.52 rad = 0.468 rad)",
     )
 
     # Tolerances
