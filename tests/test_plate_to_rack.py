@@ -232,7 +232,7 @@ def test_contract_types():
         "rack_contact_force", "arm_infeasible", "plate_in_slot",
     ]
     assert [f.name for f in dataclasses.fields(PlannerCommand)] == [
-        "arm_target", "hand", "state", "failure",
+        "arm_target", "hand", "state", "failure", "waist_pitch_rad",
     ]
     assert [f.name for f in dataclasses.fields(Pose)] == ["position", "quat_wxyz"]
     with pytest.raises(dataclasses.FrozenInstanceError):

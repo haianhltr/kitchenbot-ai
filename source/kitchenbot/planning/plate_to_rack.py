@@ -9,13 +9,31 @@ arm controller (section 7) and a :class:`HandAction` whose value is the name of 
 
 What the poses in the observation mean
 --------------------------------------
-- ``plate_pose`` is the plate's **grasp frame**: the point on the rim the palm closes on, with the
-  plate's orientation (``z`` is the plate normal). Turning the plate's body pose and diameter into
-  that point is the environment layer's job (#21), so the planner needs no plate geometry.
-- ``slot_pose`` is where that grasp frame sits when the plate's lower edge is at the top of the
-  slot (the slot entry), with the slot's yaw. The plate is seated ``insertion_depth_m`` below it.
+- ``plate_pose`` is the plate's **grasp frame**: the top rim point nearest the robot, the point the
+  palm closes on, with ``z`` the plate normal and ``x`` pointing from that point toward the plate
+  centre (#67; the rule and its consequences are in :mod:`kitchenbot.planning.geometry`). Turning
+  the plate's body pose and diameter into that frame is the environment layer's job (#21), with
+  :func:`~kitchenbot.planning.geometry.grasp_pose_from_body`, so the planner needs no plate
+  geometry.
+- ``slot_pose`` is where that grasp frame sits when the plate stands vertically with its lower edge
+  at the top of the slot (the slot entry), with the slot's yaw: one diameter above the tine tops,
+  because the planner's quarter turn puts the grasp point on top
+  (:func:`~kitchenbot.planning.geometry.slot_entry_grasp_pose`). The plate is seated
+  ``insertion_depth_m`` below it.
 - ``counter_edge_pose`` is the counter-top edge the plate is carried over on its way to the rack.
 - ``palm_pose`` is the controlled palm frame; at the grasp it coincides with the grasp frame.
+
+Waist lean (D012)
+-----------------
+:attr:`PlannerCommand.waist_pitch_rad` is the forward waist pitch the planner asks the lower-body
+policy for (positive leans the torso forward, the URDF ``waist_pitch_joint``). It is
+:attr:`PlannerConfig.waist_lean_rad` in ``pre_grasp``, ``grasp`` and ``lift``, and zero in every
+other state: from ``transport``, whose first waypoint is the counter edge, on, and in ``idle``,
+``failed`` and ``done``. It is a target per state, not a trajectory: it steps at the state
+changes. The balance policy is trained on a lean command that ramps toward its target at 1 rad/s
+and never jumps (#68), so the deployment layer between the planner and the policy (#21, a sibling
+of the arm target pipeline) must slew this target at no more than 1 rad/s before the policy sees
+it. The planner does not ramp it, and the fakes record the target only.
 
 Failure tags
 ------------
@@ -44,6 +62,7 @@ from kitchenbot.geometry import (
 )
 
 __all__ = [
+    "LEANING_STATES",
     "HandAction",
     "PlannerCommand",
     "PlannerConfig",
@@ -57,6 +76,7 @@ __all__ = [
 #: Source tags for :class:`PlannerConfig` field metadata.
 ARCH_7 = "docs/architecture.md section 7"
 ARCH_9 = "docs/architecture.md section 9"
+D012 = "docs/decisions.md D012"
 EVAL_3 = "docs/evaluation.md section 3"
 PROVISIONAL = "provisional"
 
@@ -92,6 +112,8 @@ _ACTIVE_ORDER: tuple[PlannerState, ...] = (
 _CARRYING = frozenset(
     {PlannerState.LIFT, PlannerState.TRANSPORT, PlannerState.ALIGN, PlannerState.INSERT}
 )
+#: States in which the planner commands the D012 waist lean; zero in all others.
+LEANING_STATES = frozenset({PlannerState.PRE_GRASP, PlannerState.GRASP, PlannerState.LIFT})
 
 
 class HandAction(StrEnum):
@@ -129,9 +151,20 @@ class PlannerConfig:
     )
     above_slot_height_m: float = _src(0.25, ARCH_9, "transport ends 25 cm above the slot")
     insertion_depth_m: float = _src(
-        0.05, PROVISIONAL, "descent below the slot entry at which the plate counts as seated"
+        0.05,
+        PROVISIONAL,
+        "descent below the slot entry at which the plate counts as seated; the grasp frame's "
+        "descent, which is also the depth of the plate's lowest point below the tine tops",
     )
     retreat_height_m: float = _src(0.10, ARCH_9, "palm retreats 10 cm up after opening")
+
+    # Waist
+    waist_lean_rad: float = _src(
+        0.52,
+        D012,
+        "forward waist pitch commanded in pre_grasp, grasp and lift, zero from the counter-edge "
+        "waypoint on; the top of the policy's [0, 0.52] rad command range and the URDF limit",
+    )
 
     # Tolerances
     position_tolerance_m: float = _src(
@@ -204,12 +237,20 @@ class PlannerObservation:
 
 @dataclass(frozen=True)
 class PlannerCommand:
-    """What the planner asks for: a palm pose target and a hand verb."""
+    """What the planner asks for: a palm pose target, a hand verb and a waist lean target.
+
+    ``waist_pitch_rad`` is the target of the lower-body policy's waist pitch command (D012, the
+    module docstring): ``PlannerConfig.waist_lean_rad`` in :data:`LEANING_STATES`, else 0. It
+    steps when the state changes. The deployment layer (#21) must slew it at no more than
+    1 rad/s before the policy sees it, because the policy is trained on a command that ramps at
+    1 rad/s and never jumps (#68).
+    """
 
     arm_target: Pose
     hand: HandAction
     state: PlannerState
     failure: FailureTag | None = None
+    waist_pitch_rad: float = 0.0
 
 
 def plan_waypoints(
@@ -451,13 +492,17 @@ class PlateToRackPlanner:
         else:  # DONE
             target, hand = wp["retreat"], HandAction.OPEN
         self._hand = hand
-        command = PlannerCommand(arm_target=target, hand=hand, state=s)
+        lean = self.config.waist_lean_rad if s in LEANING_STATES else 0.0
+        command = PlannerCommand(arm_target=target, hand=hand, state=s, waist_pitch_rad=lean)
         if s is PlannerState.DONE:
             self._terminal_command = command
         return command
 
     def _fail(self, tag: FailureTag, obs: PlannerObservation) -> PlannerCommand:
-        """Hold the palm where it is, keep the hand doing what it was doing, and stop."""
+        """Hold the palm where it is, keep the hand doing what it was doing, and stop.
+
+        The waist lean goes back to zero (``waist_pitch_rad`` keeps its default).
+        """
         self._failed_in = self._state
         self._failure = tag
         self._state = PlannerState.FAILED
