@@ -3,6 +3,9 @@
 ``EvalConfig.config_path`` / ``scripts/evaluate.py --config`` record the file's path and SHA256 in
 ``run.config_path`` and ``run.config_sha256``; nothing else about a run changes. The result schema
 is strict, so the two optional fields come with ``schema_version`` 2.
+
+Since #78 the command line also takes the file's ``num_envs`` when ``--num_envs`` is not given;
+the flag overrides it and ``run.num_envs`` records the value used.
 """
 
 import copy
@@ -12,8 +15,8 @@ import json
 import pytest
 from eval_helpers import REPO
 
-from kitchenbot.evaluation import runner
-from kitchenbot.evaluation.cli import format_summary
+from kitchenbot.evaluation import cli, runner
+from kitchenbot.evaluation.cli import build_parser, format_summary, resolve_num_envs, yaml_num_envs
 from kitchenbot.evaluation.cli import main as evaluate_main
 from kitchenbot.evaluation.runner import EvalConfig, file_sha256, run_evaluation, write_result
 from kitchenbot.evaluation.schema import load_schema, validate_result
@@ -22,6 +25,7 @@ from kitchenbot.scene.randomization import SCENARIOS
 
 CONFIG_DIR = REPO / "configs" / "eval"
 BOTH = [(sc, sp) for sc in SCENARIOS for sp in SPLITS]
+FIXED = [(sc, sp) for sc in runner.FIXED_BASE_SCENARIOS for sp in SPLITS]  # the *_fixed.yaml
 
 
 # ------------------------------------------------------------------ the evaluator hook
@@ -75,9 +79,12 @@ def test_config_path_is_normalised_and_must_exist(tmp_path):
         _fake_config(config_path=tmp_path)  # a directory
 
 
-@pytest.mark.parametrize(("scenario", "split"), BOTH)
-def test_every_committed_config_can_be_hashed_by_a_fake_run(scenario, split):
-    path = CONFIG_DIR / f"{scenario.lower()}_{split}.yaml"
+@pytest.mark.parametrize(
+    ("scenario", "split", "suffix"),
+    [(sc, sp, "") for sc, sp in BOTH] + [(sc, sp, "_fixed") for sc, sp in FIXED],
+)
+def test_every_committed_config_can_be_hashed_by_a_fake_run(scenario, split, suffix):
+    path = CONFIG_DIR / f"{scenario.lower()}_{split}{suffix}.yaml"
     seeds = tuple(default_seeds("fake", split)[:3])
     doc = run_evaluation(
         EvalConfig(scenario="fake", split=split, seeds=seeds, config_path=path)
@@ -190,3 +197,89 @@ def test_written_result_keeps_the_hash_after_a_round_trip(tmp_path):
     assert back == doc
     validate_result(back)
     assert f"sha256 {doc['run']['config_sha256'][:12]}" in format_summary(back)
+
+
+# ------------------------------------------------------------------ num_envs from the YAML (#78)
+
+
+def _run_without_num_envs(tmp_path, *extra):
+    """A fake run with ``extra`` arguments and no ``--num_envs``; returns (status, run block)."""
+    out = tmp_path / "result.json"
+    argv = ["--scenario", "fake", "--seeds", "0-9", "--headless", "--out", str(out), *extra]
+    code = evaluate_main(argv)
+    return code, (json.loads(out.read_text("utf-8"))["run"] if out.exists() else None)
+
+
+def test_without_the_flag_a_config_run_uses_the_yaml_num_envs(tmp_path, capsys):
+    path = CONFIG_DIR / "s2_seen.yaml"
+    code, run = _run_without_num_envs(tmp_path, "--config", str(path))
+    assert code == 0
+    assert run["num_envs"] == 100 == yaml_num_envs(path)  # the S2 seen trial count
+    assert run["config_sha256"] == file_sha256(path)
+    assert "num_envs 100" in capsys.readouterr().out
+
+
+def test_the_flag_overrides_the_yaml_num_envs(tmp_path):
+    out = tmp_path / "result.json"
+    argv = ["--scenario", "fake", "--seeds", "0-9", "--num_envs", "7", "--out", str(out)]
+    assert evaluate_main([*argv, "--config", str(CONFIG_DIR / "s2_seen.yaml")]) == 0
+    assert json.loads(out.read_text("utf-8"))["run"]["num_envs"] == 7
+
+
+def test_without_the_flag_or_a_config_the_default_is_used(tmp_path):
+    code, run = _run_without_num_envs(tmp_path)
+    assert code == 0
+    assert run["num_envs"] == runner.DEFAULT_NUM_ENVS == EvalConfig(scenario="fake").num_envs
+    assert build_parser().parse_args(["--scenario", "fake"]).num_envs is None
+
+
+def test_a_yaml_without_num_envs_falls_back_to_the_default(tmp_path):
+    path = tmp_path / "scratch.yaml"
+    path.write_text("physics: isaacsim_physx\n", encoding="utf-8")
+    assert yaml_num_envs(path) is None
+    code, run = _run_without_num_envs(tmp_path, "--config", str(path))
+    assert code == 0 and run["num_envs"] == runner.DEFAULT_NUM_ENVS
+
+
+def test_a_real_scenario_gets_the_yaml_num_envs_too(monkeypatch, tmp_path):
+    """S0 to S4 are placeholders today; the config they would run with carries the YAML's value."""
+    seen = []
+
+    def capture(config, **_):
+        seen.append(config)
+        raise NotImplementedError("placeholder")
+
+    monkeypatch.setattr(cli, "run_evaluation", capture)
+    argv = ["--scenario", "S3", "--split", "unseen", "--out", str(tmp_path)]
+    assert evaluate_main([*argv, "--config", str(CONFIG_DIR / "s3_unseen.yaml")]) == 3
+    assert seen[0].num_envs == 50 and seen[0].config_path == CONFIG_DIR / "s3_unseen.yaml"
+    assert evaluate_main(argv) == 3  # no config: the default
+    assert seen[1].num_envs == runner.DEFAULT_NUM_ENVS
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("num_envs: 0\n", "num_envs must be a positive integer, got 0"),
+        ("num_envs: many\n", "num_envs must be a positive integer, got 'many'"),
+        ("num_envs: true\n", "num_envs must be a positive integer, got True"),
+        ("num_envs: 2.5\n", "num_envs must be a positive integer, got 2.5"),
+        ("- num_envs: 4\n", "expected a mapping at the top level"),
+        ("num_envs: [\n", "cannot read as YAML"),
+    ],
+    ids=["zero", "text", "bool", "float", "list", "broken"],
+)
+def test_a_bad_yaml_num_envs_is_a_usage_error_unless_the_flag_is_given(
+    tmp_path, capsys, text, message
+):
+    path = tmp_path / "bad.yaml"
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(SystemExit) as exc:
+        _run_without_num_envs(tmp_path, "--config", str(path))
+    assert exc.value.code == 2
+    assert message in capsys.readouterr().err
+    assert not (tmp_path / "result.json").exists()
+    # With the flag the file is hashed, not read, as before #78.
+    assert resolve_num_envs(3, path) == 3
+    code, _ = _evaluate(tmp_path, "--config", str(path))
+    assert code == 0

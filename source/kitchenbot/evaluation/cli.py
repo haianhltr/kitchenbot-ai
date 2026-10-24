@@ -6,8 +6,13 @@ Example (docs/evaluation.md section 4)::
         --num_envs 50 --headless --config configs/eval/s4_unseen.yaml
 
 ``--config`` names the committed ``configs/eval`` YAML the run was started from; its path and
-SHA256 go into the result (``run.config_path``, ``run.config_sha256``). The evaluator does not
-read the file; a scenario's loader may (``dry`` does, for the sampler scenario and ranges).
+SHA256 go into the result (``run.config_path``, ``run.config_sha256``). Of its contents the
+command line reads only ``num_envs``, and only when ``--num_envs`` is not given (#78): the flag
+overrides the file, a file without the key or no ``--config`` means
+``runner.DEFAULT_NUM_ENVS``, and ``run.num_envs`` records the value used. A scenario's loader may
+read more (``dry`` does, for the sampler scenario and ranges). ``--base`` and the other options
+are not read from the file: the fixed-pelvis runs of S2 and S3 pass ``--base fixed`` with their
+``configs/eval/s<N>_<split>_fixed.yaml`` (#78).
 
 ``--extra KEY=VALUE`` (repeatable, value a YAML scalar) fills ``EvalConfig.extras``, the options
 one scenario reads: ``--scenario dry --extra reach_gate=false`` runs the dry scenario without the
@@ -30,6 +35,7 @@ import yaml
 
 from kitchenbot.evaluation.runner import (
     BASES,
+    DEFAULT_NUM_ENVS,
     DEFAULT_OUTPUT_DIR,
     HANDS,
     POLICIES,
@@ -87,8 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--num_envs",
         type=int,
-        default=50,
-        help="parallel environments; seeds run in batches of this size (default 50)",
+        default=None,
+        help=(
+            "parallel environments; seeds run in batches of this size. Default: the num_envs of "
+            f"the --config YAML, else {DEFAULT_NUM_ENVS}; the flag overrides the YAML"
+        ),
     )
     parser.add_argument("--headless", action="store_true", help="run without a viewer")
     parser.add_argument(
@@ -101,7 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--base",
         choices=BASES,
         default="floating",
-        help="fixed pelvis or floating base with the balance policy active (default floating)",
+        help=(
+            "fixed pelvis or floating base with the balance policy active (default floating). "
+            "Not read from --config: start a fixed-pelvis S2 or S3 run with --base fixed and "
+            "its configs/eval/s<N>_<split>_fixed.yaml"
+        ),
     )
     parser.add_argument(
         "--config",
@@ -109,8 +122,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "the committed configs/eval/*.yaml this run was started from (optional): its path "
-            "and SHA256 are recorded in the result. The file is hashed, not read, by the "
-            "evaluator (the dry scenario reads it too)"
+            "and SHA256 are recorded in the result. The evaluator reads only its num_envs, "
+            "when --num_envs is not given (the dry scenario also reads its scenario, split and "
+            "ranges)"
         ),
     )
     parser.add_argument(
@@ -157,6 +171,44 @@ def parse_extras(items: Sequence[str]) -> dict[str, Any]:
         except yaml.YAMLError as exc:
             raise ValueError(f"--extra {key}: cannot read {raw!r} as a YAML value: {exc}") from exc
     return extras
+
+
+def yaml_num_envs(path: Path | str) -> int | None:
+    """The ``num_envs`` of a ``configs/eval`` YAML, or ``None`` if the file has no such key.
+
+    Raises ``ValueError`` if the file cannot be read as a YAML mapping or its ``num_envs`` is not
+    a positive integer.
+    """
+    path = Path(path)
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        raise ValueError(f"--config {path.as_posix()}: cannot read as YAML: {exc}") from exc
+    if not isinstance(data, Mapping):
+        raise ValueError(f"--config {path.as_posix()}: expected a mapping at the top level")
+    if "num_envs" not in data:
+        return None
+    value = data["num_envs"]
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(
+            f"--config {path.as_posix()}: num_envs must be a positive integer, got {value!r}"
+        )
+    return value
+
+
+def resolve_num_envs(flag: int | None, config_path: Path | str | None) -> int:
+    """The ``num_envs`` a run uses: the flag if given, else the YAML's, else the default.
+
+    The YAML is read only when the flag is absent. A ``config_path`` that is not a file is left
+    to :class:`EvalConfig` to reject, so the error names the missing file.
+    """
+    if flag is not None:
+        return flag
+    if config_path is not None and Path(config_path).is_file():
+        from_yaml = yaml_num_envs(config_path)
+        if from_yaml is not None:
+            return from_yaml
+    return DEFAULT_NUM_ENVS
 
 
 def format_summary(doc: Mapping[str, Any]) -> str:
@@ -216,7 +268,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             scenario=args.scenario,
             split=args.split,
             seeds=tuple(seeds),
-            num_envs=args.num_envs,
+            num_envs=resolve_num_envs(args.num_envs, args.config),
             policy=args.policy,
             hand=args.hand,
             base=args.base,

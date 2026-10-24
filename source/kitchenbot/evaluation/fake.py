@@ -25,7 +25,9 @@ from typing import Any
 from kitchenbot.evaluation.failure_tags import FAILURE_PRECEDENCE, FailureTag, primary_failure_tag
 from kitchenbot.evaluation.runner import EpisodeResult, EvalConfig
 
-GENERATOR_VERSION = "fake-v2"
+#: Part of ``resolved_config`` and so of ``run.config_hash``. fake-v3 (#78): a success's
+#: ``duration_s`` equals its completion time instead of 2 s more.
+GENERATOR_VERSION = "fake-v3"
 
 #: Probability that each failure cause is hit in a seen trial.
 SEEN_CAUSE_PROBABILITY: dict[FailureTag, float] = {
@@ -77,7 +79,9 @@ def synthetic_episode(seed: int, split: str) -> EpisodeResult:
 
     completion = round(8.0 + 10.0 * completion_u, 3) if success else None
     if success:
-        duration = completion + 2.0  # the 2 s stability hold after release
+        # completion_time_s is when the judges' 2 s stability window after release closes
+        # (judges.PlacementJudge), so it already holds the 2 s; the episode ends there (#78).
+        duration = completion
     elif tag is FailureTag.TIMEOUT:
         duration = TIMEOUT_S
     else:

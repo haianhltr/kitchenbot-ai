@@ -706,8 +706,8 @@ class PlacementJudge:
 # Episode outcome
 # ---------------------------------------------------------------------------------------------
 
-_GRASP_SCENARIOS = METRICS["grasp_success"].scenarios  # S2, S4 and fake
-_PLACEMENT_SCENARIOS = METRICS["placement_success"].scenarios  # S3, S4 and fake
+_GRASP_SCENARIOS = METRICS["grasp_success"].scenarios  # S2, S4, fake and dry
+_PLACEMENT_SCENARIOS = METRICS["placement_success"].scenarios  # S3, S4, fake and dry
 
 
 def episode_outcome(
@@ -723,7 +723,7 @@ def episode_outcome(
     held: bool | None = None,
     released: bool | None = None,
 ) -> tuple[bool, FailureTag]:
-    """``(success, failure_tag)`` of one S2, S3 or S4 trial (``fake`` mirrors S4).
+    """``(success, failure_tag)`` of one S2, S3 or S4 trial (``fake`` and ``dry`` mirror S4).
 
     Success follows ``metrics.SUCCESS_DEFINITIONS``: S2 needs ``grasp`` (the
     :attr:`GraspJudge.grasp_success`), S3 needs ``placement`` (:attr:`PlacementJudge.
@@ -762,7 +762,7 @@ def episode_outcome(
     has_grasp = scenario in _GRASP_SCENARIOS
     has_placement = scenario in _PLACEMENT_SCENARIOS
     if not (has_grasp or has_placement):
-        raise ValueError(f"episode_outcome judges S2, S3, S4 and fake, not {scenario!r}")
+        raise ValueError(f"episode_outcome judges S2, S3, S4, fake and dry, not {scenario!r}")
     if has_grasp and grasp is None:
         raise ValueError(f"{scenario} has a grasp phase: pass grasp=GraspJudge.grasp_success")
     if has_placement and placement is None:

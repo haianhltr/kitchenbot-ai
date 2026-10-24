@@ -25,7 +25,7 @@ from kitchenbot.evaluation.runner import (
     write_result,
 )
 from kitchenbot.evaluation.schema import validate_result
-from kitchenbot.evaluation.seeds import split_seeds
+from kitchenbot.evaluation.seeds import SPLITS, split_seeds
 
 # ----------------------------------------------------------------------------- registry
 
@@ -117,19 +117,30 @@ def test_fake_output_is_pinned():
     seen = run_evaluation(EvalConfig(scenario="fake", split="seen"))
     assert unseen["aggregates"]["success"]["count"] == 36
     assert seen["aggregates"]["success"]["count"] == 78
-    # Unchanged since the first version of the fake scenario: traces were added after these draws.
+    # fake-v3 (#78): a success now ends at its completion time, not 2 s later, so the durations
+    # and trace lengths of successes moved; the draws, the tags and every metric did not.
     assert digest(episodes(unseen)) == (
-        "17932ae46108aff6dfad831ae421ab0e7ebef46c9ed528424be0cd5fbc3118a3"
+        "7392aa715816376984bb321592a6ac2551905a8a1b919797b5def191ea42e0d3"
     )
     assert digest(episodes(seen)) == (
-        "dad901e830398e3502a69b1d8b7743f2e928f7a413a83775b82922991270926d"
+        "d2c1aff3adfbf559a1613ae5ee8af00dfca635c37140a3c7833f31c25f699ff7"
     )
     assert digest(traces(unseen)) == (
-        "29826f6278c7b46d4e0ccabf23ed11f840c43116316ba0f07cc6d9e3b89ae844"
+        "1d866d317f17d6c29e112c377bb701a71b211de7a2a23454a5159a1866765807"
     )
     assert digest(traces(seen)) == (
-        "a605e86cff33129040f6be0ec7aaf5fb541449d6b6f881edbfb0863254a39453"
+        "057d6c1dc97795f426025e1b40a394c4775a6a88285622242addb03e974cf42c"
     )
+
+
+def test_fake_success_ends_at_its_completion_time():
+    """The judges' completion time already includes the 2 s stability window (#69 A17, #78)."""
+    for split in SPLITS:
+        doc = run_evaluation(EvalConfig(scenario="fake", split=split))
+        successes = [e for e in doc["episodes"] if e["success"]]
+        assert successes
+        for e in successes:
+            assert e["duration_s"] == e["metrics"]["completion_time_s"]
 
 
 def test_fake_traces_are_well_formed():

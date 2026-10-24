@@ -1,4 +1,13 @@
-"""Write the ten evaluation configs ``configs/eval/s<N>_<split>.yaml`` (#52, no simulator).
+"""Write the evaluation configs ``configs/eval/*.yaml`` (#52, #78, no simulator).
+
+Fourteen files: the ten ``s<N>_<split>.yaml``, one per scenario (S0 to S4) and split, with the
+evaluator's default floating base, and the four fixed-pelvis variants
+``s2_seen_fixed.yaml``, ``s2_unseen_fixed.yaml``, ``s3_seen_fixed.yaml`` and
+``s3_unseen_fixed.yaml`` (#78): docs/evaluation.md section 1 runs S2 and S3 with a "fixed pelvis,
+then balance policy" (``runner.FIXED_BASE_SCENARIOS``), section 6 reports fixed pelvis against the
+balance policy as a baseline, and AGENTS.md section 6 says a run without a committed config did
+not happen. A fixed file is its floating file with ``base: fixed`` and a different header: same
+seeds, ``num_envs``, policy, hand and ranges.
 
 Generate (deterministic; LF line endings; a fixed key order)::
 
@@ -11,7 +20,7 @@ temporary directory and diffs; exit code 1 on any difference or missing file)::
     py -3.12 scripts/make_eval_configs.py --check
     py -3.12 scripts/make_eval_configs.py --check --out-dir some/other/dir
 
-One file per scenario (S0 to S4) and split (seen, unseen). Keys, in this order:
+Keys, in this order:
 
 ``scenario``, ``split``
     as for ``scripts/evaluate.py``.
@@ -23,7 +32,9 @@ One file per scenario (S0 to S4) and split (seen, unseen). Keys, in this order:
 ``seeds``
     ``first``, ``last`` and ``count`` of those seeds (they are consecutive).
 ``policy``, ``hand``, ``base``
-    the defaults of ``scripts/evaluate.py`` (``EvalConfig``).
+    the defaults of ``scripts/evaluate.py`` (``EvalConfig``), except ``base: fixed`` in the four
+    fixed-pelvis files. The evaluator reads only ``num_envs`` from a file (#78), so a fixed-pelvis
+    run is started with ``--base fixed --config configs/eval/s2_seen_fixed.yaml``.
 ``randomization``
     ``RandomizationRanges.for_split(split).to_dict()``: every row of docs/evaluation.md section 2.
     ``kitchenbot.scene.randomization.sample_episode`` draws each episode from it.
@@ -45,12 +56,17 @@ from typing import Any
 import yaml
 
 import kitchenbot
-from kitchenbot.evaluation.runner import EvalConfig
+from kitchenbot.evaluation.runner import BASES, FIXED_BASE_SCENARIOS, EvalConfig
 from kitchenbot.evaluation.seeds import SPLITS
 from kitchenbot.scene.randomization import SCENARIOS, RandomizationRanges
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT_DIR = REPO_ROOT / "configs" / "eval"
+
+#: The evaluator's default base (floating, the balance policy active): the ten unsuffixed files.
+DEFAULT_BASE = EvalConfig(scenario=SCENARIOS[0]).base
+#: The base of the fixed-pelvis variants, written as ``s<N>_<split>_fixed.yaml``.
+FIXED_BASE = "fixed"
 
 _TITLES = {
     "S0": "S0 stand",
@@ -65,19 +81,48 @@ _SPLIT_NOTES = {
 }
 
 
-def file_name(scenario: str, split: str) -> str:
-    """``s4_unseen.yaml`` for ``("S4", "unseen")``."""
-    return f"{scenario.lower()}_{split}.yaml"
+def file_name(scenario: str, split: str, base: str = DEFAULT_BASE) -> str:
+    """``s4_unseen.yaml`` for ``("S4", "unseen")``; ``s2_seen_fixed.yaml`` for a fixed base."""
+    if base not in BASES:
+        raise ValueError(f"base {base!r} not in {BASES}")
+    suffix = "" if base == DEFAULT_BASE else f"_{base}"
+    return f"{scenario.lower()}_{split}{suffix}.yaml"
+
+
+def variants() -> list[tuple[str, str, str]]:
+    """``(scenario, split, base)`` of every file, in file order.
+
+    Scenario-major, then split; within one split the default-base file, then the fixed-pelvis one
+    for the scenarios of ``FIXED_BASE_SCENARIOS``.
+    """
+    out = []
+    for scenario in SCENARIOS:
+        for split in SPLITS:
+            out.append((scenario, split, DEFAULT_BASE))
+            if scenario in FIXED_BASE_SCENARIOS:
+                out.append((scenario, split, FIXED_BASE))
+    return out
 
 
 def all_file_names() -> list[str]:
-    """The ten file names, scenario-major: ``s0_seen.yaml``, ``s0_unseen.yaml``, ``s1_seen...``."""
-    return [file_name(sc, sp) for sc in SCENARIOS for sp in SPLITS]
+    """The fourteen file names: ``s0_seen.yaml``, ``s0_unseen.yaml``, ..., ``s2_seen.yaml``,
+    ``s2_seen_fixed.yaml``, ``s2_unseen.yaml``, ``s2_unseen_fixed.yaml``, ...
+    """
+    return [file_name(*variant) for variant in variants()]
 
 
-def build_config(scenario: str, split: str) -> dict[str, Any]:
-    """The document of one file, as a dict in the file's key order."""
-    defaults = EvalConfig(scenario=scenario, split=split)  # the defaults of scripts/evaluate.py
+def build_config(scenario: str, split: str, base: str = DEFAULT_BASE) -> dict[str, Any]:
+    """The document of one file, as a dict in the file's key order.
+
+    ``base`` other than the default is allowed for ``FIXED_BASE_SCENARIOS`` only.
+    """
+    if base != DEFAULT_BASE and scenario not in FIXED_BASE_SCENARIOS:
+        raise ValueError(
+            f"{scenario}: docs/evaluation.md section 1 has no {base} base for it; only "
+            f"{FIXED_BASE_SCENARIOS} get a {FIXED_BASE} file"
+        )
+    # The defaults of scripts/evaluate.py, with the base of this file.
+    defaults = EvalConfig(scenario=scenario, split=split, base=base)
     seeds = list(defaults.seeds)
     if seeds != list(range(seeds[0], seeds[-1] + 1)):
         raise ValueError(f"{scenario} {split}: the seeds are not consecutive")
@@ -94,30 +139,40 @@ def build_config(scenario: str, split: str) -> dict[str, Any]:
     }
 
 
-def render(scenario: str, split: str) -> str:
-    """The exact text of one file: a three-line comment header, then the YAML."""
+def render(scenario: str, split: str, base: str = DEFAULT_BASE) -> str:
+    """The exact text of one file: a comment header, then the YAML.
+
+    The header has four lines; a fixed-pelvis file names its base in the first line and has two
+    more saying how to start the run. The ten default-base files are unchanged by #78.
+    """
+    base_note = "" if base == DEFAULT_BASE else ", fixed pelvis"
     header = (
-        f"# {_TITLES[scenario]}, {_SPLIT_NOTES[split]}.\n"
+        f"# {_TITLES[scenario]}{base_note}, {_SPLIT_NOTES[split]}.\n"
         "# Generated by scripts/make_eval_configs.py from kitchenbot.scene.randomization; do not\n"
         "# edit by hand (`make_eval_configs.py --check` fails on any difference). Ranges:\n"
         "# docs/evaluation.md section 2; seeds: kitchenbot.evaluation.seeds.\n"
     )
+    if base != DEFAULT_BASE:
+        header += (
+            "# Fixed-pelvis run of docs/evaluation.md section 1. "
+            "The evaluator reads only num_envs\n"
+            f"# from this file: start the run with --base {base}.\n"
+        )
     body = yaml.safe_dump(
-        build_config(scenario, split), sort_keys=False, default_flow_style=None, width=100
+        build_config(scenario, split, base), sort_keys=False, default_flow_style=None, width=100
     )
     return header + body
 
 
 def generate(out_dir: Path) -> list[Path]:
-    """Write the ten files into ``out_dir`` (created if needed) and return their paths."""
+    """Write every file of :func:`variants` into ``out_dir`` (created if needed); return paths."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
-    for scenario in SCENARIOS:
-        for split in SPLITS:
-            path = out_dir / file_name(scenario, split)
-            path.write_text(render(scenario, split), encoding="utf-8", newline="\n")
-            paths.append(path)
+    for scenario, split, base in variants():
+        path = out_dir / file_name(scenario, split, base)
+        path.write_text(render(scenario, split, base), encoding="utf-8", newline="\n")
+        paths.append(path)
     return paths
 
 
@@ -157,8 +212,9 @@ def check(out_dir: Path, *, max_diff_lines: int = 40) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Generate or check configs/eval/*.yaml (issue #52): the randomization ranges "
-        "of docs/evaluation.md section 2 and the seeds, one file per scenario and split."
+        description="Generate or check configs/eval/*.yaml (issues #52, #78): the randomization "
+        "ranges of docs/evaluation.md section 2 and the seeds, one file per scenario and split, "
+        "plus a fixed-pelvis file per split for S2 and S3."
     )
     parser.add_argument(
         "--out-dir",
