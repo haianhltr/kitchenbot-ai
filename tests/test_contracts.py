@@ -3,7 +3,8 @@
 Each test pins one equality between two or more modules, or between a module and the document it
 cites, so that the next "14.9 cm against 15 cm" (#60) fails here instead of in a simulation run.
 The full audit, with the mismatches that are reported rather than pinned, is the findings comment
-on issue #69.
+on issue #69. #78 added the pins of B7 (a ``--config`` run without ``--num_envs`` uses the YAML's
+``num_envs``) and B8 (the fixed-pelvis YAMLs are the section 1 scenarios with a fixed pelvis).
 
 Pure Python: no simulator, no ``pxr`` (the tines file is read as text), the UNTESTED DRAFTS only
 parsed with ``ast``. Deliberately absent: the dry run's outcome counts and the grasp-frame rim
@@ -34,7 +35,13 @@ from kitchenbot.controllers.hand.mock import MockHand
 from kitchenbot.evaluation import dry_run, fake, judges, metrics, stats
 from kitchenbot.evaluation.cli import main as evaluate_main
 from kitchenbot.evaluation.failure_tags import FAILURE_TAG_VALUES, FailureTag
-from kitchenbot.evaluation.runner import EvalConfig, get_scenario, scenario_names
+from kitchenbot.evaluation.runner import (
+    BASES,
+    FIXED_BASE_SCENARIOS,
+    EvalConfig,
+    get_scenario,
+    scenario_names,
+)
 from kitchenbot.evaluation.schema import load_schema
 from kitchenbot.evaluation.seeds import SPLITS, default_seeds
 from kitchenbot.geometry import Pose, quat_from_yaw, tilt_from_vertical, to_frame
@@ -247,16 +254,44 @@ def test_wilson_interval_level_agrees_in_stats_and_the_schema():
 # ------------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("split", SPLITS)
-@pytest.mark.parametrize("scenario", SCENARIOS)
-def test_eval_yaml_randomization_block_is_the_sampler_ranges(scenario, split):
-    path = EVAL_CONFIGS / f"{scenario.lower()}_{split}.yaml"
+EVAL_YAML_VARIANTS = [(sc, sp, "") for sc in SCENARIOS for sp in SPLITS] + [
+    (sc, sp, "_fixed") for sc in FIXED_BASE_SCENARIOS for sp in SPLITS
+]  # the ten default-base files and the four fixed-pelvis ones (#78)
+
+
+@pytest.mark.parametrize(("scenario", "split", "suffix"), EVAL_YAML_VARIANTS)
+def test_eval_yaml_randomization_block_is_the_sampler_ranges(scenario, split, suffix):
+    path = EVAL_CONFIGS / f"{scenario.lower()}_{split}{suffix}.yaml"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     assert (data["scenario"], data["split"]) == (scenario, split)
     ranges = RandomizationRanges.from_dict(data["randomization"])
     assert ranges == RandomizationRanges.for_split(split)
     if scenario in dry_run.MIRRORABLE_SCENARIOS:
         assert dry_run.read_eval_yaml(path, split) == (scenario, ranges)
+
+
+def test_fixed_pelvis_configs_are_the_section_1_scenarios_run_with_a_fixed_pelvis():
+    """#69 B8, #78: section 1 runs S2 and S3 "fixed pelvis, then balance policy"; each has a
+    committed ``base: fixed`` YAML per split that is its default-base YAML otherwise."""
+    rows = [
+        [cell.strip() for cell in line.strip().strip("|").split("|")]
+        for line in _section("evaluation.md", "1").splitlines()
+        if re.match(r"\|\s*S\d\s*\|", line)
+    ]
+    assert [row[0] for row in rows] == list(SCENARIOS)
+    assert [row[0] for row in rows if "fixed pelvis" in row[2]] == list(FIXED_BASE_SCENARIOS)
+    fixed_files = sorted(p.name for p in EVAL_CONFIGS.glob("*_fixed.yaml"))
+    assert fixed_files == sorted(
+        f"{sc.lower()}_{sp}_fixed.yaml" for sc in FIXED_BASE_SCENARIOS for sp in SPLITS
+    )
+    for scenario in FIXED_BASE_SCENARIOS:
+        for split in SPLITS:
+            stem = f"{scenario.lower()}_{split}"
+            default = yaml.safe_load((EVAL_CONFIGS / f"{stem}.yaml").read_text(encoding="utf-8"))
+            fixed = yaml.safe_load((EVAL_CONFIGS / f"{stem}_fixed.yaml").read_text("utf-8"))
+            assert default["base"] == EvalConfig(scenario=scenario).base
+            assert fixed["base"] == "fixed" and fixed["base"] in BASES
+            assert {**fixed, "base": default["base"]} == default
 
 
 @pytest.mark.parametrize("path", sorted(EVAL_CONFIGS.glob("*.yaml")), ids=lambda p: p.name)

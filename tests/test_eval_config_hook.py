@@ -25,6 +25,7 @@ from kitchenbot.scene.randomization import SCENARIOS
 
 CONFIG_DIR = REPO / "configs" / "eval"
 BOTH = [(sc, sp) for sc in SCENARIOS for sp in SPLITS]
+FIXED = [(sc, sp) for sc in runner.FIXED_BASE_SCENARIOS for sp in SPLITS]  # the *_fixed.yaml
 
 
 # ------------------------------------------------------------------ the evaluator hook
@@ -78,9 +79,12 @@ def test_config_path_is_normalised_and_must_exist(tmp_path):
         _fake_config(config_path=tmp_path)  # a directory
 
 
-@pytest.mark.parametrize(("scenario", "split"), BOTH)
-def test_every_committed_config_can_be_hashed_by_a_fake_run(scenario, split):
-    path = CONFIG_DIR / f"{scenario.lower()}_{split}.yaml"
+@pytest.mark.parametrize(
+    ("scenario", "split", "suffix"),
+    [(sc, sp, "") for sc, sp in BOTH] + [(sc, sp, "_fixed") for sc, sp in FIXED],
+)
+def test_every_committed_config_can_be_hashed_by_a_fake_run(scenario, split, suffix):
+    path = CONFIG_DIR / f"{scenario.lower()}_{split}{suffix}.yaml"
     seeds = tuple(default_seeds("fake", split)[:3])
     doc = run_evaluation(
         EvalConfig(scenario="fake", split=split, seeds=seeds, config_path=path)
