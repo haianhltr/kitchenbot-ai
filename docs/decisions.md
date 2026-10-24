@@ -117,6 +117,12 @@ ends every episode `ik_infeasible` at 0.30 m and the tests pin that; it is the n
 expected to move. #10 measures the torso-to-counter gap when leaning (the URDF has no collision
 meshes). The balance policy has one more command dimension and a waist tracking reward instead of
 a zero-waist reward.
+Amended 2026-10-24 (#69 audit, finding E8): the commanded lean's maximum is the soft joint limit,
+0.468 rad (26.8 deg, 0.9 times the URDF's 0.52 rad of `waist_pitch_joint`), not the hard limit:
+the planner's target (#67), the training command (#68, applied by #77) and the waist envelope's
+pitch range (#77 regenerates it) read one constant, `robots.joint_limits.WAIST_LEAN_MAX_RAD`. The
+paper numbers above were computed with the lean sampled to 29.8 deg and are an upper bound by that
+margin too; #16 measures.
 
 ## D013 — Compact dishwasher raised on a plinth, dressed as a low cabinet (2026-10-23)
 

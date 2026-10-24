@@ -3,8 +3,8 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56 to #60, #66, #68, #70 and #71 merged, D012 and D013 decided, #67 and #69 open and in
-progress, Isaac Sim not yet installed. Actuals: those twenty issues
+#56 to #60, #66, #68 to #71 merged, D012 (amended) and D013 decided, #67, #77 and #78 open,
+Isaac Sim not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
 CI is green on `main`.
@@ -125,6 +125,12 @@ CI is green on `main`.
   with a strict `--check`; the clearances come from `footprints_kitchen()`: 16.5 mm under the
   open dishwasher door, 370 mm to the right leg. `kitchen_scene_cfg.cabinet_cfg()` spawns it;
   the `CABINET_*` constants and `PLINTH_GAP_M` live in `kitchen_dims`, all provisional.
+- Contract tests `tests/test_contracts.py` (#69): 35 cross-module equalities pinned (planner,
+  judges and protocol numbers, failure tags and schema, YAML ranges and sampler, dry-run extras,
+  tines layout, fakes stand-off and pelvis, quaternion order, slew and hand numbers, control rate,
+  training randomization) after an audit of 70 quantities: 59 agreed, one S2 definition line was
+  fixed, ten mismatches were reported on #69 and routed (#67, #77, #78, #5, #11, #21, #22), and 13
+  silent assumptions are listed there.
 - Report and video skeletons: `docs/report.md` with every empty slot an HTML comment naming the
   issue that fills it, and `docs/demo_video_script.md` (16 shots, 163 s, selection rules fixed
   before any result exists, overlay specification for `record_demo.py`); `tests/test_docs_skeletons.py`
@@ -154,7 +160,7 @@ palm orientation, so an upper bound) the operator chose the lower-risk row:
 (seen / unseen percent of S2 episodes with every waypoint reachable, 2 cm margin.)
 
 `ROBOT_STANDOFF_M` is 0.30 m (constant and test changed; everything else reads it). The lower-body
-policy takes a commanded forward waist pitch of 0 to 0.52 rad from its first training run (#5,
+policy takes a commanded forward waist pitch of 0 to 0.468 rad (the soft limit, D012 as amended) from its first training run (#5,
 #6); the planner commands the lean during pre-grasp, grasp and lift and zero again from the
 counter-edge waypoint on (#21); #14 puts the IK `body_offset` at the finger bases, (0.0777,
 -0.0016, 0) m in the palm link frame. 0.25 m is the fallback if #14 and #16 measure short, and
@@ -170,9 +176,10 @@ Recorded on #5, #6, #10, #11, #14, #16, #21.
 ## What is running
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
-D013, #66, #68, #70 and #71 are merged and two are in progress, one worker each: #67 (planner
-waist-lean command, the top-rim grasp frame, the dry-run rack pose, kb-manip) and #69 (contract
-audit with `tests/test_contracts.py`, kb-eval). Every other open issue needs Isaac Sim. The
+D013, #66, #68, #69, #70 and #71 are merged; #67 (planner waist-lean command, the top-rim grasp
+frame, the dry-run rack pose, kb-manip) is in progress. Two follow-ups from the #69 audit are open:
+#78 (evaluator contract fixes, kb-eval, running) and #77 (lean capped at the soft limit and the
+waist envelope regenerated, kb-controls, after #67). Every other open issue needs Isaac Sim. The
 director is pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
@@ -195,4 +202,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #67 and #69 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #67, #77 and #78 nothing that does not need Isaac Sim is left; the next move is the operator's.
