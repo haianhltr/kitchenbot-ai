@@ -1,11 +1,12 @@
 """Authored kitchen dimensions: the one place these numbers live (issue #47, no simulator).
 
-The USD generators (``scripts/make_rack_tines_usd.py``, ``scripts/make_counter_usd.py``), their
-``--check`` modes, the tests and, later, the scene configs of #10 and #11, the plate spawner and the
-planner's slot poses all read this module. Standard library only: nothing here imports ``pxr``,
-Isaac Sim, Isaac Lab or torch. Every constant says where it comes from: an issue (``#10`` is the
-counter scene, ``#29`` the ArtVIP inspection, ``#30`` the plates), a document section, or
-``provisional`` when the value is a placeholder to be measured or tuned in simulation.
+The USD generators (``scripts/make_rack_tines_usd.py``, ``scripts/make_counter_usd.py``,
+``scripts/make_cabinet_usd.py``), their ``--check`` modes, the tests and, later, the scene configs
+of #10 and #11, the plate spawner and the planner's slot poses all read this module. Standard
+library only: nothing here imports ``pxr``, Isaac Sim, Isaac Lab or torch. Every constant says where
+it comes from: an issue (``#10`` is the counter scene, ``#29`` the ArtVIP inspection, ``#30`` the
+plates), a document section, or ``provisional`` when the value is a placeholder to be measured or
+tuned in simulation.
 
 Frames
 ------
@@ -329,7 +330,8 @@ RACK_TINES_POSE_IN_LINK = (0.1993, 0.1434, 0.0121, 0.0)
 #:   pelvis, so it stands to the robot's right, front facing -x (yaw -90 deg), its body 15 mm in
 #:   front of the counter (x 0.59 to 0.98 m, y -0.50 to -0.015 m); the rack is 77 mm clear of the
 #:   counter edge;
-#: * z = 0.55 m (a plinth under the body, scene/kitchen_scene_cfg.py) puts the rack frame origin at
+#: * z = 0.55 m (a plinth under the body, dressed as a low cabinet since #70:
+#:   scene/assets/kitchen/dishwasher_cabinet.usda) puts the rack frame origin at
 #:   0.65 m, inside #56's band. The upper rack (option c) would need the unit 0.15 m lower for the
 #:   same rack height and gains no reach (below); on the counter top (option b) the rack base would
 #:   be at 1.0 m and the targets 25 cm above the slots 0.72 to 0.84 m above the pelvis, at or past
@@ -354,6 +356,49 @@ RACK_TINES_POSE_IN_LINK = (0.1993, 0.1434, 0.0121, 0.0)
 #: reason RACK_SCALE stays 1.0. #56 re-runs its analysis on this pose; #10 and #11 confirm it in
 #: simulation, the leg clearance first.
 DISHWASHER_POSE_KITCHEN = (0.59, -0.015, 0.55, -math.pi / 2.0)
+
+# --------------------------------------------------------------------------------------------
+# Dishwasher cabinet: the plinth dressed as a low kitchen cabinet (#70, D013; no simulator)
+# --------------------------------------------------------------------------------------------
+# scripts/make_cabinet_usd.py writes scene/assets/kitchen/dishwasher_cabinet.usda from these and
+# from dishwasher_frames.plinth_box_kitchen (the carcass has the plinth's footprint). The cabinet is
+# static and nothing in it is articulated (D009's cabinets-as-dressing rule). It is built on the -x
+# face of the plinth, the face the dishwasher's own front looks at (yaw -90 deg in
+# DISHWASHER_POSE_KITCHEN), and the script refuses any other yaw. Every value is provisional: a
+# look-and-clearance choice, not a measurement.
+
+#: Moved here from kitchen_scene_cfg.py (#59): the carcass stops this short of the dishwasher
+#: body's underside so the static cabinet and the fixed-base articulation do not touch.
+PLINTH_GAP_M = 0.002
+CABINET_DOOR_THICKNESS_M = 0.018  # provisional: the door panel, proud of the carcass face
+CABINET_DOOR_GAP_M = 0.003  # provisional: reveal around the door on the sides and at the bottom
+#: Provisional: reveal above the door panel. Larger than CABINET_DOOR_GAP_M because the open
+#: dishwasher door hangs in front of the unit with its underside 3.5 mm below the carcass top
+#: (z 0.5445 m against 0.548 m): a panel as tall as the carcass would meet it, so the panel stops
+#: lower and keeps at least CABINET_MIN_DOOR_CLEARANCE_M under that underside.
+CABINET_DOOR_TOP_REVEAL_M = 0.020
+CABINET_KICK_HEIGHT_M = 0.10  # provisional: toe-kick plate height, the door starts above it
+CABINET_KICK_RECESS_M = 0.06  # provisional: the kick plate is set back this far from the face
+#: Provisional: a bar handle on two posts, centred across the door. Length along the door's width,
+#: the square cross-section of the bar and the posts, the total projection from the door face to the
+#: bar's outer side, and the drop from the door's top edge to the bar's top.
+CABINET_HANDLE_LENGTH_M = 0.20
+CABINET_HANDLE_SECTION_M = 0.014
+CABINET_HANDLE_PROJECTION_M = 0.032
+CABINET_HANDLE_DROP_M = 0.060
+CABINET_FRICTION = COUNTER_FRICTION  # provisional: the same surface as the counter's body
+
+#: Clearances the generator's --check and the tests enforce (#70). The first is the gap between the
+#: cabinet's door panel and handle and the underside of the dishwasher's open door
+#: (dishwasher_frames.footprints_kitchen()["door"]); the second is the gap between the cabinet and
+#: the robot's right leg, the margin tests/test_dishwasher_frames.py asks of the open door and rack.
+CABINET_MIN_DOOR_CLEARANCE_M = 0.01
+CABINET_MIN_LEG_CLEARANCE_M = 0.03
+#: x of the right leg's outer surface, in the kitchen frame: the joint line is 0.116 to 0.119 m to
+#: the right of the pelvis (URDF fixture, #48) and the link radius is about 5 cm. An estimate, the
+#: same one as LEG_SURFACE_M in tests/test_dishwasher_frames.py (#59: the link meshes are not in the
+#: fixture); the leg is treated as a slab at x <= this value for every y, which is conservative.
+ROBOT_RIGHT_LEG_SURFACE_X_M = 0.17
 
 
 def rack_fits_plate(
