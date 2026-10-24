@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from kitchenbot.scene import dishwasher_frames as df
+from kitchenbot.scene import kitchen_dims as kd
 
 REPO = Path(__file__).resolve().parents[1]
 PKG = REPO / "source" / "kitchenbot"
@@ -143,8 +144,38 @@ def test_scene_layers_and_their_fields():
     files = ast.literal_eval(module_value(relative, "PLATE_FILES"))
     for name in files.values():
         assert (PKG / "scene" / "assets" / "plates" / name).is_file()
-    for name in ("counter.usda", "floor.usda"):
+    for name in ("counter.usda", "floor.usda", "dishwasher_cabinet.usda"):
         assert (PKG / "scene" / "assets" / "kitchen" / name).is_file()
+    assert fields["dishwasher"] == ("dishwasher_cabinet", "dishwasher", "rack_tines")
+
+
+def test_cabinet_cfg_spawns_the_committed_asset_the_way_the_counter_does():
+    """#70: the plinth is a usd-core asset now, not a CuboidCfg (D013)."""
+    relative = "source/kitchenbot/scene/kitchen_scene_cfg.py"
+    names = {
+        n.name for n in ast.walk(tree(relative)) if isinstance(n, ast.FunctionDef | ast.ClassDef)
+    }
+    assert "cabinet_cfg" in names and "plinth_cfg" not in names
+    (cabinet,) = [
+        n
+        for n in ast.walk(tree(relative))
+        if isinstance(n, ast.FunctionDef) and n.name == "cabinet_cfg"
+    ]
+    (call,) = [
+        c
+        for c in ast.walk(cabinet)
+        if isinstance(c, ast.Call) and ast.unparse(c.func).endswith("UsdFileCfg")
+    ]
+    assert ast.unparse(keyword(call, "usd_path")) == (
+        "str(ASSETS / 'kitchen' / 'dishwasher_cabinet.usda')"
+    )
+    text = (REPO / relative).read_text(encoding="utf-8")
+    assert "CuboidCfg" not in text and "PLINTH_GAP_M =" not in text  # moved to kitchen_dims
+    assert kd.PLINTH_GAP_M == 0.002
+    scene = next(n for n in ast.walk(tree(relative)) if getattr(n, "name", "") == "KitchenSceneCfg")
+    fields = {n.target.id: ast.unparse(n.value) for n in scene.body if isinstance(n, ast.AnnAssign)}
+    assert fields["dishwasher_cabinet"] == "cabinet_cfg()"
+    assert "dishwasher_plinth" not in fields
 
 
 def test_smoke_script_defaults():

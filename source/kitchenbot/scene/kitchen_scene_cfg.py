@@ -13,8 +13,11 @@ origin is the kitchen frame of ``kitchen_dims`` (the counter's front-edge middle
   the 6 m floor so neighbouring floors tile. ``GroundPlaneCfg`` (``from_files_cfg.py:373``) is the
   alternative #10 may pick.
 - **Dishwasher.** ``dishwasher_cfg.DISHWASHER_CFG`` at ``DISHWASHER_POSE_KITCHEN``, its tines as the
-  nested ``RACK_TINES_CFG``, and a static plinth box under the body
-  (``dishwasher_frames.plinth_box_kitchen``, 2 mm short of the body), part of the same layer.
+  nested ``RACK_TINES_CFG``, and the static cabinet under the body, part of the same layer: the
+  plinth dressed as a low cabinet (carcass, door front, handle; D013, #70).
+  ``dishwasher_cabinet.usda`` is authored in the kitchen frame, like ``counter.usda``, so it spawns
+  at the origin unrotated; its carcass is ``dishwasher_frames.plinth_box_kitchen`` shortened by
+  ``kitchen_dims.PLINTH_GAP_M``.
 - **Plates: one diameter per episode.** Three ``RigidObjectCfg`` (22, 25 and 27 cm, #30), one at the
   nominal spawn point on the counter (``randomization.PLATE_NOMINAL_XY_M`` on the counter top) and
   two parked flat on the floor behind the counter. #13's reset event moves the drawn diameter to
@@ -41,7 +44,6 @@ from isaaclab.utils import configclass, replace
 
 from kitchenbot.robots.g1_dex3 import make_g1_dex3_cfg
 from kitchenbot.scene import dishwasher_cfg as dwc
-from kitchenbot.scene import dishwasher_frames as df
 from kitchenbot.scene import kitchen_dims as kd
 from kitchenbot.scene.randomization import PLATE_NOMINAL_XY_M
 
@@ -52,7 +54,7 @@ LAYERS = ("counter", "dishwasher", "plates")
 #: The scene fields each layer owns.
 LAYER_FIELDS = {
     "counter": ("counter",),
-    "dishwasher": ("dishwasher_plinth", "dishwasher", "rack_tines"),
+    "dishwasher": ("dishwasher_cabinet", "dishwasher", "rack_tines"),
     "plates": ("plate_22", "plate_25", "plate_27"),
 }
 ENV_SPACING_M = kd.FLOOR_SIZE_M[0]
@@ -62,7 +64,6 @@ ACTIVE_PLATE_M = 0.25  # the plate on the counter at spawn; #13 draws one per ep
 #: Parking spots of the inactive plates: flat on the floor behind the counter, out of the robot's
 #: way and inside the 6 m floor (provisional, #13).
 PLATE_PARK_XY_M = {0.22: (-1.5, 1.5), 0.25: (-1.0, 1.5), 0.27: (-0.5, 1.5)}
-PLINTH_GAP_M = 0.002  # the plinth stops short of the body so static and fixed links do not touch
 
 
 def plate_cfg(diameter_m: float, active: bool) -> RigidObjectCfg:
@@ -89,18 +90,15 @@ def robot_cfg(fixed_base: bool = False) -> ArticulationCfg:
     return replace(cfg, init_state=replace(cfg.init_state, pos=pos))
 
 
-def plinth_cfg(scale: float = kd.RACK_SCALE) -> AssetBaseCfg:
-    """Static box from the floor to just under the dishwasher body."""
-    (cx, cy, _), (sx, sy, sz) = df.plinth_box_kitchen(scale)
-    height = sz - PLINTH_GAP_M
+def cabinet_cfg() -> AssetBaseCfg:
+    """Static low cabinet from the floor to just under the dishwasher body (#70, D013).
+
+    The asset is generated at ``kitchen_dims.RACK_SCALE`` and ``DISHWASHER_POSE_KITCHEN``
+    (``scripts/make_cabinet_usd.py``); regenerate it if either changes.
+    """
     return AssetBaseCfg(
-        prim_path="{ENV_REGEX_NS}/DishwasherPlinth",
-        spawn=sim_utils.CuboidCfg(
-            size=(sx, sy, height),
-            collision_props=sim_utils.UsdPhysicsCollisionCfg(collision_enabled=True),
-            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.62, 0.50, 0.38)),
-        ),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(cx, cy, height / 2.0)),
+        prim_path="{ENV_REGEX_NS}/DishwasherCabinet",
+        spawn=sim_utils.UsdFileCfg(usd_path=str(ASSETS / "kitchen" / "dishwasher_cabinet.usda")),
     )
 
 
@@ -116,7 +114,7 @@ class KitchenSceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Counter",
         spawn=sim_utils.UsdFileCfg(usd_path=str(ASSETS / "kitchen" / "counter.usda")),
     )
-    dishwasher_plinth: AssetBaseCfg | None = plinth_cfg()
+    dishwasher_cabinet: AssetBaseCfg | None = cabinet_cfg()
     dishwasher: ArticulationCfg | None = dwc.DISHWASHER_CFG
     rack_tines: AssetBaseCfg | None = dwc.RACK_TINES_CFG
     plate_22: RigidObjectCfg | None = plate_cfg(0.22, active=ACTIVE_PLATE_M == 0.22)
