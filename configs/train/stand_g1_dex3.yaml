@@ -52,7 +52,7 @@ commands:
   waist_lean:                # D012; observed as one value per frame, tracked by the waist reward
     joint: waist_pitch_joint
     resampling_time_s: [1.0, 3.0]
-    max_lean_rad: 0.52       # targets uniform in [0, max_lean_rad]
+    max_lean_rad: 0.468      # targets uniform in [0, max]; the soft limit, joint_limits.WAIST_LEAN_MAX_RAD
     zero_share: 0.5          # per resample, targets exactly zero
     max_rate_rad_s: 1.0      # the observed command ramps at the planner's slew rate (null: a step)
 

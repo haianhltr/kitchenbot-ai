@@ -20,7 +20,8 @@ Limits are the articulation's soft joint limits (``ArticulationCfg.soft_joint_po
 
 ``WaistLeanCommand`` (#68, D012) is the forward waist pitch the planner will ask for during
 pre-grasp, grasp and lift: one value in radians per environment, observed by the policy and tracked
-by ``rewards.waist_tracking_l1``. The rules (targets in ``[0, 0.52]`` rad, exactly zero half of the
+by ``rewards.waist_tracking_l1``. The rules (targets in ``[0, 0.468]`` rad, up to the joint's soft
+limit ``robots.joint_limits.WAIST_LEAN_MAX_RAD`` as D012 was amended, exactly zero half of the
 time, a new target every 1 to 3 s, a 1 rad/s ramp instead of a step) and the reason for each are in
 ``waist_lean_targets`` (numpy, tested on CI); this term converts tensors at the boundary. The
 metric follows ``UniformVelocityCommand`` (v3.0.0 ``commands/velocity_command.py:123-156``):

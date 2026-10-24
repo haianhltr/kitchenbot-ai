@@ -10,7 +10,8 @@ Simulator-free and tested on CI (#46):
   joint limits scaled by a range factor, 1 to 3 s resample times, linear interpolation, the
   20 percent slow right-arm reach, and the range-factor curriculum rule.
 - ``waist_lean_targets.py``: the math of the waist-lean command (D012, #68): targets in
-  ``[0, 0.52]`` rad, exactly zero half of the time, a new target every 1 to 3 s, a 1 rad/s ramp,
+  ``[0, 0.468]`` rad (the soft limit, ``robots.joint_limits.WAIST_LEAN_MAX_RAD``; D012 as amended,
+  #77), exactly zero half of the time, a new target every 1 to 3 s, a 1 rad/s ramp,
   and the waist tracking error the reward uses.
 - ``obs_layout.py``: the policy observation layout as data (139 values per frame, 5 frames,
   time-major); #6 writes it into the export manifest.

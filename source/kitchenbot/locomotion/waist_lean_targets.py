@@ -9,18 +9,21 @@ functions; this module is numpy only so that it runs on CI.
 Rules, all deterministic given a ``numpy.random.Generator``:
 
 - **Targets.** A new target is drawn every 1 to 3 s (uniform). With probability 0.5 the target is
-  exactly 0.0, otherwise it is uniform in ``[0, 0.52]`` rad, positive leaning the torso forward
-  (``MAX_LEAN_RAD`` is the URDF limit of ``waist_pitch_joint``, ``robots.joint_limits``). The draw
-  is per resample, not per episode: a 20 s episode holds about ten of them.
+  exactly 0.0, otherwise it is uniform in ``[0, 0.468]`` rad, positive leaning the torso forward.
+  ``MAX_LEAN_RAD`` is ``robots.joint_limits.WAIST_LEAN_MAX_RAD``, the soft limit of
+  ``waist_pitch_joint`` (0.9 x its 0.52 rad URDF limit, rounded to 3 decimals; D012 as amended
+  2026-10-24, #69 finding E8, #77): a policy is not trained to hold a joint at its hard stop. The
+  planner's lean target (#67) and the pitch range of the waist envelope (#77) read the same
+  constant. The draw is per resample, not per episode: a 20 s episode holds about ten of them.
 - **Ramp, not step.** The command the policy observes (and the reward tracks) moves toward the
   target at ``MAX_RATE_RAD_S`` = 1 rad/s, the rate at which the planner's arm target pipeline slews
   (``controllers/target_filter.py``: 0.3 m/s and 1 rad/s). Why: the deployed command comes from a
   slewed planner and does not jump, so a step would train the policy on a transient it never
   meets, and the tracking reward would charge it for the waist's unavoidable lag after a jump (the
-  joint is a PD loop, it cannot arrive in one 20 ms step: a 0.52 rad error asks 2,600 N·m of the
+  joint is a PD loop, it cannot arrive in one 20 ms step: a 0.468 rad error asks 2,340 N·m of the
   waist actuator, stiffness 5000 N·m/rad, whose limit is 50 N·m, ``unitree.py:506-531``). A full
-  0.52 rad lean takes 0.52 s, well inside the 1 s minimum between targets, so every ramp has
-  arrived before the next target.
+  0.468 rad lean takes 0.468 s (24 steps of 20 ms), well inside the 1 s minimum between targets,
+  so every ramp has arrived before the next target.
   ``max_rate_rad_s=None`` in the config gives the step, for an ablation in #5. The planner
   contract that follows: #21 slews the lean command at no more than 1 rad/s; a commanded jump is
   outside the training distribution.
@@ -42,6 +45,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from kitchenbot.locomotion.upper_body_targets import sample_durations
+from kitchenbot.robots.joint_limits import WAIST_LEAN_MAX_RAD
 from kitchenbot.robots.joint_maps import WAIST
 
 #: The joint the command drives.
@@ -52,8 +56,9 @@ WAIST_YAW_INDEX = WAIST.index("waist_yaw_joint")
 WAIST_ROLL_INDEX = WAIST.index("waist_roll_joint")
 WAIST_PITCH_INDEX = WAIST.index(WAIST_PITCH_JOINT)
 
-#: Largest commanded forward pitch in rad (D012): the URDF limit, 29.8 degrees.
-MAX_LEAN_RAD = 0.52
+#: Largest commanded forward pitch in rad (D012 as amended): the soft limit of the joint,
+#: ``robots.joint_limits.WAIST_LEAN_MAX_RAD``, 0.468 rad = 26.8 degrees.
+MAX_LEAN_RAD = WAIST_LEAN_MAX_RAD
 
 #: Probability that a resampled target is exactly zero (D012: the planner stands upright half the
 #: time).
