@@ -186,10 +186,13 @@ Recorded on #5, #6, #10, #11, #14, #16, #21.
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
 D013, all six are merged (#66 to #71), as are the two follow-ups of the #69 audit (#77, #78).
-Nothing is in progress: every remaining open issue needs Isaac Sim. The director is
-pre-downloading the
-Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
-`C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
+Nothing is in progress: every remaining open issue needs Isaac Sim. The install wheels are
+pre-downloaded, nothing installed: `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130`
+holds 155 wheels (8.9 GB: the `isaacsim[all,extscache]==6.2.0.0` set, `isaaclab-3.0.0`,
+`torch-2.11.0+cu130`, `torchvision-0.26.0+cu130`); #1 adds `--find-links` with that folder to the
+`uv pip install` command of `docs/setup.md` (note on #1). Plain `pip` cannot resolve the set
+(isaaclab needs `urllib3>=2.8.0`, `isaacsim-kernel` pins `urllib3==2.7.0`), which is what the
+command's `--overrides` file is for.
 
 #1 (the install) is on hold without `status:ready` until the operator reboots; #3 follows it.
 
