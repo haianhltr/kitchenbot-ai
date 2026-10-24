@@ -93,7 +93,8 @@ def test_extra_reach_gate_false_runs_the_dry_scenario_without_the_gate(tmp_path,
     other = tmp_path / "on"
     assert _run(other) == 0  # the default is the gate on
     out = capsys.readouterr().out
-    assert "success: 0/5 = 0.0%" in out and "ik_infeasible 5" in out and "extras" not in out
+    # seeds 0 to 4 with the default waist0 gate at the #67 geometry: 1 and 3 succeed
+    assert "success: 2/5 = 40.0%" in out and "ik_infeasible 3" in out and "extras" not in out
     on = load_result(next(other.glob("*_dry_seen.json"))).doc
 
     assert off["run"]["config_hash"] != on["run"]["config_hash"]  # the option is hashed

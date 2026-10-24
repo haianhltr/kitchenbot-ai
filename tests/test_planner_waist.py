@@ -118,9 +118,10 @@ def test_the_dry_run_records_the_waist_trace_and_its_maximum():
     assert off.state is S.DONE and off.max_waist_pitch_rad == LEAN
     assert {pitch for state, pitch in off.waist_trace if state in LEANING_STATES} == {LEAN}
     assert {pitch for state, pitch in off.waist_trace if state not in LEANING_STATES} == {0.0}
-    # with the gate on the first reach is refused in pre_grasp, after one leaning command
-    on = simulate_episode(spec, LAYOUT, gate=True, envelope=ReachabilityEnvelope.load())
-    assert on.failed_in is S.PRE_GRASP and on.max_waist_pitch_rad == LEAN
-    assert all(state is S.PRE_GRASP for state, _ in on.waist_trace)
+    # with the waist-zero gate seed 0 is refused in grasp, having leaned since its first command
+    on = simulate_episode(spec, LAYOUT, gate=True, envelope=ReachabilityEnvelope.load("waist0"))
+    assert on.failed_in is S.GRASP and on.max_waist_pitch_rad == LEAN
+    assert {state for state, _ in on.waist_trace} == {S.PRE_GRASP, S.GRASP}
+    assert {pitch for _, pitch in on.waist_trace} == {LEAN}
     # nothing about the waist goes into the result record (the schema allows no extra metric)
     assert "waist_pitch_rad" not in str(off.result)

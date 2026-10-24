@@ -21,12 +21,13 @@ keep this file's shape (a loader that reads the :class:`EvalConfig`, a backend w
 ``scripts/update_experiments.py`` and ``scripts/plot_results.py`` refuse it unless told
 ``--allow-synthetic``. What the numbers do say is whether the contracts between the sampler, the
 planner, the arm pipeline and the judges hold together, and what the reach gap of docs/status.md
-is worth when the committed envelope guards the arm: at the 0.30 m stand-off of ``kitchen_dims``,
-with the finger-base envelopes (#66), every gate-on episode is refused somewhere and ends in
-``ik_infeasible``, mostly at the first target of ``pre_grasp`` with the waist at zero, and in
-``pre_grasp``, ``grasp`` or ``transport`` with the waist envelope (``tests/test_dry_run.py`` pins
-the states for seeds 0 to 19 of both splits and says which geometry they come from), while the
-gate-off run is the check that the planner, the fakes and the judges agree.
+is worth when the committed envelope guards the arm. At the 0.30 m stand-off of ``kitchen_dims``,
+with the finger-base envelopes (#66), the top-rim grasp frame and the #59 dishwasher rack (#67),
+the waist-zero gate refuses the plate targets of part of the episodes (``pre_grasp`` or
+``grasp``, ending ``ik_infeasible``) and the waist envelope refuses none.
+``tests/test_dry_run.py`` pins the outcomes for seeds 0 to 19 of both splits and says which
+geometry they come from. The gate-off run is the check that the planner, the fakes and the judges
+agree.
 
 Config
 ------
@@ -63,6 +64,7 @@ rests where it is released, the counter contact the grasp judge takes is always 
 from __future__ import annotations
 
 import dataclasses
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -366,6 +368,7 @@ class DryRunBackend:
             "stand_off_m": kd.ROBOT_STANDOFF_M,
             "pelvis_height_m": PELVIS_HEIGHT_M,
             "rack_frame_xyz_m": [float(v) for v in DRY_RUN_RACK_FRAME.position],
+            "rack_frame_yaw_deg": math.degrees(DRY_RUN_RACK_FRAME.yaw),  # #67: -90, the #59 pose
             "rack_layout": dataclasses.asdict(self.layout),
             "planner": dataclasses.asdict(self.planner_config),
         }

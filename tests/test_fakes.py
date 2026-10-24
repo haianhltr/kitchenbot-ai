@@ -310,14 +310,15 @@ def test_the_palm_starts_inside_the_committed_envelope(spec):
     assert ReachabilityEnvelope.load().contains(in_pelvis.position)
 
 
-def test_with_the_committed_envelope_the_gate_refuses_the_first_reach():
-    # the status.md reach gap: the first target of pre_grasp is out of the palm's envelope
+def test_with_the_committed_envelope_the_gate_refuses_a_reach():
+    # the status.md reach gap, seed 0 with the waist-zero envelope: the pre-grasp target passes
+    # since #67 (top rim point), the grasp descent below it is refused
     fk = Fakes.from_episode(SEEN[0], LAYOUT, gate=True)
     log = run_episode(fakes=fk)
     assert log.final.state is PlannerState.FAILED
     assert log.final.failure is FailureTag.IK_INFEASIBLE
-    assert log.planner.failed_in is PlannerState.PRE_GRASP
-    assert fk.arm.refusals >= 1 and len(log.commands) < 10
+    assert log.planner.failed_in is PlannerState.GRASP
+    assert fk.arm.refusals >= 1
 
 
 @pytest.mark.parametrize(
