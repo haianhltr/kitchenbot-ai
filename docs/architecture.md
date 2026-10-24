@@ -181,9 +181,11 @@ the slew filter and `ArmTargetPipeline`: world target, `kitchenbot.geometry.to_f
 pelvis frame, envelope gate, slew; it returns the pelvis-frame target and `infeasible`, the
 planner's `arm_infeasible`, and holds the last feasible target. The envelope
 (`controllers/data/right_arm_envelope.npz`, from `scripts/make_reach_envelope.py`) marks 2 cm
-pelvis-frame voxels reached by the right palm link in URDF forward kinematics
+pelvis-frame voxels reached by the finger-base point of the right palm link (D012,
+`reachability.FINGER_BASE_OFFSET_M`, regenerated in #66) in URDF forward kinematics
 (`robots/kinematics.py`) of 2,000,000 configurations sampled inside the limits with the wrist
-margin, waist at zero, seed 48; there is no collision check. #3 checks the chain against the USD,
+margin, waist at zero, seed 48; there is no collision check. A second envelope with the waist
+sampled (`right_arm_envelope_waist.npz`, #56) can gate the dry run (`gate_envelope=waist`). #3 checks the chain against the USD,
 #14 builds the IK, #16 checks the envelope against the real IK and decides on the waist range.
 
 ## 8. Grasping (M4, developed)

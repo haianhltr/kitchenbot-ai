@@ -3,7 +3,7 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56 to #60, #68, #70 and #71 merged, D012 and D013 decided, #66, #67 and #69 open and in
+#56 to #60, #66, #68, #70 and #71 merged, D012 and D013 decided, #67 and #69 open and in
 progress, Isaac Sim not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
@@ -83,7 +83,8 @@ CI is green on `main`.
 - Arm target pipeline `controllers/target_filter.py` (world target → pelvis frame → reachability
   gate → slew at 0.3 m/s and 1 rad/s, returning the planner's `arm_infeasible`), shared pose and
   quaternion helpers in `kitchenbot/geometry.py`, numpy forward kinematics of the right arm from
-  the URDF origins (`robots/kinematics.py`) and two 2 cm voxel reachability envelopes:
+  the URDF origins (`robots/kinematics.py`) and two 2 cm voxel reachability envelopes of the
+  D012 finger-base point (regenerated in #66; `ReachabilityEnvelope.load("waist0" | "waist")`):
   `right_arm_envelope.npz` with the waist at zero (#48) and `right_arm_envelope_waist.npz` with
   the waist sampled (pitch 0 to 29.8 deg forward, yaw ±20 deg; #56). #14 builds the IK on the
   pipeline, #16 validates both envelopes against the real IK and decides which gates when.
@@ -94,8 +95,10 @@ CI is green on `main`.
 - Dry run `evaluation/dry_run.py` (#60): scenario `dry` runs the whole chain on CI without a
   simulator (eval YAML → sampler → planner against the fakes behind the arm target pipeline →
   judges → result JSON → figures), marked synthetic so it can never enter `docs/experiments.md`.
-  With the reachability gate on (waist-zero envelope, palm-link point, 0.30 m stand-off since D012)
-  every episode still ends `ik_infeasible`, the reach gap as a number until #14 and #16; with `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by
+  With the reachability gate on (finger-base envelopes, `--extra gate_envelope=waist0|waist`,
+  0.30 m stand-off) every episode still ends `ik_infeasible`: #66 traced the refusals to the
+  fakes (old rim point, counter-edge waypoint above the slot, floor-standing rack frame), which
+  #67 moves; with `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by
   construction. It is the template of a `ScenarioBackend` for #21 and #22 (note on #22).
 - Stand environment drafts for #5: `locomotion/stand_env_cfg.py`, `commands.py`,
   `upper_body_action.py`, `rewards.py`, `curriculums.py`, `agents/rsl_rl_ppo_cfg.py`,
@@ -158,17 +161,19 @@ counter-edge waypoint on (#21); #14 puts the IK `body_offset` at the finger base
 #16 says so with numbers before any constant moves again; the plate box stays. The compact
 dishwasher stays raised on its 0.55 m plinth beside the counter (D013); #10 dresses the plinth as
 a low cabinet with a door front in the counter's colour, and `DISHWASHER_POSE_KITCHEN` holds at
-either stand-off (the lateral clearance to the right leg does not depend on it). Until #16, the
-committed envelopes and the dry run's gate still use the palm-link point with the waist at zero,
-so the gate-on dry run still fails every episode as `ik_infeasible` at 0.30 m, as the tests pin.
+either stand-off (the lateral clearance to the right leg does not depend on it). The committed
+envelopes sample the finger-base point since #66 and the dry run can gate on the waist envelope;
+it still fails every episode as `ik_infeasible` at 0.30 m because of the fakes' geometry, which
+#67 moves to the decided rim point and the #59 rack pose.
 Recorded on #5, #6, #10, #11, #14, #16, #21.
 
 ## What is running
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
-D013, #68, #70 and #71 are merged and three are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
-kb-controls), #67 (planner waist-lean command and the top-rim grasp frame, kb-manip), #69 (contract audit with
-`tests/test_contracts.py`, kb-eval). Every other open issue needs Isaac Sim. The director is pre-downloading the
+D013, #66, #68, #70 and #71 are merged and two are in progress, one worker each: #67 (planner
+waist-lean command, the top-rim grasp frame, the dry-run rack pose, kb-manip) and #69 (contract
+audit with `tests/test_contracts.py`, kb-eval). Every other open issue needs Isaac Sim. The
+director is pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
 
@@ -190,4 +195,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #66, #67 and #69 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #67 and #69 nothing that does not need Isaac Sim is left; the next move is the operator's.
