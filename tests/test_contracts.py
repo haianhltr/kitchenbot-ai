@@ -8,8 +8,9 @@ on issue #69. #78 added the pins of B7 (a ``--config`` run without ``--num_envs`
 
 Pure Python: no simulator, no ``pxr`` (the tines file is read as text), the UNTESTED DRAFTS only
 parsed with ``ast``. Deliberately absent: the dry run's outcome counts and the grasp-frame rim
-point (#66 and #67 move them), the stand environment's waist command (#68) and the cabinet
-constants of ``kitchen_dims`` (#70). Values are compared with each other, never with a literal,
+point (#66 and #67 move them), the stand environment's waist command other than its maximum (#68;
+the maximum is one constant since #77 and pinned here) and the cabinet constants of
+``kitchen_dims`` (#70). Values are compared with each other, never with a literal,
 except where a document states the number in words.
 """
 
@@ -28,7 +29,7 @@ import numpy as np
 import pytest
 import yaml
 
-from kitchenbot.controllers import target_filter
+from kitchenbot.controllers import reachability, target_filter
 from kitchenbot.controllers.hand import kinematic_follow
 from kitchenbot.controllers.hand.dex3_synergy import Dex3SynergyHand
 from kitchenbot.controllers.hand.mock import MockHand
@@ -45,6 +46,7 @@ from kitchenbot.evaluation.runner import (
 from kitchenbot.evaluation.schema import load_schema
 from kitchenbot.evaluation.seeds import SPLITS, default_seeds
 from kitchenbot.geometry import Pose, quat_from_yaw, tilt_from_vertical, to_frame
+from kitchenbot.locomotion import waist_lean_targets
 from kitchenbot.planning import fakes
 from kitchenbot.planning.plate_to_rack import (
     ARCH_9,
@@ -53,6 +55,7 @@ from kitchenbot.planning.plate_to_rack import (
     PlannerState,
     plan_waypoints,
 )
+from kitchenbot.robots.joint_limits import SOFT_LIMIT_FRACTION, WAIST_LEAN_MAX_RAD, WAIST_LIMITS
 from kitchenbot.scene import dishwasher_frames as df
 from kitchenbot.scene import kitchen_dims as kd
 from kitchenbot.scene.randomization import (
@@ -482,3 +485,29 @@ def test_training_config_randomization_and_fall_tilt_match_the_protocol():
     assert len(limits) == 1 and isinstance(limits[0], ast.Call)
     assert ast.unparse(limits[0].func) == "math.radians"
     assert ast.literal_eval(limits[0].args[0]) == tilt
+
+
+def test_the_waist_lean_maximum_is_one_constant_in_the_planner_the_training_and_the_envelope():
+    """D012 as amended 2026-10-24 (#69 E8, #77): the soft limit of ``waist_pitch_joint``."""
+    upper = WAIST_LIMITS["waist_pitch_joint"].upper
+    assert WAIST_LEAN_MAX_RAD == round(SOFT_LIMIT_FRACTION * upper, 3) < upper
+    # the planner's lean (#67) and the training command (#68)
+    assert CFG.waist_lean_rad == waist_lean_targets.MAX_LEAN_RAD == WAIST_LEAN_MAX_RAD
+    lean = yaml.safe_load(TRAIN_YAML.read_text(encoding="utf-8"))["commands"]["waist_lean"]
+    assert lean["max_lean_rad"] == WAIST_LEAN_MAX_RAD
+    # the draft command term's default is the numpy constant (parsed, not imported)
+    module = ast.parse((PKG / "locomotion" / "commands.py").read_text(encoding="utf-8"))
+    cfg_class = next(
+        n for n in module.body if isinstance(n, ast.ClassDef) and n.name == "WaistLeanCommandCfg"
+    )
+    defaults = {
+        n.target.id: ast.unparse(n.value)
+        for n in cfg_class.body
+        if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name) and n.value is not None
+    }
+    assert defaults["max_lean_rad"] == "wlt.MAX_LEAN_RAD"
+    # the waist envelope's pitch range, in the code and in the committed file the dry run gates on
+    pitch = (0.0, math.degrees(WAIST_LEAN_MAX_RAD))
+    assert reachability.WAIST_ENVELOPE_RANGE_DEG[2] == pitch
+    assert reachability.ReachabilityEnvelope.load("waist").waist_range_deg[2] == pitch
+    assert f"forward waist pitch in [0, {WAIST_LEAN_MAX_RAD:g}] rad" in ARCH_6
