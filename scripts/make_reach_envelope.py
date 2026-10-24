@@ -1,9 +1,11 @@
-r"""Sample the right palm's reachability envelope from the URDF joint dump (#48, #56; no simulator).
+r"""Sample the right palm's reachability envelope from the URDF joint dump (#48, #56, #66; no
+simulator).
 
-Generate the committed envelope, waist at zero (deterministic: the same seed and sample count give
-the same grid, and the same bytes on the same platform)::
+Generate the committed envelope, waist at zero, of the finger-base point (D012; deterministic: the
+same seed, sample count and offset give the same grid, and the same bytes on the same platform)::
 
     py -3.12 scripts/make_reach_envelope.py --seed 48 --samples 2000000 \
+        --tip-offset 0.0777 -0.0016 0 \
         --out source/kitchenbot/controllers/data/right_arm_envelope.npz
 
 Generate the committed waist envelope (#56): the waist sampled too, pitch 0 to +30 deg forward
@@ -13,7 +15,13 @@ says why this range)::
 
     py -3.12 scripts/make_reach_envelope.py --seed 48 --samples 8000000 \
         --waist-yaw-deg 20 --waist-pitch-min-deg 0 --waist-pitch-max-deg 30 \
+        --tip-offset 0.0777 -0.0016 0 \
         --out source/kitchenbot/controllers/data/right_arm_envelope_waist.npz
+
+``--tip-offset X Y Z`` (metres, in the ``right_hand_palm_link`` frame) samples a point fixed in the
+palm link instead of its origin; ``0.0777 -0.0016 0`` is the finger bases,
+``reachability.FINGER_BASE_OFFSET_M`` (#66; #48 and #56 sampled the origin, the default). The file
+records a non-zero offset as ``tip_offset_m`` and ``--check`` prints it.
 
 The waist flags default to 0, which is the #48 behaviour bit for bit. ``--waist-yaw-deg`` and
 ``--waist-roll-deg`` are half ranges (+-); the pitch range is ``[min, max]``, positive leaning
@@ -91,8 +99,10 @@ def generate(
     spacing: float = VOXEL_SIZE_M,
     wrist_margin_deg: float = WRIST_MARGIN_DEG,
     waist_range: Sequence[Sequence[float]] = ZERO_WAIST_DEG,
+    tip_offset_m: Sequence[float] | None = None,
 ) -> ReachabilityEnvelope:
-    """Build the right-palm envelope from a joint dump file (waist at zero by default)."""
+    """Build the right-palm envelope from a joint dump file (waist at zero and the palm link
+    origin by default; ``tip_offset_m`` in the palm link frame moves the sampled point)."""
     joints, provenance = load_dump(joints_path)
     return build_envelope(
         right_arm_chain(joints),
@@ -102,6 +112,7 @@ def generate(
         wrist_margin_deg=wrist_margin_deg,
         joint_source=provenance,
         waist_range=waist_range,
+        tip_offset_m=tip_offset_m,
     )
 
 
@@ -226,6 +237,15 @@ def main(argv: list[str] | None = None) -> int:
         help="waist pitch upper end, deg (positive leans forward)",
     )
     parser.add_argument(
+        "--tip-offset",
+        type=float,
+        nargs=3,
+        default=(0.0, 0.0, 0.0),
+        metavar=("X", "Y", "Z"),
+        help="sampled point in the palm link frame, m (default the link origin; the committed "
+        "files use the finger bases, 0.0777 -0.0016 0)",
+    )
+    parser.add_argument(
         "--out",
         type=Path,
         default=None,
@@ -264,7 +284,14 @@ def main(argv: list[str] | None = None) -> int:
         if out is None:
             out = DEFAULT_OUT if waist == ZERO_WAIST_DEG else DEFAULT_WAIST_OUT
         start = time.perf_counter()
-        envelope = generate(args.joints, args.samples, args.seed, args.spacing, waist_range=waist)
+        envelope = generate(
+            args.joints,
+            args.samples,
+            args.seed,
+            args.spacing,
+            waist_range=waist,
+            tip_offset_m=tuple(args.tip_offset),
+        )
         path = envelope.save(out)
         print(f"sampled and wrote in {time.perf_counter() - start:.1f} s")
     print(report(envelope, path))

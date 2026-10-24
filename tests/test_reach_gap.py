@@ -142,9 +142,10 @@ def test_zero_range_draws_are_the_48_draws(chain):
 def test_zero_range_reproduces_the_committed_metadata_and_fill_on_a_small_sample(
     tmp_path, chain, committed
 ):
+    offset = committed.tip_offset_m  # the finger bases since #66
     explicit = mre.generate(FIXTURE, samples=20_000, seed=committed.seed,
-                            waist_range=((0.0, 0.0), (0.0, 0.0), (0.0, 0.0)))
-    default = mre.generate(FIXTURE, samples=20_000, seed=committed.seed)
+                            waist_range=((0.0, 0.0), (0.0, 0.0), (0.0, 0.0)), tip_offset_m=offset)
+    default = mre.generate(FIXTURE, samples=20_000, seed=committed.seed, tip_offset_m=offset)
     assert explicit.same_as(default)
     assert explicit.fill_fraction == default.fill_fraction
     assert (explicit.seed, explicit.wrist_margin_deg, explicit.frame, explicit.tip_link) == (
@@ -153,14 +154,19 @@ def test_zero_range_reproduces_the_committed_metadata_and_fill_on_a_small_sample
     assert explicit.joint_source == committed.joint_source
     assert explicit.waist_at_zero and committed.waist_at_zero
     assert explicit.waist_range_deg == committed.waist_range_deg == rc.ZERO_WAIST_DEG
+    assert explicit.tip_offset_m == committed.tip_offset_m == rc.FINGER_BASE_OFFSET_M
     # the first draws of the seed are the first configurations of the committed sample
     idx = np.argwhere(explicit.occupied)
     centres = explicit.origin + (idx + 0.5) * explicit.spacing
     assert committed.contains_points(centres).all()
-    # a zero-range envelope writes exactly the #48 keys: re-saving the committed file is a no-op
+    # a zero-range envelope writes no waist key, and re-saving the committed file is a no-op
     resaved = committed.save(tmp_path / "resaved.npz")
     assert resaved.read_bytes() == COMMITTED.read_bytes()
     with np.load(explicit.save(tmp_path / "small.npz"), allow_pickle=False) as data:
+        assert "waist_range_deg" not in data.files and "tip_offset_m" in data.files
+    # the palm link origin (#48's point) writes exactly the #48 keys
+    origin = mre.generate(FIXTURE, samples=2_000, seed=committed.seed)
+    with np.load(origin.save(tmp_path / "origin.npz"), allow_pickle=False) as data:
         assert "waist_range_deg" not in data.files and "tip_offset_m" not in data.files
 
 
@@ -173,12 +179,14 @@ def test_committed_waist_envelope_records_its_range_and_is_small(committed, comm
     assert (env.seed, env.samples) == (rc.DEFAULT_SEED, rc.WAIST_ENVELOPE_SAMPLES)
     assert env.waist_range_deg == rc.clip_waist_range(rc.WAIST_ENVELOPE_RANGE_DEG)
     assert env.waist_range_deg[2] == pytest.approx((0.0, math.degrees(0.52)))
-    assert not env.waist_at_zero and env.tip_offset_m == (0.0, 0.0, 0.0)
-    assert (env.frame, env.tip_link, env.joint_source) == (
-        committed.frame, committed.tip_link, committed.joint_source
+    # the finger-base point of D012 (#66), the same point as the waist-at-zero file
+    assert not env.waist_at_zero and env.tip_offset_m == rc.FINGER_BASE_OFFSET_M
+    assert (env.frame, env.tip_link, env.joint_source, env.tip_offset_m) == (
+        committed.frame, committed.tip_link, committed.joint_source, committed.tip_offset_m
     )
     with np.load(COMMITTED_WAIST, allow_pickle=False) as data:
         assert data["waist_range_deg"].shape == (3, 2)
+        np.testing.assert_array_equal(data["tip_offset_m"], rc.FINGER_BASE_OFFSET_M)
     # the lean reaches further forward, and keeps (almost) all of the waist-at-zero voxels
     assert env.bounding_box[1][0] - committed.bounding_box[1][0] >= 0.10
     idx = np.argwhere(committed.occupied)
@@ -188,12 +196,16 @@ def test_committed_waist_envelope_records_its_range_and_is_small(committed, comm
 
 def test_waist_file_sampled_points_are_inside(chain, committed_waist):
     _, positions = rc.sample_tip_positions(
-        chain, 5000, committed_waist.seed, waist_range=committed_waist.waist_range_deg
+        chain,
+        5000,
+        committed_waist.seed,
+        waist_range=committed_waist.waist_range_deg,
+        tip_offset_m=committed_waist.tip_offset_m,
     )
     assert committed_waist.contains_points(positions).all()
 
 
-def test_check_prints_the_waist_ranges_of_both_files():
+def test_check_prints_the_waist_ranges_and_the_tip_offset_of_both_files():
     for path, expected in (
         (COMMITTED, "yaw [0, 0], roll [0, 0], pitch [0, 0]; waist at zero"),
         (COMMITTED_WAIST, "yaw [-20, 20], roll [0, 0], pitch [0, 29.79]; waist sampled"),
@@ -206,6 +218,21 @@ def test_check_prints_the_waist_ranges_of_both_files():
         )
         assert "waist ranges (deg): " + expected in result.stdout
         assert "URDF limits yaw +-150, roll +-29.79, pitch +-29.79 deg" in result.stdout
+        assert "tip offset (0.0777, -0.0016, 0.0000) m" in result.stdout
+
+
+def test_script_tip_offset_flag_writes_the_offset(tmp_path):
+    out = tmp_path / "t.npz"
+    argv = ["--samples", "2000", "--seed", "4", "--tip-offset", "0.0777", "-0.0016", "0",
+            "--out", str(out)]
+    assert mre.main(argv) == 0
+    env = ReachabilityEnvelope.load(out)
+    assert env.tip_offset_m == rc.FINGER_BASE_OFFSET_M and env.waist_at_zero
+    in_memory = mre.generate(FIXTURE, samples=2000, seed=4, tip_offset_m=rc.FINGER_BASE_OFFSET_M)
+    assert env.same_as(in_memory)
+    origin = tmp_path / "o.npz"
+    assert mre.main(["--samples", "2000", "--seed", "4", "--out", str(origin)]) == 0
+    assert ReachabilityEnvelope.load(origin).tip_offset_m == (0.0, 0.0, 0.0)  # the default
 
 
 def test_script_waist_flags_write_the_clipped_range(tmp_path, capsys):
@@ -290,12 +317,39 @@ def test_analysis_core_writes_tables_and_a_figure(tmp_path, committed, committed
     # 2 stand-offs x 2 plate ys x 2 envelopes x (S1 to S4: 3 parts, S0: plate and slot) x 2 splits
     assert len(rows) - 1 == 2 * 2 * 2 * (4 * 3 + 2) * 2
     assert 10_000 < paths["figure"].stat().st_size < 300_000
-    # at the current constants the #48 envelope reaches none of the plate targets (#52's finding)
+    # at the 0.45 m stand-off of before D012 the waist-at-zero envelope reaches almost none of the
+    # plate targets: none with #48's palm link origin (#52's finding); with the finger-base point
+    # the committed files hold since #66, none of the first three seen draws and one of the first
+    # three unseen S1 and S4 draws
     pairs = analysis.grid[(0.45, 0.30)]
-    for scenario in ("S1", "S2", "S4"):
-        for split in ("seen", "unseen"):
+    expected = {"seen": (0.0, 0.0, 0.0), "unseen": (1 / 3, 0.0, 1 / 3)}
+    for split, fractions in expected.items():
+        for scenario, fraction in zip(("S1", "S2", "S4"), fractions, strict=True):
             r = pairs[(scenario, split)]
-            assert rga.episode_fraction(r.inside["waist0"], rga.PLATE_TARGETS[:3]) == 0.0
+            got = rga.episode_fraction(r.inside["waist0"], rga.PLATE_TARGETS[:3])
+            assert got == pytest.approx(fraction), (scenario, split)
+
+
+def test_the_point_sensitivity_resamples_the_point_the_envelopes_do_not_hold():
+    def small(offset):
+        return {
+            "waist0": mre.generate(FIXTURE, samples=500, seed=1, tip_offset_m=offset),
+            "waist": mre.generate(FIXTURE, samples=500, seed=1,
+                                  waist_range=rc.WAIST_ENVELOPE_RANGE_DEG, tip_offset_m=offset),
+        }
+
+    variant = {"pitch 0 to 15": ((0.0, 0.0), (0.0, 0.0), (0.0, 15.0))}
+    # the committed files hold the finger bases since #66: the sensitivity is the palm link origin
+    finger = rga.resampled_envelopes(small(rc.FINGER_BASE_OFFSET_M), waist_variants=variant)
+    assert set(finger) == {"palm-link point", "pitch 0 to 15"}
+    assert all(e.tip_offset_m == (0.0, 0.0, 0.0) for e in finger["palm-link point"].values())
+    assert finger["pitch 0 to 15"]["waist"].tip_offset_m == rc.FINGER_BASE_OFFSET_M
+    # #56's palm-link envelopes: the sensitivity is the finger bases, as in the committed doc
+    origin = rga.resampled_envelopes(small(None), waist_variants={})
+    assert set(origin) == {"finger-base point"}
+    assert all(
+        e.tip_offset_m == rc.FINGER_BASE_OFFSET_M for e in origin["finger-base point"].values()
+    )
 
 
 def test_committed_figure_is_under_300_kb():

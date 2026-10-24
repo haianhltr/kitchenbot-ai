@@ -12,6 +12,7 @@ import pytest
 
 from kitchenbot.controllers import reachability as rc
 from kitchenbot.controllers.reachability import ReachabilityEnvelope
+from kitchenbot.geometry import quat_apply
 from kitchenbot.robots import joint_maps as jm
 from kitchenbot.robots.kinematics import right_arm_chain
 
@@ -59,10 +60,21 @@ def test_committed_envelope_is_small_and_records_its_sampling(committed):
     assert committed.spacing == rc.VOXEL_SIZE_M == 0.02
     assert committed.wrist_margin_deg == rc.WRIST_MARGIN_DEG == 5.0
     assert (committed.frame, committed.tip_link) == ("pelvis", jm.PALM_LINKS["right"])
+    # the finger-base point of D012 (#66), recorded in the file; #48 sampled the link origin
+    assert committed.tip_offset_m == rc.FINGER_BASE_OFFSET_M == (0.0777, -0.0016, 0.0)
     assert "073aec51f548add65baf482ea8bb3be4cb81b7ad" in committed.joint_source
     with np.load(COMMITTED, allow_pickle=False) as data:
         assert {"packed", "origin", "spacing", "shape", "seed", "samples"} <= set(data.files)
         assert data["packed"].dtype == np.uint8
+        np.testing.assert_array_equal(data["tip_offset_m"], rc.FINGER_BASE_OFFSET_M)
+
+
+def test_finger_base_offset_is_the_mean_of_the_index_and_middle_finger_bases():
+    joints = {j["name"]: j for j in json.loads(FIXTURE.read_text(encoding="utf-8"))["joints"]}
+    bases = [joints[f"right_hand_{f}_0_joint"] for f in ("index", "middle")]
+    assert all(j["parent"] == jm.PALM_LINKS["right"] for j in bases)
+    mean = np.mean([j["origin_xyz"] for j in bases], axis=0)
+    np.testing.assert_allclose(rc.FINGER_BASE_OFFSET_M, mean, atol=1e-12)
 
 
 def test_committed_file_equals_a_fresh_generation_with_the_recorded_seed(committed):
@@ -72,19 +84,39 @@ def test_committed_file_equals_a_fresh_generation_with_the_recorded_seed(committ
         seed=committed.seed,
         spacing=committed.spacing,
         wrist_margin_deg=committed.wrist_margin_deg,
+        tip_offset_m=committed.tip_offset_m,
     )
     assert fresh.same_as(committed)
 
 
+def test_load_takes_the_name_of_a_committed_envelope(committed):
+    assert rc.ENVELOPE_PATHS == {"waist0": rc.DEFAULT_PATH, "waist": rc.WAIST_PATH}
+    assert ReachabilityEnvelope.load("waist0").same_as(committed)
+    assert ReachabilityEnvelope.load().same_as(committed)  # the default is waist0
+    assert ReachabilityEnvelope.load("waist").same_as(ReachabilityEnvelope.load(rc.WAIST_PATH))
+    assert ReachabilityEnvelope.resolve("waist") == rc.WAIST_PATH
+    assert ReachabilityEnvelope.resolve(str(COMMITTED)) == COMMITTED  # a path stays a path
+    with pytest.raises(FileNotFoundError):
+        ReachabilityEnvelope.load("waist1")  # not a name, so a (missing) relative path
+
+
 def test_fk_of_sampled_configurations_is_inside(chain, committed):
-    # the first draws of the recorded seed are the first configurations of the committed sample
-    q, positions = rc.sample_tip_positions(chain, 5000, committed.seed)
+    # the first draws of the recorded seed are the first configurations of the committed sample;
+    # the committed point is the finger bases, fixed in the palm link frame
+    offset = np.array(committed.tip_offset_m)
+    q, positions = rc.sample_tip_positions(
+        chain, 5000, committed.seed, tip_offset_m=committed.tip_offset_m
+    )
     for row, position in zip(q[:20], positions[:20], strict=True):
-        np.testing.assert_allclose(chain.fk(row)[0], position, atol=1e-12)
+        pos, quat = chain.fk(row)
+        np.testing.assert_allclose(pos + quat_apply(quat, offset), position, atol=1e-12)
     assert committed.contains_points(positions).all()
-    assert committed.contains(chain.fk(np.zeros(7))[0])
+    pos, quat = chain.fk(np.zeros(7))
+    assert committed.contains(pos + quat_apply(quat, offset))
     # configurations the envelope never saw: all but a sliver at the sparse boundary are inside
-    _, unseen = rc.sample_tip_positions(chain, 5000, committed.seed + 1)
+    _, unseen = rc.sample_tip_positions(
+        chain, 5000, committed.seed + 1, tip_offset_m=committed.tip_offset_m
+    )
     assert committed.contains_points(unseen).mean() > 0.995
 
 
@@ -93,7 +125,9 @@ def test_points_far_away_are_outside(committed):
         assert not committed.contains(p)
         assert not committed.margin_contains(p, 0.05)
     lo, hi = committed.bounding_box
-    assert np.all(hi - lo < 1.0)  # a 0.45 m arm cannot span a metre in any axis
+    # a 0.45 m arm plus 8 cm to the finger bases cannot span 1.1 m in any axis (#66: z spans
+    # 1.02 m, from 0.20 m below the pelvis to 0.82 m above)
+    assert np.all(hi - lo < 1.1)
 
 
 def test_sampling_bounds_take_the_wrist_margin_off_both_ends(chain):
