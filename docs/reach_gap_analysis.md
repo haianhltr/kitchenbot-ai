@@ -413,3 +413,25 @@ envelope the first refused target is in `pre_grasp`, `grasp` or `transport`, the
 0.1 to 12.5 cm outside it; with #59's rack frame in the fakes every transport and slot target is
 inside both envelopes and 15 / 50 seen and 36 / 50 unseen episodes keep every target inside the
 waist envelope. #67 moves the rim point; #16 measures the reach with the real IK.
+
+**Lean capped at the soft limit (#77, 2026-10-24).** D012 as amended caps the commanded lean at the
+soft limit of `waist_pitch_joint`, 0.468 rad = 26.81 deg (`robots.joint_limits.WAIST_LEAN_MAX_RAD`,
+0.9 of the 0.52 rad URDF limit), and the planner (#67), the training command (#68) and the waist
+envelope's pitch range now read that one constant. `right_arm_envelope_waist.npz` was regenerated
+with #66's seed 48, 8,000,000 samples, yaw ±20 deg and finger-base offset, only the pitch maximum
+changed from 29.79 to 26.81 deg (`py -3.12 scripts/make_reach_envelope.py --seed 48 --samples
+8000000 --waist-yaw-deg 20 --waist-pitch-min-deg 0 --waist-pitch-max-deg 26.814424812122528
+--tip-offset 0.0777 -0.0016 0`): 83,107 voxels, 0.665 m³, 7,274 B (2,081 of #66's 84,469 voxels
+gone, 719 new ones on the sparsely sampled boundary); the waist-zero file is unchanged. The same
+analysis command as in the #66 paragraph gives, at the 0.30 m stand-off with the 2 cm margin,
+`waist0 / waist`, seen then unseen, with the 29.8 deg envelope and then the 26.8 deg one: S2
+33 / 98 → 33 / 97 and 72 / 100 → 72 / 100; S4 all seven 20 / 96 → 20 / 92 and 80 / 100 →
+80 / 100 (still equal to the plate half). Only the seen split moves, by one S2 episode of 100 and
+two S4 episodes of 50; per waypoint over the ten pairs `pre_grasp` stays 54 / 100, `grasp` goes
+49 / 99 → 49 / 98 and `lift` 58 / 100 → 58 / 99; without the margin S2 stays 47 / 100 and
+84 / 100. The dry run (`scripts/evaluate.py --scenario dry`, 50 seeds per split, gate on) with
+`gate_envelope=waist` now passes 48 / 50 seen and 50 / 50 unseen, against 50 / 50 on both with the
+29.8 deg envelope: seeds 19 and 28 of the seen split are refused at `grasp`, the target 1.0 and
+0.4 cm outside the capped envelope and inside #66's. With `gate_envelope=waist0` it stays 13 / 50
+and 43 / 50, with the gate off 50 / 50. All of it is still forward kinematics without collision or
+palm orientation, an upper bound; #16 measures with the real IK.

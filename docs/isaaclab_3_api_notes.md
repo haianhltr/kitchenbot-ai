@@ -215,15 +215,18 @@ the sampling math is `locomotion/waist_lean_targets.py` (numpy, tested). Referen
 Reasons: the planner's arm target pipeline slews at 1 rad/s (`controllers/target_filter.py`) and
 #21 is to slew the lean command the same way, so a deployed lean does not jump; and the G1 waist actuator (`unitree.py:506-531`) has
 stiffness 5000 N·m/rad against an effort limit of 50 N·m (and 35 N·m in the URDF fixture), so a
-0.52 rad step demands 2,600 N·m and saturates the actuator for the whole transient. At 1 rad/s a
-full lean takes 0.52 s, inside the 1 s minimum between targets.
+0.468 rad step demands 2,340 N·m and saturates the actuator for the whole transient. At 1 rad/s a
+full lean takes 0.468 s, inside the 1 s minimum between targets.
 
 **Limits.** `G1_29DOF_CFG` sets `soft_joint_pos_limit_factor=0.9` (`unitree.py:446`), so the
-waist pitch soft limit is 0.468 rad, below the 0.52 rad command maximum (the URDF limit, D012).
+waist pitch soft limit is 0.468 rad. Since D012's amendment (2026-10-24, #69 finding E8) that is
+the command maximum: `waist_lean_targets.MAX_LEAN_RAD` reads `robots.joint_limits.WAIST_LEAN_MAX_RAD`
+(#77), the constant the planner (#67) and the waist envelope's pitch range read too; #68 had drawn
+targets up to the 0.52 rad URDF limit, a target at the hard stop.
 Nothing in the draft clips the command or the policy's targets to the soft limits
 (`JointAction.process_actions` clips only when `cfg.clip` is set,
-`source/isaaclab/isaaclab/envs/mdp/actions/joint_actions.py:169-178`), so a command of 0.52 rad
-is a target at the hard stop; the joint cannot overshoot it. `reset_joints_by_scale` would clamp to the
+`source/isaaclab/isaaclab/envs/mdp/actions/joint_actions.py:169-178`), so the largest command is a
+target at the soft limit, 0.052 rad short of the hard stop. `reset_joints_by_scale` would clamp to the
 soft limits (`events.py:1436-1437`) but its range is `(1.0, 1.0)` times a default of zero.
 
 ## 5. Observations
