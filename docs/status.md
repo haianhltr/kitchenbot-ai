@@ -3,7 +3,8 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56, #57, #58, #59 and #60 merged, D012 and D013 decided, Isaac Sim not yet installed. Actuals: those twenty issues
+#56, #57, #58, #59 and #60 merged, D012 and D013 decided, #66 to #71 open and in progress, Isaac
+Sim not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
 CI is green on `main`.
@@ -149,7 +150,14 @@ Recorded on #5, #6, #10, #11, #14, #16, #21.
 
 ## What is running
 
-No training run has started. Nothing is in progress: every remaining open issue needs Isaac Sim.
+No training run has started. Six no-simulation issues opened on 2026-10-24 after D012 and D013
+are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
+kb-controls), #67 (planner waist-lean command and the top-rim grasp frame, kb-manip), #68
+(waist pitch command in the stand environment drafts, kb-controls), #69 (contract audit with
+`tests/test_contracts.py`, kb-eval), #70 (plinth as a low cabinet, kb-sim), #71 (report and
+README, kb-eval). Every other open issue needs Isaac Sim. The director is pre-downloading the
+Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
+`C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
 
 #1 (the install) is on hold without `status:ready` until the operator reboots; #3 follows it.
 
@@ -169,4 +177,4 @@ No training run has started. Nothing is in progress: every remaining open issue 
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). Nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #66 to #71 nothing that does not need Isaac Sim is left; the next move is the operator's.
