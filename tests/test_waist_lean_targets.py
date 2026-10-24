@@ -5,7 +5,7 @@ import pytest
 
 from kitchenbot.locomotion import waist_lean_targets as wlt
 from kitchenbot.robots import joint_maps
-from kitchenbot.robots.joint_limits import WAIST_LIMITS
+from kitchenbot.robots.joint_limits import SOFT_LIMIT_FRACTION, WAIST_LEAN_MAX_RAD, WAIST_LIMITS
 
 DT = 0.02  # the policy step: decimation 4 at 200 Hz
 
@@ -15,8 +15,13 @@ def rng(seed: int = 0) -> np.random.Generator:
 
 
 def test_constants_match_d012_and_the_urdf():
-    assert wlt.MAX_LEAN_RAD == WAIST_LIMITS["waist_pitch_joint"].upper == 0.52
-    assert WAIST_LIMITS["waist_pitch_joint"].lower == -0.52  # the command never goes backward
+    # D012 as amended 2026-10-24 (#69 E8, #77): the lean is capped at the soft limit, 0.9 x the
+    # 0.52 rad URDF limit of waist_pitch_joint rounded to 3 decimals, the planner's constant
+    pitch = WAIST_LIMITS["waist_pitch_joint"]
+    assert wlt.MAX_LEAN_RAD == WAIST_LEAN_MAX_RAD == round(SOFT_LIMIT_FRACTION * pitch.upper, 3)
+    assert wlt.MAX_LEAN_RAD == 0.468 and pitch.upper == 0.52
+    assert wlt.MAX_LEAN_RAD < pitch.upper  # never a target at the hard stop
+    assert pitch.lower == -0.52  # the command never goes backward
     assert wlt.ZERO_SHARE == 0.5
     assert wlt.RESAMPLE_TIME_RANGE_S == (1.0, 3.0)
     assert wlt.MAX_RATE_RAD_S == 1.0
@@ -37,7 +42,7 @@ def test_targets_are_in_range_and_half_are_exactly_zero():
     zero_share = np.mean(targets == 0.0)
     assert abs(zero_share - 0.5) < 0.01  # 9 standard errors at this sample size
     lean = targets[targets > 0.0]
-    assert abs(lean.mean() - wlt.MAX_LEAN_RAD / 2) < 0.005  # uniform on [0, 0.52]
+    assert abs(lean.mean() - wlt.MAX_LEAN_RAD / 2) < 0.005  # uniform on [0, 0.468]
     assert lean.max() > 0.99 * wlt.MAX_LEAN_RAD and lean.min() < 0.01 * wlt.MAX_LEAN_RAD
     # uniform: each tenth of the range holds a tenth of the non-zero draws
     counts, _ = np.histogram(lean, bins=10, range=(0.0, wlt.MAX_LEAN_RAD))
@@ -74,7 +79,7 @@ def test_bad_sampling_arguments_are_rejected():
 
 def test_slew_moves_at_most_one_step_and_never_overshoots():
     command = np.array([0.0, 0.5, 0.3, 0.3, 0.0])
-    target = np.array([0.52, 0.0, 0.3, 0.31, 0.0])
+    target = np.array([0.468, 0.0, 0.3, 0.31, 0.0])
     out = wlt.slew_toward(command, target, 0.02)
     np.testing.assert_allclose(out, [0.02, 0.48, 0.3, 0.31, 0.0])
     assert np.all(np.abs(out - command) <= 0.02 + 1e-12)
@@ -96,12 +101,12 @@ def test_a_full_lean_takes_about_half_a_second():
     while command[0] < wlt.MAX_LEAN_RAD - 1e-9:
         command = wlt.slew_toward(command, np.full(1, wlt.MAX_LEAN_RAD), wlt.MAX_RATE_RAD_S * DT)
         steps += 1
-    assert steps == 26  # 0.52 rad at 1 rad/s = 0.52 s = 26 steps of 20 ms
+    assert steps == 24  # 0.468 rad at 1 rad/s = 0.468 s: 23 full steps of 20 ms and a partial one
     assert steps * DT < wlt.RESAMPLE_TIME_RANGE_S[0]  # the ramp ends before the next target
 
 
 def test_tracking_error_is_pitch_error_plus_yaw_and_roll():
-    pitch = np.array([0.2, 0.0, 0.52, 0.1])
+    pitch = np.array([0.2, 0.0, 0.52, 0.1])  # joint positions; 0.52 is the hard stop, not a command
     yaw = np.array([0.0, 0.1, -0.2, 0.0])
     roll = np.array([0.0, 0.0, 0.05, -0.3])
     command = np.array([0.2, 0.0, 0.0, 0.3])
@@ -111,7 +116,7 @@ def test_tracking_error_is_pitch_error_plus_yaw_and_roll():
 
 
 def test_tracking_error_is_zero_only_on_the_commanded_posture():
-    command = np.array([0.0, 0.3, 0.52])
+    command = np.array([0.0, 0.3, wlt.MAX_LEAN_RAD])
     zeros = np.zeros(3)
     assert np.all(wlt.tracking_error(command, zeros, zeros, command) == 0.0)
     # the old reward pulled the waist to zero even when a lean was commanded; this one does not
@@ -164,16 +169,16 @@ def test_resampling_interval_is_one_to_three_seconds(trace):
 
 
 def test_command_arrives_at_the_target_before_the_next_draw(trace):
-    """After 27 steps (0.54 s, one more than the longest ramp) the command equals its target, and
-    it is exactly 0.0 whenever that target is zero."""
+    """After 25 steps (0.50 s, one more than the longest ramp, 24 steps for 0.468 rad) the command
+    equals its target, and it is exactly 0.0 whenever that target is zero."""
     checked = zero_checked = 0
     for env in range(trace.resampled.shape[1]):
         draws = np.flatnonzero(trace.resampled[:, env])
         ends = list(draws[1:]) + [trace.command.shape[0]]
         for start, end in zip(draws, ends, strict=True):
-            for step in range(start + 27, end):
+            for step in range(start + 25, end):
                 assert abs(trace.command[step, env] - trace.target[step, env]) < 1e-12
-            if end > start + 27:
+            if end > start + 25:
                 checked += 1
                 if trace.target[start, env] == 0.0:
                     assert trace.command[end - 1, env] == 0.0
