@@ -37,13 +37,13 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P04 | M0 | kb-sim | Windows go/no-go gate: pretrained play and 100-iteration training run; record FPS and VRAM; decision comment | 3 | P01 | CP, gpu |
 | P28 | M0 | kb-sim | Provisional G1 Dex3 joint map and limits from the Unitree URDF; partition test; no simulation | 2 | — | |
 | P35 | M0 | kb-sim | Windows host check script with `-Fix` for long paths, git option and uv; no simulation | 2 | — | |
-| P05 | M1 | kb-controls | Stand environment: run and fix the P46 drafts in simulation; zero-agent and random-agent smoke | 4 | P03, P46 | CP |
-| P06 | M1 | kb-controls | Train lower-body policy v1; export TorchScript and joint manifest; S0 metrics | 8 | P05, P04 | CP, gpu |
+| P05 | M1 | kb-controls | Stand environment: run and fix the P46 drafts in simulation with the D012 waist pitch command added; zero-agent and random-agent smoke | 4 | P03, P46 | CP |
+| P06 | M1 | kb-controls | Train lower-body policy v1 with the commanded waist lean (D012); export TorchScript and joint manifest; S0 metrics | 8 | P05, P04 | CP, gpu |
 | P07 | M1 | kb-controls | Lower-body policy action-term wrapper; Agile checkpoint baseline wrapper; S0 comparison under pushes | 6 | P06 | CP |
 | P08 | M1 | kb-controls | Robustness test: scripted arm sweeps while standing; fall rate for own policy and Agile | 5 | P07 | |
 | P46 | M1 | kb-controls | Stand environment drafts and the Isaac Lab 3.0 API notes, written against the v3.0.0 source; no simulation | 4 | — | |
 | P09 | M2 | kb-sim | Plate asset: drop test of the P30 meshes, `plate_cfg.py` factory, YCB check | 2 | P03, P30 | |
-| P10 | M2 | kb-sim | Run and fix the P59 scene config draft: P47 counter and floor layers with the robot | 2 | P03, P47, P59 | |
+| P10 | M2 | kb-sim | Run and fix the P59 scene config draft: P47 counter and floor layers with the robot at the D012 stand-off; plinth dressed as a low cabinet (D013) | 2 | P03, P47, P59 | |
 | P11 | M2 | kb-sim | Articulated dishwasher: run and fix the P59 ArticulationCfg and overrides layer on the ArtVIP twin, else author USD; door and rack joints, attach the P47 tines to the rack link, door open and rack out by default | 5 | P10, P29, P47, P59 | |
 | P12 | M2 | kb-sim | Articulated cabinets from ArtVIP or MolmoSpaces as scene dressing; full kitchen composition; load time and FPS check | 5 | P11 | |
 | P13 | M2 | kb-sim | Scene randomization event terms wrapping the P52 sampler | 2 | P09, P11, P52 | |
@@ -52,9 +52,9 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P47 | M2 | kb-sim | Rack tines, counter and floor as procedural USD; kitchen dimensions and slot poses in one module; no simulation | 4 | P29, P30 | |
 | P52 | M2 | kb-sim | Seeded randomization sampler for `docs/evaluation.md` section 2 and the ten eval YAMLs; no simulation | 3 | P23, P47 | |
 | P59 | M2 | kb-sim | Untested drafts of the dishwasher ArticulationCfg, a usd-core overrides layer, the kitchen InteractiveSceneCfg and the load_kitchen smoke; dishwasher pose constant; no simulation | 3 | P29, P46, P47 | |
-| P14 | M3 | kb-controls | Right-arm DifferentialIK term on the P48 pipeline, left-arm posture term, waist hold; fixed pelvis; S1 fixed-base | 5 | P03, P48 | |
+| P14 | M3 | kb-controls | Right-arm DifferentialIK term on the P48 pipeline with the finger-base `body_offset` (D012), left-arm posture term, waist hold; fixed pelvis; S1 fixed-base | 5 | P03, P48 | |
 | P15 | M3 | kb-controls | Composite environment: lower-body policy plus arm IK plus hand term; pelvis-frame target transform; S1 with balance | 8 | P07, P14 | CP |
-| P16 | M3 | kb-controls | Validate the P48 and P56 envelopes against the real IK; decide the waist range; `ik_infeasible` tagging; S1 seen and unseen | 4 | P15, P48, P56 | |
+| P16 | M3 | kb-controls | Validate the P48 and P56 envelopes against the real IK at the D012 stand-off; decide the waist range, confirm 0.30 m or fall back to 0.25 m; `ik_infeasible` tagging; S1 seen and unseen | 4 | P15, P48, P56 | |
 | P48 | M3 | kb-controls | Right-arm target slew filter, URDF forward kinematics, sampled reachability envelope, pelvis-frame transform; no simulation | 4 | P28, P42, P43 | |
 | P56 | M3 | kb-controls | Reach-gap analysis: waist-range envelope against the plate and slot targets of the eval splits, with a recommendation for the stand-off and the waist range; no simulation | 2 | P48, P52 | |
 | P17 | M4 | kb-manip | Wire the P58 KinematicFollowHand to the plate rigid body; S2 fixed-base baseline | 4 | P09, P14, P42, P58 | |

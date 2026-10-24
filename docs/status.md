@@ -3,7 +3,7 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56, #57, #58, #59 and #60 merged, Isaac Sim not yet installed. Actuals: those twenty issues
+#56, #57, #58, #59 and #60 merged, D012 and D013 decided, Isaac Sim not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
 CI is green on `main`.
@@ -89,12 +89,12 @@ CI is green on `main`.
 - Reach-gap analysis `docs/reach_gap_analysis.md` with `scripts/reach_gap_analysis.py` (#56): the
   planner's waypoints for every committed seed of the ten (scenario, split) pairs against both
   envelopes, per stand-off and plate position, with the figure `docs/figures/reach_gap.png`. The
-  result is the operator decision below.
+  result is D012 (section below).
 - Dry run `evaluation/dry_run.py` (#60): scenario `dry` runs the whole chain on CI without a
   simulator (eval YAML → sampler → planner against the fakes behind the arm target pipeline →
   judges → result JSON → figures), marked synthetic so it can never enter `docs/experiments.md`.
-  With the reachability gate on and today's constants every episode ends `ik_infeasible` (the reach
-  gap as a number); with `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by
+  With the reachability gate on (waist-zero envelope, palm-link point, 0.30 m stand-off since D012)
+  every episode still ends `ik_infeasible`, the reach gap as a number until #14 and #16; with `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by
   construction. It is the template of a `ScenarioBackend` for #21 and #22 (note on #22).
 - Stand environment drafts for #5: `locomotion/stand_env_cfg.py`, `commands.py`,
   `upper_body_action.py`, `rewards.py`, `curriculums.py`, `agents/rsl_rl_ppo_cfg.py`,
@@ -121,31 +121,31 @@ CI is green on `main`.
   queue #27, and no-simulation issues #28, #29, #30, #35, #40, #42, #43, #46 to #49, #52 and #56
   to #60 added so work continued before the install.
 
-## Decision waiting on the operator: stand-off and waist lean (measured, not decided)
+## Decided on 2026-10-23: stand-off, waist lean, IK point, raised dishwasher (D012, D013)
 
-With today's constants (robot 0.45 m from the counter edge, plate box centred 0.30 m into the
-counter) no S1, S2 or S4 plate target is inside the right palm's reach, with the waist at zero or
-leaning: 0 % of 700 sampled episodes (`docs/reach_gap_analysis.md`, forward kinematics only, no
-collision, no palm orientation, so an upper bound). Neither knob alone closes the gap; the slot
-side is fine since #59 (every slot reachable without a lean at any stand-off up to 0.40 m).
+From the #56 analysis (`docs/reach_gap_analysis.md`: forward kinematics only, no collision, no
+palm orientation, so an upper bound) the operator chose the lower-risk row:
 
 | stand-off | waist at zero | commanded lean up to 29.8 deg |
 | --- | --- | --- |
-| 0.45 m (today) | S2 0 / 0 | S2 0 / 30 |
-| 0.30 m | S2 2 / 30 | S2 73 / 96 (98 / 100 if the IK point is the finger bases) |
-| 0.25 m | S2 21 / 58 | S2 97 / 100 |
+| 0.45 m (before) | S2 0 / 0 | S2 0 / 30 |
+| **0.30 m (now)** | S2 2 / 30 | S2 73 / 96, **98 / 100 with the IK point at the finger bases** |
+| 0.25 m (fallback) | S2 21 / 58 | S2 97 / 100 |
 
 (seen / unseen percent of S2 episodes with every waypoint reachable, 2 cm margin.)
 
-The recommendation on the table: `ROBOT_STANDOFF_M` 0.45 → 0.25 m and a commanded forward waist
-lean during pre-grasp, grasp and lift, upright again from the counter-edge waypoint on; plate box
-unchanged (moving it closer puts a quarter of the unseen 27 cm plates past the counter edge). Costs:
-the balance policy must be trained with a waist pitch command (0 to 0.52 rad) it does not have
-yet (#5, #6); the torso-to-counter gap shrinks to an estimated 5 cm when leaning at 0.25 m (#10
-measures, the URDF has no collision meshes); at the pitch limit the policy has no margin left to
-counter-lean. The alternative with less balance risk is 0.30 m plus the IK point at the finger
-bases (#14) plus the lean. Until the operator decides, the constants stay and the dry run with the
-gate on fails every episode as `ik_infeasible`. Recorded on #5, #6, #10, #14, #16, #21.
+`ROBOT_STANDOFF_M` is 0.30 m (constant and test changed; everything else reads it). The lower-body
+policy takes a commanded forward waist pitch of 0 to 0.52 rad from its first training run (#5,
+#6); the planner commands the lean during pre-grasp, grasp and lift and zero again from the
+counter-edge waypoint on (#21); #14 puts the IK `body_offset` at the finger bases, (0.0777,
+-0.0016, 0) m in the palm link frame. 0.25 m is the fallback if #14 and #16 measure short, and
+#16 says so with numbers before any constant moves again; the plate box stays. The compact
+dishwasher stays raised on its 0.55 m plinth beside the counter (D013); #10 dresses the plinth as
+a low cabinet with a door front in the counter's colour, and `DISHWASHER_POSE_KITCHEN` holds at
+either stand-off (the lateral clearance to the right leg does not depend on it). Until #16, the
+committed envelopes and the dry run's gate still use the palm-link point with the waist at zero,
+so the gate-on dry run still fails every episode as `ik_infeasible` at 0.30 m, as the tests pin.
+Recorded on #5, #6, #10, #11, #14, #16, #21.
 
 ## What is running
 
@@ -164,12 +164,6 @@ No training run has started. Nothing is in progress: every remaining open issue 
 4. Read the MolmoSpaces dataset card's licence wording ("research and educational use" on top of
    CC BY 4.0) and say whether its two static filler assets may appear in the portfolio video; they
    are optional (D011).
-5. Decide the stand-off and the waist lean (section above): adopt 0.25 m plus the lean, 0.30 m plus
-   the finger-base IK point plus the lean, or wait for #10 and #14 to measure in simulation first.
-   The director changes the constants and records the decision in `docs/decisions.md` on your word.
-6. Say whether a compact dishwasher raised on a plinth beside the counter is acceptable for the
-   portfolio scene (#59, a concession to the arm's reach: an under-counter dishwasher's lower rack
-   is 0.35 to 0.40 m below the pelvis, where the arm cannot go without stepping or crouching).
 
 ## Next critical step
 

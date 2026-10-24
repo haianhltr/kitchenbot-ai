@@ -133,8 +133,8 @@ with these changes:
 | Action | legs and waist, 15 position targets, scale 0.25 around the default pose |
 | Upper body during training | `UpperBodyCommand`, a `CommandTerm` with `resampling_time_range` 1 to 3 s, samples arm and hand targets inside joint limits and interpolates linearly; a `CurriculumTerm` scales the sampling range from 0.2 to 1.0 of the joint range as the fall rate drops; 20 percent of episodes instead command a slow reach of the right arm into the front workspace. `UpperBodyFollowAction` applies the targets |
 | Observations | base angular velocity (3), projected gravity (3), velocity command (3), leg and waist joint positions and velocities relative to default (30), last action (15), arm and hand joint positions and velocities (56), arm and hand target positions (28); 5-frame history |
-| Commands | planar velocity in [-0.3, 0.3] m/s and yaw rate in [-0.3, 0.3] rad/s, with 60 percent of episodes at exactly zero (standing) |
-| Rewards | tracking of linear and angular velocity, base height around 0.75 m, flat orientation, waist deviation from zero, penalties on joint torques, joint accelerations, action rate, feet slip, undesired contacts of knees and torso; standing-specific bonus for feet staying planted when the command is zero |
+| Commands | planar velocity in [-0.3, 0.3] m/s and yaw rate in [-0.3, 0.3] rad/s, with 60 percent of episodes at exactly zero (standing); forward waist pitch in [0, 0.52] rad (D012: the planner's lean for pre-grasp, grasp and lift), resampled every 1 to 3 s and zero in half of the episodes |
+| Rewards | tracking of linear and angular velocity, base height around 0.75 m, flat orientation, waist deviation from its command (zero unless commanded, D012), penalties on joint torques, joint accelerations, action rate, feet slip, undesired contacts of knees and torso; standing-specific bonus for feet staying planted when the command is zero |
 | Terminations | torso or pelvis contact with the ground, tilt over 60 degrees, timeout at 20 s |
 | Domain randomization | friction 0.6 to 1.0, added base mass -1 to +3 kg, random pushes 10 to 30 N every 3 s, actuator gain scale 0.9 to 1.1 |
 | Algorithm | RSL-RL PPO, actor and critic MLP [256, 128, 128], 1,500 iterations as a first budget, 24 steps per env |
@@ -275,7 +275,7 @@ dishwasher without cabinets for speed.
 
 Authored geometry exists since #47, without a simulator. `scene/kitchen_dims.py` holds every
 authored dimension (counter 0.90 m high, 0.60 m deep, 1.8 m wide with a 0.45 x 0.40 m sink, robot
-stand-off 0.45 m; each marked with its source or `provisional`) and `RackSlotLayout`, whose
+stand-off 0.30 m, D012, from #10's 0.45 m; each marked with its source or `provisional`) and `RackSlotLayout`, whose
 `slot_pose(i)` is the planner's slot pose in the rack frame: `x` across the tines, `y` along the two
 tine rows, `z` up, origin at the centre of the base frame's underside, slot 3 of 5 at `x = 0`, pose
 height at the top of the tines. `scripts/make_counter_usd.py` and `scripts/make_rack_tines_usd.py`

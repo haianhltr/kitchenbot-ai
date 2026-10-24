@@ -387,3 +387,9 @@ the judges' 15 cm, so `plan_waypoints` now aims the lift waypoint one position t
 a few cells of the tables above move by 1 to 2 points (for example the lift column at the 0.25 m
 stand-off 44 / 98 to 43 / 98); no recommendation changes. The committed tables are kept as
 generated for #56; the re-run outputs are in the director's scratch space only.
+
+**Decision (D012, 2026-10-23).** The operator chose the lower-risk row: stand-off 0.30 m with the
+commanded lean and the IK point at the finger bases (98 / 100 on paper), 0.25 m as the fallback if
+#14 and #16 measure short in simulation, the plate box unchanged. `kitchen_dims.ROBOT_STANDOFF_M`
+is 0.30 m from that date; the tables above were generated at 0.45 m and 0.25 m and are kept as
+generated. The balance policy takes the waist pitch command from its first training run (#5, #6).

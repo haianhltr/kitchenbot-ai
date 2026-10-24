@@ -93,3 +93,40 @@ filler, dropped if the operator reads the licence wording as restrictive.
 Consequences: #11 is a wrapping job (7 hours) rather than authoring from scratch; architecture
 section 10a and issue #11 now say 0.2 m; one licence line for the operator to read before the demo
 video uses a MolmoSpaces asset.
+
+## D012 — Stand-off 0.30 m with a commanded waist lean and the IK point at the finger bases (2026-10-23)
+
+Context: #56's reach-gap analysis (forward kinematics against both envelopes, no collision, no palm
+orientation) found no S1, S2 or S4 plate target inside the right palm's reach at the 0.45 m
+stand-off, leaning or not, and neither the stand-off nor the lean alone closes the gap. On paper,
+0.25 m with a lean gives S2 97 / 100 (seen / unseen) with the torso about 5 cm from the counter
+edge; 0.30 m with the lean and the IK's controlled point at the finger bases gives 98 / 100 with
+about 10 cm. The slot side is reachable without a lean at either stand-off since #59.
+Decision: `ROBOT_STANDOFF_M` is 0.30 m. The lower-body policy is trained from v1 with a commanded
+forward waist pitch in [0, 0.52] rad (#5, #6; this extends D006), the planner commands the lean
+during pre-grasp, grasp and lift and zero again from the counter-edge waypoint on (#21), and #14
+sets the IK `body_offset` to (0.0777, -0.0016, 0) m in the palm link frame, the mean of the index
+and middle finger bases. 0.25 m is the fallback, taken only if #14 and #16 measure short in
+simulation, and #16 reports the numbers before any constant moves again. The plate box stays
+(moving it closer puts a quarter of the unseen 27 cm plates past the counter edge).
+Consequences: one constant and its test changed. The committed envelopes and the dry run's gate
+still describe the palm-link point with the waist at zero until #16, so the gate-on dry run still
+ends every episode `ik_infeasible` at 0.30 m and the tests pin that; it is the number #16 is
+expected to move. #10 measures the torso-to-counter gap when leaning (the URDF has no collision
+meshes). The balance policy has one more command dimension and a waist tracking reward instead of
+a zero-waist reward.
+
+## D013 — Compact dishwasher raised on a plinth, dressed as a low cabinet (2026-10-23)
+
+Context: an under-counter dishwasher's lower rack sits 0.35 to 0.40 m below the pelvis, where the
+arm cannot go without stepping or crouching (#56, #59). #59 placed ArtVIP `dishwasher_2` on a
+0.55 m plinth to the robot's right, 0.35 m laterally because the open door and the pulled-out rack
+must clear the right leg; there every slot is reachable without a lean at stand-offs up to 0.40 m.
+A raised dishwasher is a real kitchen arrangement (a compact unit on a base cabinet, or an
+ergonomic raised installation); a bare box under it reads as a prop.
+Decision: the raised compact unit stays, pose `DISHWASHER_POSE_KITCHEN`, plinth height 0.55 m,
+which holds at either stand-off. #10 dresses the plinth as a low cabinet: a static box with a door
+front in the counter's colour, nothing articulated (D009's cabinets-as-dressing rule). A full-size
+unit loaded through its upper rack is not pursued.
+Consequences: no change to the frame math or the slot poses; #10 gains a small dressing task; the
+demo video script (#49) presents the scene as a raised dishwasher.

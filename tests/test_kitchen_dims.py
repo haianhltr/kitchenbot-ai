@@ -22,7 +22,7 @@ def test_module_uses_the_standard_library_only():
 def test_counter_numbers_come_from_issue_10():
     assert kd.COUNTER_HEIGHT_M == 0.90
     assert kd.COUNTER_DEPTH_M == 0.60
-    assert kd.ROBOT_STANDOFF_M == 0.45
+    assert kd.ROBOT_STANDOFF_M == 0.30  # D012: from #10's 0.45 m
     assert kd.COUNTER_WIDTH_M > 4 * 0.20  # room for the 20 cm plate box, the sink and a gap
 
 

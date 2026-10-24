@@ -42,7 +42,10 @@ COUNTER_HEIGHT_M = 0.90  # #10: "counter 0.9 m high"; the counter-top face is at
 COUNTER_DEPTH_M = 0.60  # #10: "0.6 m deep"
 COUNTER_WIDTH_M = 1.80  # provisional: room for the sink and the 20 cm x 20 cm plate box
 COUNTER_TOP_THICKNESS_M = 0.04  # provisional: the top slab, the layer the counter-top face closes
-ROBOT_STANDOFF_M = 0.45  # #10: "robot 0.45 m from the counter edge"
+# D012 (2026-10-23): 0.30 m, from #10's 0.45 m, after the #56 reach-gap analysis; paired with a
+# commanded waist lean and the IK point at the finger bases (#14); 0.25 m is the fallback if #14
+# and #16 measure short in simulation. The dishwasher pose below holds at either stand-off.
+ROBOT_STANDOFF_M = 0.30
 
 # Sink: a rectangular basin recessed into the counter top. The opening is centred in depth
 # (SINK_CENTRE_Y_M = COUNTER_DEPTH_M / 2), offset to the left so the plate box and the dishwasher
