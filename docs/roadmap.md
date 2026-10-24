@@ -9,13 +9,13 @@ reported per run in `docs/experiments.md` and is not estimated here.
 | Milestone | Owner | Hours | Exit criterion |
 | --- | --- | --- | --- |
 | M0 Environment | kb-sim | 15 | Windows go/no-go gate passed or Ubuntu fallback decided; G1 Dex3 joint map committed; CI green |
-| M1 Standing | kb-controls | 29 | Own lower-body policy meets S0 targets under pushes and scripted arm sweeps; Agile baseline measured alongside |
+| M1 Standing | kb-controls | 31 | Own lower-body policy meets S0 targets under pushes and scripted arm sweeps; Agile baseline measured alongside |
 | M2 Kitchen | kb-sim | 32 | Full kitchen loads with robot and plate; dishwasher door and rack articulate; randomization terms exist |
 | M3 Reaching | kb-controls | 25 | S1 targets met with balance policy active, seen and unseen |
 | M4 Grasping | kb-manip | 32 | S2 targets met with Dex3 or the Dex1 fallback decision recorded |
 | M5 Placement | kb-manip | 19 | S4 runs end to end with automatic success detection |
-| M6 Evaluation | kb-eval | 26 | All deliverables in `docs/evaluation.md` section 8 checked |
-| **Total** | | **178** | no unallocated buffer; actuals in `docs/status.md` are running far under estimate |
+| M6 Evaluation | kb-eval | 28 | All deliverables in `docs/evaluation.md` section 8 checked |
+| **Total** | | **182** | no unallocated buffer; actuals in `docs/status.md` are running far under estimate |
 
 Stretch, outside the 150 hours: **M3b** learned right-arm policy replacing DifferentialIK behind the
 same interface, then imitation learning from the scripted planner.
@@ -23,10 +23,11 @@ same interface, then imitation learning from the scripted planner.
 ## Issue plan
 
 Planning IDs map one to one onto GitHub issue numbers: P01 is #1, P26 is #26, and the pinned GPU
-queue is #27 (P27 is unused). P28, P29, P30, P35, P40, P42, P43, P46 to P49, P52, P56 to P60 and
-P66 to P71 were added on 2026-10-23 and 2026-10-24 as no-simulation work that ran while the Isaac
-Sim install waited on the operator's reboot (P31 to P34, P36 to P39, P41, P44, P45, P50, P51, P53
-to P55 and P61 to P65 are unused: those numbers went to pull requests). `CP` marks the critical path, labelled `milestone-blocker`. "After" lists hard
+queue is #27 (P27 is unused). P28, P29, P30, P35, P40, P42, P43, P46 to P49, P52, P56 to P60,
+P66 to P71, P77 and P78 were added on 2026-10-23 and 2026-10-24 as no-simulation work that ran
+while the Isaac Sim install waited on the operator's reboot (P31 to P34, P36 to P39, P41, P44,
+P45, P50, P51, P53 to P55, P61 to P65 and P72 to P76 are unused: those numbers went to pull
+requests). `CP` marks the critical path, labelled `milestone-blocker`. "After" lists hard
 dependencies, mirrored as "Blocked by" in each issue.
 
 | ID | Milestone | Owner | Title | Hours | After | Flags |
@@ -43,6 +44,7 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P08 | M1 | kb-controls | Robustness test: scripted arm sweeps while standing; fall rate for own policy and Agile | 5 | P07 | |
 | P46 | M1 | kb-controls | Stand environment drafts and the Isaac Lab 3.0 API notes, written against the v3.0.0 source; no simulation | 4 | — | |
 | P68 | M1 | kb-controls | Waist pitch command term, observation and tracking reward in the stand environment drafts (D012); no simulation | 2 | P46 | |
+| P77 | M1 | kb-controls | Lean capped at the 0.468 rad soft limit (D012 amended): command term, waist envelope regenerated, pins; no simulation | 2 | P66, P67, P68 | |
 | P09 | M2 | kb-sim | Plate asset: drop test of the P30 meshes, `plate_cfg.py` factory, YCB check | 2 | P03, P30 | |
 | P10 | M2 | kb-sim | Run and fix the P59 scene config draft: P47 counter and floor layers with the robot at the D012 stand-off and the P70 cabinet spawned by `cabinet_cfg()` | 2 | P03, P47, P59, P70 | |
 | P11 | M2 | kb-sim | Articulated dishwasher: run and fix the P59 ArticulationCfg and overrides layer on the ArtVIP twin, else author USD; door and rack joints, attach the P47 tines to the rack link, door open and rack out by default | 5 | P10, P29, P47, P59 | |
@@ -80,16 +82,17 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P60 | M6 | kb-eval | Dry-run scenario on CI: eval YAML, sampler, planner with fakes, judges, result JSON, figures; no simulation | 3 | P57 | |
 | P69 | M6 | kb-eval | Contract audit across planner, judges, dry run, sampler, YAMLs and schema, with `tests/test_contracts.py`; no simulation | 2 | P60 | |
 | P71 | M6 | kb-eval | Report and README: the reach gap found before the simulator; no simulation | 2 | P49, P56 | |
+| P78 | M6 | kb-eval | Evaluator contract fixes from the P69 audit: num_envs from the YAML, fixed-pelvis S2 and S3 configs, fake completion time, judges comments; no simulation | 2 | P60, P69 | |
 
 Plus one pinned issue, **GPU queue**, which is a lock, not work.
 
-Hours by owner: kb-sim 47, kb-controls 54, kb-manip 51 (45 without the conditional P19), kb-eval 26.
+Hours by owner: kb-sim 47, kb-controls 56, kb-manip 51 (45 without the conditional P19), kb-eval 28.
 
 ## Week plan (20 hours per week)
 
 | Week | Focus | Issues |
 | --- | --- | --- |
-| 1 | Environment gate, scaffolding, asset load; no-simulation work while the install waits | P01 P02 P03 P04 P28 P29 P30 P35, P23 P24 P40, P42 P43 P46 P47 P48 P49 P52 P56 P57 P58 P59 P60 P66 P67 P68 P69 P70 P71, start P05 |
+| 1 | Environment gate, scaffolding, asset load; no-simulation work while the install waits | P01 P02 P03 P04 P28 P29 P30 P35, P23 P24 P40, P42 P43 P46 P47 P48 P49 P52 P56 P57 P58 P59 P60 P66 P67 P68 P69 P70 P71 P77 P78, start P05 |
 | 2 | First policy training; plate and counter | P05 P06, P09 P10 |
 | 3 | Policy wrapper and robustness; dishwasher; arm IK fixed-base; evaluator | P07 P08, P11, P14, P23 |
 | 4 | Composite env with balance; cabinets; kinematic grasp | P15, P12 P13, P17 |
