@@ -1,6 +1,6 @@
 """Observation layout of the balance policy, as data (docs/architecture.md section 6; #46).
 
-One frame is the nine terms below, concatenated in this order; the policy sees ``HISTORY_LENGTH``
+One frame is the ten terms below, concatenated in this order; the policy sees ``HISTORY_LENGTH``
 frames. The environment draft (``stand_env_cfg.py``) builds its observation group from this table,
 and #6 writes the same table into the export manifest so the deployment wrapper and a future
 real-robot bridge read the same layout.
@@ -48,6 +48,9 @@ FRAME_TERMS: tuple[ObsTerm, ...] = (
     ObsTerm("base_ang_vel", 3, "mdp.base_ang_vel (base frame, rad/s)"),
     ObsTerm("projected_gravity", 3, "mdp.projected_gravity (base frame, unit vector)"),
     ObsTerm("velocity_commands", 3, "mdp.generated_commands('base_velocity'): vx, vy, wz"),
+    ObsTerm(
+        "waist_lean_command", 1, "mdp.generated_commands('waist_lean'): forward pitch, rad"
+    ),
     ObsTerm("lower_joint_pos", 15, "mdp.joint_pos_rel (minus default pose)", LOWER_BODY_JOINTS),
     ObsTerm("lower_joint_vel", 15, "mdp.joint_vel_rel", LOWER_BODY_JOINTS),
     ObsTerm("last_action", 15, "mdp.last_action (raw policy action)", LOWER_BODY_JOINTS),
@@ -58,7 +61,7 @@ FRAME_TERMS: tuple[ObsTerm, ...] = (
     ),
 )
 
-#: Values in one frame: 3 + 3 + 3 + 15 + 15 + 15 + 28 + 28 + 28.
+#: Values in one frame: 3 + 3 + 3 + 1 + 15 + 15 + 15 + 28 + 28 + 28.
 FRAME_DIM: int = sum(term.dim for term in FRAME_TERMS)
 
 #: Values in the flattened history the actor and critic receive.
