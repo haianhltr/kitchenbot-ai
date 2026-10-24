@@ -131,6 +131,55 @@ This report describes a simulated Unitree G1 humanoid that stands on a balance p
 <!-- TODO(#9): the plate asset and its drop test -->
 <!-- TODO(#13): the randomization terms and the frozen seed splits -->
 
+### Reach-gap analysis before the simulator
+
+Everything in this subsection was computed on paper, not measured in simulation. Isaac Sim was not installed when the work was done. No number below was printed by `scripts/evaluate.py`, so none of it is a result and none of it is in [experiments.md](experiments.md). The question was whether the right hand can reach the plates the planner will ask for. The answer comes from the robot's URDF and the planner's own waypoints, before any controller existed. Sources: [reach_gap_analysis.md](reach_gap_analysis.md) (#56), [decisions.md](decisions.md) (D012, D013) and the issues named in parentheses.
+
+**What was computed (#56).**
+
+- **Two reach envelopes** of the right palm, meaning the origin of `right_hand_palm_link` in the pelvis frame, from forward kinematics of Unitree's `g1_29dof_with_hand_rev_1_0.urdf`. The seven right-arm joints are drawn uniformly inside their limits with the 5 degree wrist margin of architecture section 7. The reachable points are stored as 2 cm voxels. One envelope holds the waist at zero (2,000,000 samples, #48). The other samples the waist: forward pitch 0 to 29.79 deg (the URDF limit), yaw ±20 deg, roll 0 (8,000,000 samples, #56).
+- **The planner's own waypoints** (`plan_waypoints` with the default `PlannerConfig`, #43) for the 700 committed episodes of the ten (scenario, split) pairs, S0 to S4, seen and unseen, drawn by the seeded sampler (#52). Each waypoint was put in the pelvis frame, with the pelvis 0.75 m above the floor and a chosen stand-off between the pelvis and the counter's front edge.
+- **The test.** An episode counts as reachable only if every waypoint of its set lies inside the envelope with a 2 cm margin. The set for S2, grasp and lift, is `pre_grasp`, `grasp` and `lift`.
+
+**The gap in metres.** At the 0.45 m stand-off of the original design, the grasp points lie 0.52 to 0.77 m ahead of the pelvis in the seen split and 0.45 to 0.68 m in the unseen split, all 0.17 m above it. At that height, 2 cm inside the boundary and 5 to 25 cm to the right of the pelvis, the palm reaches 0.36 to 0.38 m forward with the waist at zero and 0.50 to 0.53 m with the waist sampled. With the waist at zero, which is the envelope the arm target pipeline loads (#48), 0 percent of the S1, S2 and S4 plate episodes had every waypoint reachable at 0.45 m, seen or unseen. With the lean, 0 to 3 percent of the seen episodes and 30 to 42 percent of the unseen ones were reachable there; the unseen plate box is 5 cm closer to the robot.
+
+**The stand-off table.** S2 episodes with every waypoint reachable, in percent, seen / unseen (100 and 50 seeds), 2 cm margin. Source: the S2 sensitivity table of [reach_gap_analysis.md](reach_gap_analysis.md).
+
+| Stand-off | Waist at zero | Lean | Lean, IK point at the finger bases |
+| --- | --- | --- | --- |
+| 0.45 m (original design) | 0 / 0 | 0 / 30 | 29 / 60 |
+| 0.30 m (D012) | 2 / 30 | 73 / 96 | 98 / 100 |
+| 0.25 m (D012 fallback) | 21 / 58 | 97 / 100 | 100 / 100 |
+
+*Waist at zero* is the #48 envelope. *Lean* is the #56 envelope, the union over waist postures from upright to 29.79 deg of forward pitch; one held posture of 29.8 deg scores 69 / 94 at 0.30 m. The last column re-samples the lean envelope for a point 7.8 cm along the palm link, the mean of the index and middle finger base joints, where the rim sits in a Dex3 grasp; #14 is to set the IK's controlled point there. No single change closes the gap. At 0.30 m the lean alone gives 73 / 96 and the finger-base point with the waist at zero gives 33 / 72. Moving the plate box 5 cm closer buys what 5 cm of stand-off buys and puts 24 percent of the unseen 27 cm plates past the counter's front edge, so the box stayed.
+
+![Reach envelopes with the plate targets, and S2 against stand-off](figures/reach_gap.png)
+
+Figure, from `scripts/reach_gap_analysis.py` (#56), computed on paper. Left: side slice of both envelopes at pelvis y = -0.15 m, with the S2 and S4 plate targets at the 0.45 m stand-off (hollow) and the 0.25 m stand-off (filled). Middle: slice at the grasp height with the grasp points. Right: S2 against stand-off for both envelopes, seen and unseen. It was drawn before D012, so the targets are drawn at 0.45 and 0.25 m, not at the chosen 0.30 m.
+
+**What the analysis changed.**
+
+- **Slot side (#59, D013).** The first rack pose derived from the architecture, a floor-standing dishwasher under the counter on the right, was out of reach at every stand-off from 0.25 to 0.45 m and in both envelopes: S3 0 / 0 percent. The slot entries need the rack base 0.5 to 0.7 m above the floor and within about 0.25 m to the right of the pelvis. #59 put the compact ArtVIP `dishwasher_2` on a 0.55 m plinth to the robot's right, with the slot entries 0.74 m above the floor and 0.35 m to the right, because the open door and the pulled-out rack must clear the right leg. At that pose the S3 slot targets are 100 / 100 percent reachable at 0.25 to 0.40 m in both envelopes, and with the waist at zero 92 / 100 at 0.45 m. D013 keeps the raised unit. A compact unit on a base cabinet is a real arrangement. #10 dresses the plinth as a low cabinet. A full-size unit loaded through its upper rack is not pursued. The pose is still a paper result; #11 checks it against the loaded asset.
+- **Plate side (D012).** On paper, 0.25 m with the lean gives S2 97 / 100 with the torso about 5 cm from the counter's front edge in the worst case. 0.30 m with the lean and the IK point at the finger bases gives 98 / 100 with about 10 cm. The operator chose the second. `ROBOT_STANDOFF_M` is 0.30 m. The lower-body policy is trained from its first run with a commanded forward waist pitch of 0 to 0.52 rad (#5, #6; this extends D006). The planner commands the lean during `pre_grasp`, `grasp` and `lift` and upright again from the counter-edge waypoint on (#21). #14 sets the IK's `body_offset` to (0.0777, -0.0016, 0) m in the palm link frame. 0.25 m is the fallback, taken only if #14 and #16 measure short in simulation, and #16 reports the numbers before any constant moves again. So far one constant and its test have changed.
+- **The 1 mm lift bug (#60).** The CI dry run chains the seeded sampler, the planner, the arm target pipeline, the judges and the result writer against fakes, with no simulator (`scripts/evaluate.py --scenario dry`). Its first run ended every episode in `drop`. The planner aimed the `lift` waypoint at exactly 15 cm above the grasp, the state exits within its 2 cm position tolerance of the waypoint, and the plate never rose above 14.9 cm, 1 mm under the 15 cm the grasp judge asks for ([evaluation.md](evaluation.md), section 3). The planner's tests (#43) and the judges' tests (#57) each passed; the mismatch sat between them. The waypoint is now aimed one tolerance higher, 17 cm, and `PlannerConfig.lift_height_m` stays at the protocol's 15 cm (`tests/test_plan_lift_waypoint.py`, `tests/test_dry_run.py`).
+
+**The dry run today.** On `configs/eval/s4_seen.yaml` and `s4_unseen.yaml`, 50 seeds each, at commit `f2274bf` (2026-10-23): with the reachability gate on (waist-zero envelope, palm-link point, 0.30 m stand-off) 0 of 50 episodes succeed in each split and all 50 end `ik_infeasible`. With `--extra reach_gate=false` 50 of 50 reach `done` in each split. The second number is true by construction, because the fakes cannot fail; the first is the reach gap as a number until #14 and #16 move the point and the envelope. These files are marked synthetic and `scripts/update_experiments.py` refuses them.
+
+**What this does not show.**
+
+- **No collision.** The URDF has no collision meshes. The 5 cm and 10 cm torso-to-counter gaps are estimates from Unitree's published standing thickness of 0.20 m, in the worst case with 2 cm of pelvis noise toward the counter. #10 measures the gap in simulation.
+- **No palm orientation and no IK.** A voxel is reachable with some orientation, not with the planner's grasp orientation, so every fraction is an upper bound with respect to orientation. #16 checks both envelopes against the real IK.
+- **No balance.** A 30 deg lean moves the upper-body mass toward the toes, at the edge of the URDF range. If the policy shifts the hips back to compensate, the pelvis moves away from the counter and the reach shrinks by the same amount. The pelvis-frame envelope does not see that, and the policy has not been trained with a waist command yet (#5, #6).
+- **A reading of the grasp point.** The tables take the grasp point to be the near rim of the plate at the rim top. At the plate centre the gap reopens: S2 at 0.30 m with the lean is 10 / 40 (same sensitivity table). #21 fixes the grasp frame.
+- **A sampled boundary.** The envelopes are random samples; near their boundary they are slightly conservative, which the 2 cm margin absorbs.
+- **A nominal pelvis.** The pelvis is at 0.75 m plus the specification's noise (±2 cm, ±5 deg). Sway, a crouch or a hip shift are not in the numbers.
+
+Reproduce: `py -3.12 scripts/reach_gap_analysis.py --figure docs/figures/reach_gap.png` (about two minutes, numpy only; 128 s on 2026-10-23). The tables of the analysis were generated before #60 raised the lift waypoint by 2 cm. A re-run at commit `f2274bf` (2026-10-23) reproduced every cell quoted in this subsection; a few other cells move by 1 to 2 points (S2 unseen at 0.35 m with the lean, 82 to 80), and the committed tables are kept as generated.
+
+<!-- TODO(#10): the torso-to-counter gap measured in simulation with the waist leaning, next to the 10 cm estimate above -->
+<!-- TODO(#11): the dishwasher pose of #59 checked against the loaded asset, next to the 100 / 100 percent slot reach above -->
+<!-- TODO(#16): the envelopes checked against the real IK with the IK point at the finger bases; add the measured reach next to the paper numbers of the stand-off table and say which of them moved -->
+
 ## Evaluation protocol
 
 *What goes here: a few sentences on how a trial is run and judged (seen and held-out seeds, success decided from simulation state, intervals on every rate, one primary failure cause per failed trial) and a link to [evaluation.md](evaluation.md) for the definition; the tables of that file are not copied.*
@@ -285,8 +334,10 @@ Every failed trial carries exactly one primary cause. When several occur in one 
 - D009: Detailed kitchen with a pre-opened dishwasher; cabinets as dressing
 - D010: ArtVIP and MolmoSpaces for furniture; no PartNet-Mobility
 - D011: ArtVIP `dishwasher_2` as the dishwasher base; MolmoSpaces only as static filler
+- D012: Stand-off 0.30 m with a commanded waist lean and the IK point at the finger bases (from the paper analysis in Method, not yet measured)
+- D013: Compact dishwasher raised on a plinth, dressed as a low cabinet (from the paper analysis in Method, not yet measured)
 
-<!-- TODO(#26): add one line for each decision recorded after D011 and, for D008, the outcome of the time box -->
+<!-- TODO(#26): add one line for each decision recorded after D013 and, for D008, the outcome of the time box -->
 
 ## Limitations and honest caveats
 
