@@ -19,7 +19,10 @@ Poses and frames
 - **Plate pose** is the plate's body frame as ``scripts/make_plate_usd.py`` authors it (#30): origin
   at the centre of the underside, local ``z`` the plate normal (the planner's plate convention,
   :mod:`kitchenbot.geometry`), quaternions ``(w, x, y, z)``. It is *not* the planner's
-  ``plate_pose``, which is the grasp frame on the rim (docs/architecture.md section 9).
+  ``plate_pose``, which is the grasp frame on the top rim (docs/architecture.md section 9); a
+  backend converts with ``kitchenbot.planning.geometry.body_pose_from_grasp`` (#67). With the
+  planner's grasp frame at its slot entry, :func:`plate_in_slot`'s lowest rim point is at the tine
+  tops, centred in the gap (``tests/test_planner_hand_contract.py``).
 - **Rack frame** is the one of :mod:`kitchenbot.scene.kitchen_dims`: ``x`` across the tines, ``y``
   along the tine rows, ``z`` up, origin at the centre of the underside of the base frame. A seated
   plate stands vertically with its normal along ``x``. :func:`plate_in_slot` takes the plate pose

@@ -1,10 +1,11 @@
 """The planner's hand verbs drive KinematicFollowHand through the fakes (#58, contract of #43).
 
 ``planner_helpers.Fakes`` holds the plate's grasp frame on the rim (what the planner observes,
-docs/architecture.md section 9); the hand works on the plate centre. The wiring below converts
-between the two with the plate radius, the way the environment layer will, and lets the hand write
-the plate pose itself (``plate_follows_palm=False``). Still no simulation: this checks that the
-verbs, the attach rule and the follow compose with the planner, not that anything is grasped.
+docs/architecture.md section 9); the hand works on the plate's root (body) pose. The wiring below
+converts between the two with the grasp convention of ``kitchenbot.planning.geometry`` (#67: the
+top rim point nearest the robot), the way the environment layer will, and lets the hand write the
+plate pose itself (``plate_follows_palm=False``). Still no simulation: this checks that the verbs,
+the attach rule and the follow compose with the planner, not that anything is grasped.
 """
 
 import numpy as np
@@ -12,14 +13,21 @@ import pytest
 from planner_helpers import PLATE_GRASP, Fakes, run_episode
 
 from kitchenbot.controllers.hand.base import HandController, HandPosture
-from kitchenbot.controllers.hand.kinematic_follow import KinematicFollowHand
+from kitchenbot.controllers.hand.kinematic_follow import (
+    DEFAULT_ATTACH_DISTANCE_M,
+    KinematicFollowHand,
+    rim_distance,
+)
 from kitchenbot.evaluation.failure_tags import FailureTag
 from kitchenbot.geometry import Pose, pose_compose, pose_inverse, quat_angle
+from kitchenbot.planning.geometry import body_pose_from_grasp
 from kitchenbot.planning.plate_to_rack import HandAction, PlannerConfig, PlannerState
+from kitchenbot.scene.kitchen_dims import PLATE_HEIGHT_M
 
 DIAMETER = 0.25
-#: The plate centre in the grasp frame: the grasp frame sits on the rim, a radius along local +x.
-CENTRE_IN_GRASP = Pose((-DIAMETER / 2.0, 0.0, 0.0))
+#: The plate's root (body) pose in the grasp frame, from the one convention (#67): a radius along
+#: the grasp frame's +x (toward the centre) and one plate height down, ``(D/2, 0, -0.02)``.
+CENTRE_IN_GRASP = body_pose_from_grasp(Pose((0.0, 0.0, 0.0)), DIAMETER)
 PALM_VELOCITY = ((0.10, 0.00, 0.05), (0.0, 0.0, 0.20))
 
 
@@ -51,6 +59,22 @@ class Wiring:
 
 def wired(**fakes_kwargs) -> Wiring:
     return Wiring(Fakes(**fakes_kwargs))
+
+
+def test_the_centre_offset_is_the_top_rim_convention():
+    np.testing.assert_allclose(
+        CENTRE_IN_GRASP.position, (DIAMETER / 2.0, 0.0, -PLATE_HEIGHT_M), atol=1e-12
+    )
+
+
+def test_a_palm_exactly_at_the_grasp_frame_is_one_plate_height_from_the_hands_rim_circle():
+    # the hand measures to the rim circle in the plane of the pose it is given, here the root pose
+    # (underside): the top rim point is 2 cm above it, inside the 3 cm attach distance by 1 cm
+    fakes = Fakes()
+    root = pose_compose(fakes.plate.pose, CENTRE_IN_GRASP)
+    distance = rim_distance(fakes.plate.pose.position, root, DIAMETER)
+    assert distance == pytest.approx(PLATE_HEIGHT_M)
+    assert DEFAULT_ATTACH_DISTANCE_M - distance == pytest.approx(0.01)
 
 
 def test_the_hand_exposes_every_planner_verb():

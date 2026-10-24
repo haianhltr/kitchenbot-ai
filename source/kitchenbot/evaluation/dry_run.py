@@ -9,8 +9,8 @@
    #48 reachability gate and slew filter (``reach_gate``, on by default), a fake hand, plate and
    rack built from the sampled episode and the ``kitchen_dims.RackSlotLayout``;
 3. the judges (:mod:`kitchenbot.evaluation.judges`, #57), stepped every control step with the
-   plate **body** pose converted from the fakes' grasp frame (the convention of #58's tests, see
-   :mod:`kitchenbot.planning.fakes`), the hand's holding flag and the rack contact force;
+   plate **body** pose converted from the fakes' grasp frame (the top-rim grasp convention of
+   :mod:`kitchenbot.planning.geometry`, #67), the hand's holding flag and the rack contact force;
 4. :func:`~kitchenbot.evaluation.judges.episode_outcome` for ``success`` and the primary failure
    tag, and the S4 metric set for the result document.
 
@@ -21,12 +21,13 @@ keep this file's shape (a loader that reads the :class:`EvalConfig`, a backend w
 ``scripts/update_experiments.py`` and ``scripts/plot_results.py`` refuse it unless told
 ``--allow-synthetic``. What the numbers do say is whether the contracts between the sampler, the
 planner, the arm pipeline and the judges hold together, and what the reach gap of docs/status.md
-is worth when the committed envelope guards the arm: at the 0.30 m stand-off of ``kitchen_dims``,
-with the finger-base envelopes (#66), every gate-on episode is refused somewhere and ends in
-``ik_infeasible``, mostly at the first target of ``pre_grasp`` with the waist at zero, and in
-``pre_grasp``, ``grasp`` or ``transport`` with the waist envelope (``tests/test_dry_run.py`` pins
-the states for seeds 0 to 19 of both splits and says which geometry they come from), while the
-gate-off run is the check that the planner, the fakes and the judges agree.
+is worth when the committed envelope guards the arm. At the 0.30 m stand-off of ``kitchen_dims``,
+with the finger-base envelopes (#66), the top-rim grasp frame and the #59 dishwasher rack (#67),
+the waist-zero gate refuses the plate targets of part of the episodes (``pre_grasp`` or
+``grasp``, ending ``ik_infeasible``) and the waist envelope refuses none.
+``tests/test_dry_run.py`` pins the outcomes for seeds 0 to 19 of both splits and says which
+geometry they come from. The gate-off run is the check that the planner, the fakes and the judges
+agree.
 
 Config
 ------
@@ -53,7 +54,9 @@ scenario options reach the document only through the hash).
 What the dry run does not model
 -------------------------------
 Balance (``fell`` is always false and ``torso_orientation_error_deg`` always 0.0: there is no
-torso), contact physics (the rack force is the fake rack's box model, the plate is held rigidly and
+torso; the planner's D012 waist lean is recorded in :attr:`DryEpisode.waist_trace` but moves
+nothing, and it is not in the result JSON because the schema's episode metrics allow no extra
+key), contact physics (the rack force is the fake rack's box model, the plate is held rigidly and
 rests where it is released, the counter contact the grasp judge takes is always false), friction
 (drawn by the sampler, unused here) and the hand's grip.
 """
@@ -61,6 +64,7 @@ rests where it is released, the counter contact the grasp judge takes is always 
 from __future__ import annotations
 
 import dataclasses
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -97,8 +101,9 @@ __all__ = [
 ]
 
 #: Version of the dry-run chain; part of ``resolved_config`` and so of ``run.config_hash``. Bump it
-#: when the fakes, the loop or the mapping to metrics change what an episode produces.
-GENERATOR_VERSION = "dry-v1"
+#: when the fakes, the loop or the mapping to metrics change what an episode produces. v2 (#67):
+#: the grasp frame is the top rim point nearest the robot and the slot entry follows it.
+GENERATOR_VERSION = "dry-v2"
 
 #: Control rate of the loop, the rate of the arm and hand controllers (docs/architecture.md
 #: section 5).
@@ -173,6 +178,13 @@ class DryEpisode:
     steps: int
     grasp_why: str
     placement_why: str
+    #: ``(planner state, waist_pitch_rad)`` of every command sent to the fakes (D012, #67).
+    waist_trace: tuple[tuple[PlannerState, float], ...] = ()
+
+    @property
+    def max_waist_pitch_rad(self) -> float:
+        """The largest waist lean commanded in the episode, 0.0 if no command was sent."""
+        return max((pitch for _, pitch in self.waist_trace), default=0.0)
 
 
 def simulate_episode(
@@ -283,6 +295,7 @@ def simulate_episode(
         steps=k,
         grasp_why=grasp.why(),
         placement_why=placement.why(),
+        waist_trace=tuple(fakes.waist_trace),
     )
 
 
@@ -355,6 +368,7 @@ class DryRunBackend:
             "stand_off_m": kd.ROBOT_STANDOFF_M,
             "pelvis_height_m": PELVIS_HEIGHT_M,
             "rack_frame_xyz_m": [float(v) for v in DRY_RUN_RACK_FRAME.position],
+            "rack_frame_yaw_deg": math.degrees(DRY_RUN_RACK_FRAME.yaw),  # #67: -90, the #59 pose
             "rack_layout": dataclasses.asdict(self.layout),
             "planner": dataclasses.asdict(self.planner_config),
         }

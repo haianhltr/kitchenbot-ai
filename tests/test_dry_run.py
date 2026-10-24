@@ -194,74 +194,94 @@ def test_plot_results_draws_the_dry_result_when_allowed(tmp_path, capsys):
 # ----------------------------------------------------------------------------- the reach gate
 
 
-# The gate pins below come from this geometry (#66): both committed envelopes of the finger-base
-# point (D012), the 0.30 m stand-off, the pelvis at 0.75 m; the fakes' grasp frame on the plate's
-# local +x rim at the underside plane (#58's convention, not the near top rim of
-# docs/reach_gap_analysis.md), the counter-edge waypoint above the slot's x and the provisional
-# floor-standing rack ``DRY_RUN_RACK_FRAME``. With either envelope every gate-on episode still
-# ends ``ik_infeasible``: the plate targets are a rim's width further out than the analysis's, and
-# no transport or slot target of that rack is inside either envelope. #67 changes the rim point
-# and adds the waist command; whichever of #66 and #67 merges second re-pins these numbers.
+# The gate pins below come from this geometry (#66, re-pinned by #67): both committed envelopes of
+# the finger-base point (D012), the 0.30 m stand-off, the pelvis at 0.75 m; the fakes' grasp frame
+# on the top rim point nearest the robot (planning.geometry, #67), the counter-edge waypoint at the
+# grasp x, and the rack frame of the #59 raised dishwasher with the rack pulled out
+# (``DRY_RUN_RACK_FRAME``). The ``waist`` gate checks every target against the leaning envelope,
+# also the transport and slot targets the planner commands upright. A check of each waypoint
+# against the envelope of its commanded posture (lean for pre_grasp, grasp, lift; waist0 after)
+# also passes for 50 of 50 seeds of each split (#67 PR). Before #67, with #66's envelopes, every
+# gate-on episode ended ``ik_infeasible``.
+
+#: ``(successes, ik_infeasible)`` of the gate-on run over ``SEEDS``, per envelope and split.
+#: 50 seeds per split (#67): waist0 seen 13 / 37, unseen 43 / 7; waist 50 / 0 on both.
+GATE_ON = {
+    ("waist0", "seen"): (5, 15),
+    ("waist0", "unseen"): (18, 2),
+    ("waist", "seen"): (20, 0),
+    ("waist", "unseen"): (20, 0),
+}
 
 
 @pytest.mark.parametrize("envelope", [None, "waist"], ids=["waist0", "waist"])
 @pytest.mark.parametrize("split", SPLITS)
-def test_the_ik_infeasible_rate_differs_with_the_gate_on_and_off(split, envelope):
+def test_the_gate_on_and_off_results_at_the_d012_geometry(split, envelope):
     on, off = doc(split, True, envelope), doc(split, False)
     on_n = on["aggregates"]["failure_tag_counts"]["ik_infeasible"]
     off_n = off["aggregates"]["failure_tag_counts"]["ik_infeasible"]
-    assert on_n != off_n
-    # at the 0.30 m stand-off every gated episode is refused somewhere (the geometry above)
-    assert (on_n, off_n) == (N, 0)
-    assert on["aggregates"]["success"]["count"] == 0
+    assert (on["aggregates"]["success"]["count"], on_n) == GATE_ON[(envelope or "waist0", split)]
+    assert off_n == 0 and off["aggregates"]["success"]["count"] == N
     assert on["run"]["config_hash"] != off["run"]["config_hash"]  # the option is hashed
 
 
-#: The planner state each gate-on episode of seeds 0 to 19 (seen) and 1000 to 1019 (unseen) fails
-#: in, per gating envelope, at the geometry above. Measured in #66 (50 seeds per split: waist0
-#: seen 49 pre_grasp and 1 grasp; unseen 43 pre_grasp, 4 grasp, 3 transport; waist seen
-#: 28 pre_grasp, 15 transport, 7 grasp; unseen 36 transport, 8 pre_grasp, 6 grasp).
-FIRST_REFUSAL = {
-    ("waist0", "seen"): {S.PRE_GRASP: 20},
-    ("waist0", "unseen"): {S.PRE_GRASP: 18, S.GRASP: 1, S.TRANSPORT: 1},
-    ("waist", "seen"): {S.PRE_GRASP: 11, S.TRANSPORT: 6, S.GRASP: 3},
-    ("waist", "unseen"): {S.TRANSPORT: 15, S.PRE_GRASP: 3, S.GRASP: 2},
+#: How each gate-on episode of ``SEEDS`` ends: the state the planner failed in, or ``done``.
+#: 50 seeds per split (#67): waist0 seen 30 pre_grasp, 7 grasp, 13 done; unseen 2 pre_grasp,
+#: 5 grasp, 43 done; waist 50 done on both. No episode is refused after the lift any more.
+END_STATE = {
+    ("waist0", "seen"): {S.PRE_GRASP: 13, S.GRASP: 2, S.DONE: 5},
+    ("waist0", "unseen"): {S.PRE_GRASP: 1, S.GRASP: 1, S.DONE: 18},
+    ("waist", "seen"): {S.DONE: 20},
+    ("waist", "unseen"): {S.DONE: 20},
 }
 
 
 @pytest.mark.parametrize("envelope", ["waist0", "waist"])
 @pytest.mark.parametrize("split", SPLITS)
-def test_the_gate_refuses_a_reach_at_the_nominal_stand_off(split, envelope):
+def test_where_the_gate_refuses_at_the_nominal_stand_off(split, envelope):
     episodes = _episodes(split, True, N, envelope)
-    assert dict(Counter(e.failed_in for e in episodes)) == FIRST_REFUSAL[(envelope, split)]
+    ends = Counter(e.failed_in or e.state for e in episodes)
+    assert dict(ends) == END_STATE[(envelope, split)]
     for episode in episodes:
+        if episode.state is S.DONE:
+            assert episode.gate_refusals == 0 and episode.result.success
+            continue
         assert episode.state is S.FAILED
         assert episode.planner_failure is FailureTag.IK_INFEASIBLE
         assert episode.gate_refusals >= 1
         assert episode.result.failure_tag is FailureTag.IK_INFEASIBLE
         assert episode.result.metrics["completion_time_s"] is None
+        assert episode.result.metrics["grasp_success"] is False
         if episode.failed_in is S.PRE_GRASP:  # the first target is refused, nothing moved
-            assert episode.steps <= 2 and episode.result.metrics["grasp_success"] is False
+            assert episode.steps <= 2
 
 
-def test_the_waist_envelope_lets_more_episodes_past_the_plate_than_waist0():
+def test_the_waist_envelope_lets_more_episodes_through_than_waist0():
     for split in SPLITS:
-        past = {
-            name: sum(e.failed_in is S.TRANSPORT for e in _episodes(split, True, N, name))
+        done = {
+            name: sum(e.state is S.DONE for e in _episodes(split, True, N, name))
             for name in ("waist0", "waist")
         }
-        assert past["waist"] > past["waist0"]
+        assert done["waist"] > done["waist0"]
 
 
 def test_a_closer_stand_off_lets_the_planner_past_pre_grasp():
-    spec_ok = []
-    for seed in range(N):
-        spec = sample_episode(seed, "seen", "S4")
-        # 0.15 m with the finger-base waist0 envelope (#66): 12 of 20 get past pre_grasp (at
-        # 0.10 m 18, at 0.05 m and closer all 20, at 0.25 m 1)
-        ep = simulate_episode(spec, LAYOUT, gate=True, envelope=_ENVELOPE, stand_off_m=0.15)
-        spec_ok.append(ep.failed_in is not S.PRE_GRASP)
-    assert 0 < sum(spec_ok) < N  # some, not all: the reach gap is the stand-off
+    def past(stand_off_m):
+        return sum(
+            simulate_episode(
+                sample_episode(seed, "seen", "S4"),
+                LAYOUT,
+                gate=True,
+                envelope=_ENVELOPE,
+                stand_off_m=stand_off_m,
+            ).failed_in
+            is not S.PRE_GRASP
+            for seed in range(N)
+        )
+
+    # finger-base waist0 envelope, seeds 0 to 19 (#67 geometry): 7 of 20 get past pre_grasp at
+    # 0.30 m, 15 at 0.25 m, all 20 at 0.15 m (19 at 0.20 m)
+    assert (past(0.30), past(0.25), past(0.15)) == (7, 15, N)
 
 
 @pytest.mark.parametrize("name", ["waist0", "waist"])
@@ -502,8 +522,8 @@ def test_the_command_line_runs_the_dry_scenario_end_to_end(tmp_path, capsys):
     assert evaluate_main(argv) == 0
     out = capsys.readouterr().out
     assert "scenario dry | split seen" in out and "SYNTHETIC RUN" in out
-    # the gate is on by default; seeds 0 to 4 are all refused at the geometry of the gate pins
-    assert "failure tags: fall 0, ik_infeasible 5" in out
+    # the gate is on by default (waist0): seeds 1 and 3 succeed, 0, 2 and 4 are refused (GATE_ON)
+    assert "success: 2/5" in out and "failure tags: fall 0, ik_infeasible 3" in out
     written = list(tmp_path.glob("*_dry_seen.json"))
     assert len(written) == 1
     from kitchenbot.evaluation.results import load_result
@@ -517,8 +537,8 @@ def test_the_command_line_gates_on_the_waist_envelope(tmp_path, capsys):
     assert evaluate_main(argv) == 0
     out = capsys.readouterr().out
     assert "extras gate_envelope=waist" in out
-    # seeds 0 and 4 refused in pre_grasp, 1 in transport, 2 and 3 in grasp (FIRST_REFUSAL)
-    assert "failure tags: fall 0, ik_infeasible 5" in out
+    # with the waist envelope seeds 0 to 4 all succeed at the #67 geometry (END_STATE)
+    assert "success: 5/5" in out and "failure tags: fall 0, ik_infeasible 0" in out
     assert len(list(tmp_path.glob("*_dry_seen.json"))) == 1
 
 
@@ -561,6 +581,6 @@ def test_the_module_imports_no_simulator():
 
 
 def test_the_module_surface():
-    assert dry_run.GENERATOR_VERSION == "dry-v1" and dry_run.CONTROL_HZ == 50.0
+    assert dry_run.GENERATOR_VERSION == "dry-v2" and dry_run.CONTROL_HZ == 50.0  # v2: #67
     assert set(dry_run.MIRRORABLE_SCENARIOS) == {"S2", "S3", "S4"}
     assert dry_run.EXTRA_KEYS == ("reach_gate", "gate_envelope")
