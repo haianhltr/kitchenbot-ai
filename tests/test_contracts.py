@@ -262,8 +262,10 @@ def test_dry_run_extra_keys_are_registered_and_are_not_eval_config_fields():
     run_fields = {f.name for f in dataclasses.fields(EvalConfig)}
     assert run_fields.isdisjoint(dry_run.EXTRA_KEYS)
     assert set(EvalConfig(scenario="dry").to_dict()).isdisjoint(dry_run.EXTRA_KEYS)
-    backend = dry_run.DryRunBackend(EvalConfig(scenario="dry", extras={"reach_gate": False}))
-    assert set(dry_run.EXTRA_KEYS) <= set(backend.resolved_config())
+    # Extras are not run fields, so they reach run.config_hash only through resolved_config().
+    gate_on = dry_run.DryRunBackend(EvalConfig(scenario="dry")).resolved_config()
+    off = dry_run.DryRunBackend(EvalConfig(scenario="dry", extras={"reach_gate": False}))
+    assert off.resolved_config() != gate_on
 
 
 def test_synthetic_scenarios_agree_in_the_catalogue_the_registry_and_the_schema():
