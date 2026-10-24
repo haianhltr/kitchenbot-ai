@@ -194,22 +194,27 @@ def test_plot_results_draws_the_dry_result_when_allowed(tmp_path, capsys):
 # ----------------------------------------------------------------------------- the reach gate
 
 
-# The gate pins below come from this geometry (#66, re-pinned by #67): both committed envelopes of
-# the finger-base point (D012), the 0.30 m stand-off, the pelvis at 0.75 m; the fakes' grasp frame
-# on the top rim point nearest the robot (planning.geometry, #67), the counter-edge waypoint at the
-# grasp x, and the rack frame of the #59 raised dishwasher with the rack pulled out
+# The gate pins below come from this geometry (#66, re-pinned by #67 and #77): both committed
+# envelopes of the finger-base point (D012), the waist envelope's forward pitch sampled up to the
+# 0.468 rad soft limit (``joint_limits.WAIST_LEAN_MAX_RAD``, 26.81 deg, #77; it was the 0.52 rad
+# URDF limit, 29.79 deg, before), the 0.30 m stand-off, the pelvis at 0.75 m; the fakes' grasp
+# frame on the top rim point nearest the robot (planning.geometry, #67), the counter-edge waypoint
+# at the grasp x, and the rack frame of the #59 raised dishwasher with the rack pulled out
 # (``DRY_RUN_RACK_FRAME``). The ``waist`` gate checks every target against the leaning envelope,
 # also the transport and slot targets the planner commands upright. A check of each waypoint
 # against the envelope of its commanded posture (lean for pre_grasp, grasp, lift; waist0 after)
-# also passes for 50 of 50 seeds of each split (#67 PR). Before #67, with #66's envelopes, every
-# gate-on episode ended ``ik_infeasible``.
+# passes for 48 of 50 seen and 50 of 50 unseen seeds (#77 PR; 50 of 50 on both with the 29.79 deg
+# envelope, #67 PR). Before #67, with #66's envelopes, every gate-on episode ended
+# ``ik_infeasible``.
 
 #: ``(successes, ik_infeasible)`` of the gate-on run over ``SEEDS``, per envelope and split.
-#: 50 seeds per split (#67): waist0 seen 13 / 37, unseen 43 / 7; waist 50 / 0 on both.
+#: 50 seeds per split (#77): waist0 seen 13 / 37, unseen 43 / 7; waist seen 48 / 2 (seeds 19
+#: and 28, the grasp target 1.0 and 0.4 cm outside the capped envelope), unseen 50 / 0. The capped
+#: pitch range moves only the ("waist", "seen") cell: it was (20, 0), 50 / 0 over 50 seeds (#67).
 GATE_ON = {
     ("waist0", "seen"): (5, 15),
     ("waist0", "unseen"): (18, 2),
-    ("waist", "seen"): (20, 0),
+    ("waist", "seen"): (19, 1),
     ("waist", "unseen"): (20, 0),
 }
 
@@ -226,12 +231,13 @@ def test_the_gate_on_and_off_results_at_the_d012_geometry(split, envelope):
 
 
 #: How each gate-on episode of ``SEEDS`` ends: the state the planner failed in, or ``done``.
-#: 50 seeds per split (#67): waist0 seen 30 pre_grasp, 7 grasp, 13 done; unseen 2 pre_grasp,
-#: 5 grasp, 43 done; waist 50 done on both. No episode is refused after the lift any more.
+#: 50 seeds per split (#77): waist0 seen 30 pre_grasp, 7 grasp, 13 done; unseen 2 pre_grasp,
+#: 5 grasp, 43 done; waist seen 2 grasp, 48 done (seed 19 is the grasp refusal of the first
+#: twenty; 50 done before the cap, #67), unseen 50 done. No episode is refused after the lift.
 END_STATE = {
     ("waist0", "seen"): {S.PRE_GRASP: 13, S.GRASP: 2, S.DONE: 5},
     ("waist0", "unseen"): {S.PRE_GRASP: 1, S.GRASP: 1, S.DONE: 18},
-    ("waist", "seen"): {S.DONE: 20},
+    ("waist", "seen"): {S.GRASP: 1, S.DONE: 19},
     ("waist", "unseen"): {S.DONE: 20},
 }
 

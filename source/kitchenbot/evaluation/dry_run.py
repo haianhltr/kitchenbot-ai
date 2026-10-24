@@ -24,7 +24,8 @@ planner, the arm pipeline and the judges hold together, and what the reach gap o
 is worth when the committed envelope guards the arm. At the 0.30 m stand-off of ``kitchen_dims``,
 with the finger-base envelopes (#66), the top-rim grasp frame and the #59 dishwasher rack (#67),
 the waist-zero gate refuses the plate targets of part of the episodes (``pre_grasp`` or
-``grasp``, ending ``ik_infeasible``) and the waist envelope refuses none.
+``grasp``, ending ``ik_infeasible``) and the waist envelope, its pitch capped at the 0.468 rad
+soft limit since #77, refuses the ``grasp`` target of 2 of the 50 seen seeds and none unseen.
 ``tests/test_dry_run.py`` pins the outcomes for seeds 0 to 19 of both splits and says which
 geometry they come from. The gate-off run is the check that the planner, the fakes and the judges
 agree.

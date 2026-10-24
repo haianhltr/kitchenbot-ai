@@ -1,4 +1,4 @@
-r"""Sample the right palm's reachability envelope from the URDF joint dump (#48, #56, #66; no
+r"""Sample the right palm's reachability envelope from the URDF joint dump (#48, #56, #66, #77; no
 simulator).
 
 Generate the committed envelope, waist at zero, of the finger-base point (D012; deterministic: the
@@ -8,13 +8,15 @@ same seed, sample count and offset give the same grid, and the same bytes on the
         --tip-offset 0.0777 -0.0016 0 \
         --out source/kitchenbot/controllers/data/right_arm_envelope.npz
 
-Generate the committed waist envelope (#56): the waist sampled too, pitch 0 to +30 deg forward
-lean (clipped to the 0.52 rad URDF limit, 29.79 deg), yaw -20 to +20 deg, roll 0; the arm draws
-are the same as above, the waist comes from its own stream (``kitchenbot.controllers.reachability``
-says why this range)::
+Generate the committed waist envelope (#56, #77): the waist sampled too, forward pitch 0 to the
+soft limit ``joint_limits.WAIST_LEAN_MAX_RAD`` (0.468 rad; D012 as amended), yaw -20 to +20 deg,
+roll 0, which is ``reachability.WAIST_ENVELOPE_RANGE_DEG``; the arm draws are the same as above,
+the waist comes from its own stream (``kitchenbot.controllers.reachability`` says why this range).
+The pitch maximum is ``math.degrees(0.468)`` written out in full, so that the file records exactly
+that constant (#56 and #66 passed 30, clipped to the 0.52 rad URDF limit, 29.79 deg)::
 
     py -3.12 scripts/make_reach_envelope.py --seed 48 --samples 8000000 \
-        --waist-yaw-deg 20 --waist-pitch-min-deg 0 --waist-pitch-max-deg 30 \
+        --waist-yaw-deg 20 --waist-pitch-min-deg 0 --waist-pitch-max-deg 26.814424812122528 \
         --tip-offset 0.0777 -0.0016 0 \
         --out source/kitchenbot/controllers/data/right_arm_envelope_waist.npz
 

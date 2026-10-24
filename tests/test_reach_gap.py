@@ -14,7 +14,7 @@ from kitchenbot.controllers import reachability as rc
 from kitchenbot.controllers.reachability import ReachabilityEnvelope
 from kitchenbot.geometry import Pose, to_frame
 from kitchenbot.robots import joint_maps as jm
-from kitchenbot.robots.joint_limits import WAIST_LIMITS
+from kitchenbot.robots.joint_limits import WAIST_LEAN_MAX_RAD, WAIST_LIMITS
 from kitchenbot.robots.kinematics import UrdfChain, right_arm_chain
 from kitchenbot.scene import kitchen_dims as kd
 
@@ -95,7 +95,9 @@ def test_waist_sampling_stays_inside_the_limits_and_the_requested_range(chain):
     yaw, roll, pitch = waist.T
     assert np.all(np.abs(yaw) <= math.radians(20.0) + 1e-12)
     assert np.all(roll == 0.0)
-    assert np.all(pitch >= 0.0) and np.all(pitch <= 0.52)
+    # the committed range leans up to the soft limit the planner commands (#77), not the URDF's
+    assert np.all(pitch >= 0.0) and np.all(pitch <= WAIST_LEAN_MAX_RAD + 1e-12)
+    assert pitch.max() > WAIST_LEAN_MAX_RAD - 0.01
 
 
 def test_sampled_positions_are_the_forward_kinematics_of_the_sampled_waist(chain):
@@ -174,11 +176,16 @@ def test_zero_range_reproduces_the_committed_metadata_and_fill_on_a_small_sample
 
 
 def test_committed_waist_envelope_records_its_range_and_is_small(committed, committed_waist):
-    assert COMMITTED_WAIST.stat().st_size < 50_000
+    assert COMMITTED_WAIST.stat().st_size < 10_000  # #77: 7,274 B, the issue asks under 10 KB
     env = committed_waist
     assert (env.seed, env.samples) == (rc.DEFAULT_SEED, rc.WAIST_ENVELOPE_SAMPLES)
     assert env.waist_range_deg == rc.clip_waist_range(rc.WAIST_ENVELOPE_RANGE_DEG)
-    assert env.waist_range_deg[2] == pytest.approx((0.0, math.degrees(0.52)))
+    # #77: forward pitch 0 to the 0.468 rad soft limit (26.81 deg), the planner's and the training
+    # command's maximum; #56 and #66 sampled to the 0.52 rad URDF limit (29.79 deg). Clipping does
+    # not touch it, so the file records exactly degrees(WAIST_LEAN_MAX_RAD).
+    assert env.waist_range_deg == rc.WAIST_ENVELOPE_RANGE_DEG
+    assert env.waist_range_deg[2] == (0.0, math.degrees(WAIST_LEAN_MAX_RAD))
+    assert env.waist_range_deg[0] == (-20.0, 20.0) and env.waist_range_deg[1] == (0.0, 0.0)
     # the finger-base point of D012 (#66), the same point as the waist-at-zero file
     assert not env.waist_at_zero and env.tip_offset_m == rc.FINGER_BASE_OFFSET_M
     assert (env.frame, env.tip_link, env.joint_source, env.tip_offset_m) == (
@@ -208,7 +215,8 @@ def test_waist_file_sampled_points_are_inside(chain, committed_waist):
 def test_check_prints_the_waist_ranges_and_the_tip_offset_of_both_files():
     for path, expected in (
         (COMMITTED, "yaw [0, 0], roll [0, 0], pitch [0, 0]; waist at zero"),
-        (COMMITTED_WAIST, "yaw [-20, 20], roll [0, 0], pitch [0, 29.79]; waist sampled"),
+        # the waist file's pitch ends at the soft limit since #77 (29.79, the URDF limit, before)
+        (COMMITTED_WAIST, "yaw [-20, 20], roll [0, 0], pitch [0, 26.81]; waist sampled"),
     ):
         result = subprocess.run(
             [sys.executable, str(ENVELOPE_SCRIPT), "--check", str(path)],

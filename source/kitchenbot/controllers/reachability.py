@@ -7,16 +7,20 @@ itself is :class:`kitchenbot.controllers.target_filter.ArmTargetPipeline`.
 
 Two envelopes are committed, both of the finger-base point :data:`FINGER_BASE_OFFSET_M` (D012, the
 IK's controlled point; regenerated in #66 with the seeds, sample counts and waist ranges of #48 and
-#56, which sampled the palm link origin), each with a name for :meth:`ReachabilityEnvelope.load`:
+#56, which sampled the palm link origin; the waist file again in #77 with only its pitch maximum
+changed), each with a name for :meth:`ReachabilityEnvelope.load`:
 
 - ``waist0``, ``data/right_arm_envelope.npz`` (#48, :data:`DEFAULT_PATH`): the waist held at zero.
   This is the one ``ArmTargetPipeline`` loads by default.
 - ``waist``, ``data/right_arm_envelope_waist.npz`` (#56, :data:`WAIST_PATH`): the waist sampled
-  too, waist pitch 0 to +29.79 deg (forward lean), yaw -20 to +20 deg, roll 0. It answers "what
-  would a waist lean buy" for #10, #14 and #16 (``scripts/reach_gap_analysis.py``) and is the dry
-  run's gate with ``gate_envelope=waist``. Neither the arm controller nor the balance policy
-  guarantees a posture in that range yet (the planner's lean command is #21's), so it is an upper
-  bound, not a gate the arm controller can rely on.
+  too, waist pitch 0 to +26.81 deg (forward lean up to the soft limit
+  ``joint_limits.WAIST_LEAN_MAX_RAD``, 0.468 rad, the lean the planner commands and the balance
+  policy is trained on; regenerated in #77, #56 and #66 sampled up to the 0.52 rad URDF limit),
+  yaw -20 to +20 deg, roll 0. It answers "what would a waist lean buy" for #10, #14 and #16
+  (``scripts/reach_gap_analysis.py``) and is the dry run's gate with ``gate_envelope=waist``.
+  Neither the arm controller nor the balance policy guarantees a posture in that range yet (#5
+  trains the lean, #21 commands it), so it is an upper bound, not a gate the arm controller can
+  rely on.
 
 What is sampled:
 
@@ -71,7 +75,7 @@ from pathlib import Path
 import numpy as np
 
 from kitchenbot.robots import joint_maps
-from kitchenbot.robots.joint_limits import WAIST_LIMITS
+from kitchenbot.robots.joint_limits import WAIST_LEAN_MAX_RAD, WAIST_LIMITS
 from kitchenbot.robots.kinematics import UrdfChain
 
 __all__ = [
@@ -117,13 +121,20 @@ FINGER_BASE_OFFSET_M: tuple[float, float, float] = (0.0777, -0.0016, 0.0)
 
 #: Waist yaw, roll and pitch ranges ``(lower, upper)`` in degrees of the #48 envelope: all zero.
 ZERO_WAIST_DEG: tuple[tuple[float, float], ...] = ((0.0, 0.0), (0.0, 0.0), (0.0, 0.0))
-#: Requested waist range of ``right_arm_envelope_waist.npz`` (yaw, roll, pitch; degrees, before
-#: clipping, which takes the pitch to the 0.52 rad URDF limit, 29.79 deg). Why: a forward lean of
-#: up to the URDF limit is the only waist motion that brings the palm toward the counter; +-20 deg
-#: of yaw turns the right shoulder toward the plate box and the rack on the robot's right without
-#: the 150 deg the URDF allows (which would also swing the arm behind the robot); roll stays zero
-#: because a side lean moves the shoulder sideways by a few centimetres and costs balance.
-WAIST_ENVELOPE_RANGE_DEG: tuple[tuple[float, float], ...] = ((-20.0, 20.0), (0.0, 0.0), (0.0, 30.0))
+#: Waist range of ``right_arm_envelope_waist.npz`` (yaw, roll, pitch; degrees, inside the URDF
+#: limits, so clipping leaves it unchanged). Why: a forward lean is the only waist motion that
+#: brings the palm toward the counter, and its maximum is the lean the planner commands and the
+#: balance policy is trained on, ``joint_limits.WAIST_LEAN_MAX_RAD`` (the soft limit, 0.468 rad =
+#: 26.81 deg; D012 as amended, #77; #56 requested 30 deg, clipped to the 0.52 rad URDF limit);
+#: +-20 deg of yaw turns the right shoulder toward the plate box and the rack on the robot's right
+#: without the 150 deg the URDF allows (which would also swing the arm behind the robot); roll
+#: stays zero because a side lean moves the shoulder sideways by a few centimetres and costs
+#: balance.
+WAIST_ENVELOPE_RANGE_DEG: tuple[tuple[float, float], ...] = (
+    (-20.0, 20.0),
+    (0.0, 0.0),
+    (0.0, math.degrees(WAIST_LEAN_MAX_RAD)),
+)
 #: Sample count of the waist envelope: three more dimensions than #48, so more samples per voxel.
 WAIST_ENVELOPE_SAMPLES = 8_000_000
 #: Second word of the waist generator's seed sequence: ``default_rng([seed, WAIST_STREAM])``.
