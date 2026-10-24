@@ -49,6 +49,12 @@ POLICIES: tuple[str, ...] = ("own", "agile")
 HANDS: tuple[str, ...] = ("kinematic", "dex3", "dex1")
 BASES: tuple[str, ...] = ("fixed", "floating")
 
+#: Scenarios that docs/evaluation.md section 1 runs with a fixed pelvis first, then with the
+#: balance policy ("fixed pelvis, then balance policy"). Besides the default floating-base file,
+#: each has a ``base: fixed`` config per split, ``configs/eval/s<N>_<split>_fixed.yaml``
+#: (#78); ``tests/test_contracts.py`` pins the set to the section 1 table.
+FIXED_BASE_SCENARIOS: tuple[str, ...] = ("S2", "S3")
+
 #: ``num_envs`` of a run that names neither ``--num_envs`` nor a ``--config`` YAML with a
 #: ``num_envs`` (docs/evaluation.md section 4, step 1: ``--num_envs 50``).
 DEFAULT_NUM_ENVS = 50

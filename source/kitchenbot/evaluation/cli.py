@@ -10,7 +10,9 @@ SHA256 go into the result (``run.config_path``, ``run.config_sha256``). Of its c
 command line reads only ``num_envs``, and only when ``--num_envs`` is not given (#78): the flag
 overrides the file, a file without the key or no ``--config`` means
 ``runner.DEFAULT_NUM_ENVS``, and ``run.num_envs`` records the value used. A scenario's loader may
-read more (``dry`` does, for the sampler scenario and ranges).
+read more (``dry`` does, for the sampler scenario and ranges). ``--base`` and the other options
+are not read from the file: the fixed-pelvis runs of S2 and S3 pass ``--base fixed`` with their
+``configs/eval/s<N>_<split>_fixed.yaml`` (#78).
 
 ``--extra KEY=VALUE`` (repeatable, value a YAML scalar) fills ``EvalConfig.extras``, the options
 one scenario reads: ``--scenario dry --extra reach_gate=false`` runs the dry scenario without the
@@ -108,7 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--base",
         choices=BASES,
         default="floating",
-        help="fixed pelvis or floating base with the balance policy active (default floating)",
+        help=(
+            "fixed pelvis or floating base with the balance policy active (default floating). "
+            "Not read from --config: start a fixed-pelvis S2 or S3 run with --base fixed and "
+            "its configs/eval/s<N>_<split>_fixed.yaml"
+        ),
     )
     parser.add_argument(
         "--config",
