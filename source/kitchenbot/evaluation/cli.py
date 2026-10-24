@@ -121,7 +121,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "an option only one scenario reads, repeatable; the value is a YAML scalar (false, "
             "0.3, text). dry reads reach_gate (default true): --extra reach_gate=false turns the "
-            "reachability gate off. The result's run.config_hash covers it"
+            "reachability gate off; and gate_envelope (waist0, the default, or waist): the "
+            "committed envelope the gate loads. The result's run.config_hash covers them"
         ),
     )
     parser.add_argument(

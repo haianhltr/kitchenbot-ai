@@ -7,12 +7,18 @@ the planner's final state), the document path through ``run_evaluation`` and the
 import copy
 import dataclasses
 import functools
+import json
+from collections import Counter
 
 import pytest
 from eval_helpers import REPO, load_script
 from jsonschema import Draft202012Validator
 
-from kitchenbot.controllers.reachability import ReachabilityEnvelope
+from kitchenbot.controllers.reachability import (
+    ENVELOPE_PATHS,
+    FINGER_BASE_OFFSET_M,
+    ReachabilityEnvelope,
+)
 from kitchenbot.evaluation import dry_run
 from kitchenbot.evaluation.cli import main as evaluate_main
 from kitchenbot.evaluation.dry_run import (
@@ -40,7 +46,8 @@ from kitchenbot.scene.randomization import RandomizationRanges, sample_episode
 
 CONFIG_DIR = REPO / "configs" / "eval"
 LAYOUT = kd.RackSlotLayout()
-_ENVELOPE = ReachabilityEnvelope.load()
+_ENVELOPES = {name: ReachabilityEnvelope.load(name) for name in ("waist0", "waist")}
+_ENVELOPE = _ENVELOPES["waist0"]
 S = PlannerState
 
 N = 20  # the "twenty seeds" of the issue
@@ -49,38 +56,46 @@ SPLITS = ("seen", "unseen")
 GATES = (True, False)
 
 
-def _config(split, gate, *, seeds=None, yaml=True, **kwargs):
+def _config(split, gate, *, seeds=None, yaml=True, envelope=None, **kwargs):
+    extras = {"reach_gate": gate}
+    if envelope is not None:
+        extras["gate_envelope"] = envelope
     return EvalConfig(
         scenario="dry",
         split=split,
         seeds=SEEDS[split] if seeds is None else seeds,
         num_envs=50,
         config_path=CONFIG_DIR / f"s4_{split}.yaml" if yaml else None,
-        extras={"reach_gate": gate},
+        extras=extras,
         **kwargs,
     )
 
 
 @functools.cache
-def _doc(split, gate):
-    return run_evaluation(_config(split, gate))
+def _doc(split, gate, envelope=None):
+    return run_evaluation(_config(split, gate, envelope=envelope))
 
 
-def doc(split, gate):
+def doc(split, gate, envelope=None):
     """A validated twenty-seed document; a fresh copy, so a test may change it."""
-    return copy.deepcopy(_doc(split, gate))
+    return copy.deepcopy(_doc(split, gate, envelope))
 
 
 @functools.cache
-def _episode(split, gate, seed):
+def _episode(split, gate, seed, envelope="waist0"):
     return simulate_episode(
-        sample_episode(seed, split, "S4"), LAYOUT, gate=gate, envelope=_ENVELOPE if gate else None
+        sample_episode(seed, split, "S4"),
+        LAYOUT,
+        gate=gate,
+        envelope=_ENVELOPES[envelope] if gate else None,
     )
 
 
-def _episodes(split, gate, count):
+def _episodes(split, gate, count, envelope="waist0"):
     """The first ``count`` seeds of the split, simulated once per seed for the whole module."""
-    return tuple(_episode(split, gate, seed) for seed in default_seeds("S4", split)[:count])
+    return tuple(
+        _episode(split, gate, seed, envelope) for seed in default_seeds("S4", split)[:count]
+    )
 
 
 # ----------------------------------------------------------------------------- the document
@@ -179,37 +194,105 @@ def test_plot_results_draws_the_dry_result_when_allowed(tmp_path, capsys):
 # ----------------------------------------------------------------------------- the reach gate
 
 
+# The gate pins below come from this geometry (#66): both committed envelopes of the finger-base
+# point (D012), the 0.30 m stand-off, the pelvis at 0.75 m; the fakes' grasp frame on the plate's
+# local +x rim at the underside plane (#58's convention, not the near top rim of
+# docs/reach_gap_analysis.md), the counter-edge waypoint above the slot's x and the provisional
+# floor-standing rack ``DRY_RUN_RACK_FRAME``. With either envelope every gate-on episode still
+# ends ``ik_infeasible``: the plate targets are a rim's width further out than the analysis's, and
+# no transport or slot target of that rack is inside either envelope. #67 changes the rim point
+# and adds the waist command; whichever of #66 and #67 merges second re-pins these numbers.
+
+
+@pytest.mark.parametrize("envelope", [None, "waist"], ids=["waist0", "waist"])
 @pytest.mark.parametrize("split", SPLITS)
-def test_the_ik_infeasible_rate_differs_with_the_gate_on_and_off(split):
-    on, off = doc(split, True), doc(split, False)
+def test_the_ik_infeasible_rate_differs_with_the_gate_on_and_off(split, envelope):
+    on, off = doc(split, True, envelope), doc(split, False)
     on_n = on["aggregates"]["failure_tag_counts"]["ik_infeasible"]
     off_n = off["aggregates"]["failure_tag_counts"]["ik_infeasible"]
     assert on_n != off_n
-    # at the stand-off of kitchen_dims no sampled plate is in the palm's envelope (docs/status.md)
+    # at the 0.30 m stand-off every gated episode is refused somewhere (the geometry above)
     assert (on_n, off_n) == (N, 0)
     assert on["aggregates"]["success"]["count"] == 0
     assert on["run"]["config_hash"] != off["run"]["config_hash"]  # the option is hashed
 
 
+#: The planner state each gate-on episode of seeds 0 to 19 (seen) and 1000 to 1019 (unseen) fails
+#: in, per gating envelope, at the geometry above. Measured in #66 (50 seeds per split: waist0
+#: seen 49 pre_grasp and 1 grasp; unseen 43 pre_grasp, 4 grasp, 3 transport; waist seen
+#: 28 pre_grasp, 15 transport, 7 grasp; unseen 36 transport, 8 pre_grasp, 6 grasp).
+FIRST_REFUSAL = {
+    ("waist0", "seen"): {S.PRE_GRASP: 20},
+    ("waist0", "unseen"): {S.PRE_GRASP: 18, S.GRASP: 1, S.TRANSPORT: 1},
+    ("waist", "seen"): {S.PRE_GRASP: 11, S.TRANSPORT: 6, S.GRASP: 3},
+    ("waist", "unseen"): {S.TRANSPORT: 15, S.PRE_GRASP: 3, S.GRASP: 2},
+}
+
+
+@pytest.mark.parametrize("envelope", ["waist0", "waist"])
 @pytest.mark.parametrize("split", SPLITS)
-def test_the_gate_refuses_the_first_reach_at_the_nominal_stand_off(split):
-    for episode in _episodes(split, True, N):
-        assert episode.state is S.FAILED and episode.failed_in is S.PRE_GRASP
+def test_the_gate_refuses_a_reach_at_the_nominal_stand_off(split, envelope):
+    episodes = _episodes(split, True, N, envelope)
+    assert dict(Counter(e.failed_in for e in episodes)) == FIRST_REFUSAL[(envelope, split)]
+    for episode in episodes:
+        assert episode.state is S.FAILED
         assert episode.planner_failure is FailureTag.IK_INFEASIBLE
-        assert episode.gate_refusals >= 1 and episode.steps < 10
+        assert episode.gate_refusals >= 1
         assert episode.result.failure_tag is FailureTag.IK_INFEASIBLE
-        assert episode.result.metrics["grasp_success"] is False
         assert episode.result.metrics["completion_time_s"] is None
+        if episode.failed_in is S.PRE_GRASP:  # the first target is refused, nothing moved
+            assert episode.steps <= 2 and episode.result.metrics["grasp_success"] is False
+
+
+def test_the_waist_envelope_lets_more_episodes_past_the_plate_than_waist0():
+    for split in SPLITS:
+        past = {
+            name: sum(e.failed_in is S.TRANSPORT for e in _episodes(split, True, N, name))
+            for name in ("waist0", "waist")
+        }
+        assert past["waist"] > past["waist0"]
 
 
 def test_a_closer_stand_off_lets_the_planner_past_pre_grasp():
-    envelope = None
     spec_ok = []
     for seed in range(N):
         spec = sample_episode(seed, "seen", "S4")
-        ep = simulate_episode(spec, LAYOUT, gate=True, envelope=envelope, stand_off_m=0.0)
+        # 0.15 m with the finger-base waist0 envelope (#66): 12 of 20 get past pre_grasp (at
+        # 0.10 m 18, at 0.05 m and closer all 20, at 0.25 m 1)
+        ep = simulate_episode(spec, LAYOUT, gate=True, envelope=_ENVELOPE, stand_off_m=0.15)
         spec_ok.append(ep.failed_in is not S.PRE_GRASP)
     assert 0 < sum(spec_ok) < N  # some, not all: the reach gap is the stand-off
+
+
+@pytest.mark.parametrize("name", ["waist0", "waist"])
+def test_the_resolved_config_names_the_envelope_that_gated(name):
+    backend = DryRunBackend(_config("seen", True, envelope=name))
+    assert backend.gate_envelope == name and backend.envelope.same_as(_ENVELOPES[name])
+    block = backend.resolved_config()["envelope"]
+    assert block["name"] == name
+    assert block["file"] == ENVELOPE_PATHS[name].name
+    assert block["tip_offset_m"] == list(FINGER_BASE_OFFSET_M)
+    assert block["waist_range_deg"] == [list(r) for r in _ENVELOPES[name].waist_range_deg]
+    assert block["occupied_voxels"] == _ENVELOPES[name].occupied_count
+    json.dumps(block)  # plain JSON, hashable into run.config_hash
+
+
+def test_gate_envelope_defaults_to_waist0_and_is_hashed():
+    default = DryRunBackend(_config("seen", True))
+    assert dry_run.DEFAULT_GATE_ENVELOPE == default.gate_envelope == "waist0"
+    explicit = DryRunBackend(_config("seen", True, envelope="waist0"))
+    waist = DryRunBackend(_config("seen", True, envelope="waist"))
+    assert default.resolved_config() == explicit.resolved_config()
+    assert waist.resolved_config() != default.resolved_config()
+    assert waist.resolved_config()["envelope"]["file"] == "right_arm_envelope_waist.npz"
+    on0, onw = doc("seen", True), doc("seen", True, "waist")
+    assert on0["run"]["config_hash"] != onw["run"]["config_hash"]
+    assert set(onw["run"]) == set(on0["run"])  # the run block has no envelope key
+    # with the gate off the envelope is not loaded, so its name changes nothing
+    off = DryRunBackend(_config("seen", False))
+    off_waist = DryRunBackend(_config("seen", False, envelope="waist"))
+    assert off.envelope is None and off.resolved_config()["envelope"] is None
+    assert off_waist.resolved_config() == off.resolved_config()
 
 
 def test_the_gate_off_is_the_extras_option_and_not_a_run_field():
@@ -228,6 +311,9 @@ def test_bad_extras_are_a_scenario_config_error():
         DryRunBackend(EvalConfig(scenario="dry", seeds=(0,), extras={"speed": 1}))
     with pytest.raises(ScenarioConfigError, match="reach_gate"):
         DryRunBackend(EvalConfig(scenario="dry", seeds=(0,), extras={"reach_gate": "off"}))
+    for bad in ("waist1", "right_arm_envelope.npz", True, None):
+        with pytest.raises(ScenarioConfigError, match="gate_envelope.*one of"):
+            DryRunBackend(EvalConfig(scenario="dry", seeds=(0,), extras={"gate_envelope": bad}))
     with pytest.raises(ValueError, match="extras keys"):
         EvalConfig(scenario="dry", seeds=(0,), extras={1: True})
 
@@ -416,12 +502,24 @@ def test_the_command_line_runs_the_dry_scenario_end_to_end(tmp_path, capsys):
     assert evaluate_main(argv) == 0
     out = capsys.readouterr().out
     assert "scenario dry | split seen" in out and "SYNTHETIC RUN" in out
-    assert "failure tags: fall 0, ik_infeasible 5" in out  # the gate is on by default
+    # the gate is on by default; seeds 0 to 4 are all refused at the geometry of the gate pins
+    assert "failure tags: fall 0, ik_infeasible 5" in out
     written = list(tmp_path.glob("*_dry_seen.json"))
     assert len(written) == 1
     from kitchenbot.evaluation.results import load_result
 
     assert load_result(written[0]).doc["run"]["scenario"] == "dry"
+
+
+def test_the_command_line_gates_on_the_waist_envelope(tmp_path, capsys):
+    argv = ["--scenario", "dry", "--config", str(CONFIG_DIR / "s4_seen.yaml"), "--seeds", "0-4",
+            "--extra", "gate_envelope=waist", "--out", str(tmp_path)]
+    assert evaluate_main(argv) == 0
+    out = capsys.readouterr().out
+    assert "extras gate_envelope=waist" in out
+    # seeds 0 and 4 refused in pre_grasp, 1 in transport, 2 and 3 in grasp (FIRST_REFUSAL)
+    assert "failure tags: fall 0, ik_infeasible 5" in out
+    assert len(list(tmp_path.glob("*_dry_seen.json"))) == 1
 
 
 def test_the_default_seeds_of_the_dry_run_are_the_s4_trial_counts():
@@ -465,4 +563,4 @@ def test_the_module_imports_no_simulator():
 def test_the_module_surface():
     assert dry_run.GENERATOR_VERSION == "dry-v1" and dry_run.CONTROL_HZ == 50.0
     assert set(dry_run.MIRRORABLE_SCENARIOS) == {"S2", "S3", "S4"}
-    assert dry_run.EXTRA_KEYS == ("reach_gate",)
+    assert dry_run.EXTRA_KEYS == ("reach_gate", "gate_envelope")

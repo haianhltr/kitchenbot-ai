@@ -69,10 +69,11 @@ class EvalConfig:
     ``run.config_sha256``. It is not part of :meth:`to_dict`, so ``run.config_hash`` is the same
     with and without it. The runner does not read the file's contents; a scenario's loader may.
 
-    ``extras`` are options only one scenario's loader reads (``dry``: ``reach_gate``, see
-    :mod:`kitchenbot.evaluation.dry_run`). They are not part of :meth:`to_dict`, so they are not
-    in the ``run`` block and the schema is untouched; a loader that uses one puts it in its
-    ``resolved_config()``, which is how it reaches ``run.config_hash``. The command line fills
+    ``extras`` are options only one scenario's loader reads (``dry``: ``reach_gate`` and
+    ``gate_envelope``, see :mod:`kitchenbot.evaluation.dry_run`). They are not part of
+    :meth:`to_dict`, so they are not in the ``run`` block and the schema is untouched; a loader
+    that uses one puts it in its ``resolved_config()``, which is how it reaches
+    ``run.config_hash``. The command line fills
     them with ``--extra KEY=VALUE``; ``run_evaluation`` rejects keys the scenario does not list in
     ``ScenarioSpec.extra_keys``.
     """
@@ -269,7 +270,7 @@ def _register_builtin() -> None:
             loader=_load_dry,
             uses_gpu=False,
             synthetic=True,
-            extra_keys=("reach_gate",),  # dry_run.EXTRA_KEYS; a test keeps the two equal
+            extra_keys=("reach_gate", "gate_envelope"),  # dry_run.EXTRA_KEYS; a test checks
         )
     )
 

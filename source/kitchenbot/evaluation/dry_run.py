@@ -21,10 +21,12 @@ keep this file's shape (a loader that reads the :class:`EvalConfig`, a backend w
 ``scripts/update_experiments.py`` and ``scripts/plot_results.py`` refuse it unless told
 ``--allow-synthetic``. What the numbers do say is whether the contracts between the sampler, the
 planner, the arm pipeline and the judges hold together, and what the reach gap of docs/status.md
-is worth when the committed envelope guards the arm: with the stand-off of ``kitchen_dims`` the
-first target of ``pre_grasp`` is out of the palm's reach in every sampled episode, so the gate-on
-run ends in ``ik_infeasible`` (``tests/test_dry_run.py`` asserts it for seeds 0 to 19 of both
-splits), while the gate-off run is the check that the planner, the fakes and the judges agree.
+is worth when the committed envelope guards the arm: at the 0.30 m stand-off of ``kitchen_dims``,
+with the finger-base envelopes (#66), every gate-on episode is refused somewhere and ends in
+``ik_infeasible``, mostly at the first target of ``pre_grasp`` with the waist at zero, and in
+``pre_grasp``, ``grasp`` or ``transport`` with the waist envelope (``tests/test_dry_run.py`` pins
+the states for seeds 0 to 19 of both splits and says which geometry they come from), while the
+gate-off run is the check that the planner, the fakes and the judges agree.
 
 Config
 ------
@@ -39,7 +41,14 @@ into ``resolved_config`` and so into ``run.config_hash``.
 
 ``EvalConfig.extras``, set on the command line with ``--extra reach_gate=false``:
 ``{"reach_gate": False}`` turns the reachability gate off, which leaves the fake arm
-unconstrained. Both settings are testable and differ in ``run.config_hash``.
+unconstrained. ``{"gate_envelope": "waist"}`` (``--extra gate_envelope=waist``, #66) gates on the
+committed waist envelope instead of the default ``"waist0"`` (waist at zero); both are of the
+finger-base point of D012 (:data:`kitchenbot.controllers.reachability.ENVELOPE_PATHS`). The
+fakes have no torso, so ``waist`` is the upper bound of a commanded lean, not a lean the dry run
+models. Every setting is testable and differs in ``run.config_hash``: the resolved config's
+``envelope`` block (``None`` with the gate off) names the file, the tip offset and the waist range
+that gated. The ``run`` block of the result has no envelope key (the schema is strict and
+scenario options reach the document only through the hash).
 
 What the dry run does not model
 -------------------------------
@@ -59,7 +68,7 @@ from typing import Any
 
 import yaml
 
-from kitchenbot.controllers.reachability import ReachabilityEnvelope
+from kitchenbot.controllers.reachability import ENVELOPE_PATHS, ReachabilityEnvelope
 from kitchenbot.evaluation.failure_tags import FailureTag
 from kitchenbot.evaluation.judges import GraspJudge, PlacementJudge, episode_outcome
 from kitchenbot.evaluation.runner import EpisodeResult, EvalConfig, ScenarioConfigError
@@ -75,6 +84,7 @@ from kitchenbot.scene.randomization import (
 
 __all__ = [
     "CONTROL_HZ",
+    "DEFAULT_GATE_ENVELOPE",
     "EXTRA_KEYS",
     "GENERATOR_VERSION",
     "MIRRORABLE_SCENARIOS",
@@ -102,7 +112,10 @@ SETTLE_S = 3.0
 MIRRORABLE_SCENARIOS: tuple[str, ...] = ("S2", "S3", "S4")
 
 #: ``EvalConfig.extras`` keys this scenario reads.
-EXTRA_KEYS: tuple[str, ...] = ("reach_gate",)
+EXTRA_KEYS: tuple[str, ...] = ("reach_gate", "gate_envelope")
+
+#: The envelope the gate loads without ``extras["gate_envelope"]``: the waist at zero.
+DEFAULT_GATE_ENVELOPE = "waist0"
 
 _DEFAULT_MIRROR = "S4"
 
@@ -288,8 +301,8 @@ def run_dry_episode(
 class DryRunBackend:
     """Backend of the ``dry`` scenario (:class:`~kitchenbot.evaluation.runner.ScenarioBackend`).
 
-    Reads the :class:`EvalConfig`: the split, ``config_path`` (see the module docstring) and
-    ``extras["reach_gate"]``. Holds no resources.
+    Reads the :class:`EvalConfig`: the split, ``config_path`` (see the module docstring),
+    ``extras["reach_gate"]`` and ``extras["gate_envelope"]``. Holds no resources.
     """
 
     def __init__(self, config: EvalConfig, layout: kd.RackSlotLayout | None = None) -> None:
@@ -301,7 +314,13 @@ class DryRunBackend:
         gate = config.extras.get("reach_gate", True)
         if not isinstance(gate, bool):
             raise ScenarioConfigError(f"extras['reach_gate'] must be a bool, got {gate!r}")
+        name = config.extras.get("gate_envelope", DEFAULT_GATE_ENVELOPE)
+        if not isinstance(name, str) or name not in ENVELOPE_PATHS:
+            raise ScenarioConfigError(
+                f"extras['gate_envelope'] must be one of {list(ENVELOPE_PATHS)}, got {name!r}"
+            )
         self.gate = gate
+        self.gate_envelope = name
         self.split = config.split
         self.layout = layout if layout is not None else kd.RackSlotLayout()
         if config.config_path is not None:
@@ -310,12 +329,16 @@ class DryRunBackend:
             self.sampler_scenario = _DEFAULT_MIRROR
             self.ranges = RandomizationRanges.for_split(config.split)
         self.planner_config = PlannerConfig()
-        self.envelope = ReachabilityEnvelope.load() if self.gate else None
+        self.envelope = ReachabilityEnvelope.load(name) if self.gate else None
 
     def resolved_config(self) -> Mapping[str, Any]:
         envelope = None
         if self.envelope is not None:
             envelope = {
+                "name": self.gate_envelope,
+                "file": ENVELOPE_PATHS[self.gate_envelope].name,
+                "tip_offset_m": list(self.envelope.tip_offset_m),
+                "waist_range_deg": [list(row) for row in self.envelope.waist_range_deg],
                 "seed": self.envelope.seed,
                 "samples": self.envelope.samples,
                 "spacing_m": self.envelope.spacing,
