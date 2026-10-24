@@ -34,7 +34,8 @@ Unseen results are the headline numbers.
 `kitchenbot.scene.randomization` is the implementation of this table: `RandomizationRanges` holds
 the rows, `sample_episode(seed, split, scenario)` draws one episode from a sub-seed of its scenario,
 split and seed, `scripts/make_eval_configs.py` writes the ranges into the ten
-`configs/eval/s<N>_<split>.yaml` files, and the Isaac Lab event terms of #13 wrap the sampler
+`configs/eval/s<N>_<split>.yaml` files and the four fixed-pelvis files of S2 and S3
+(`s<N>_<split>_fixed.yaml`, section 1), and the Isaac Lab event terms of #13 wrap the sampler
 rather than re-implementing it.
 
 Ranges are frozen once M4 starts. Changing them resets `docs/experiments.md`.
@@ -80,10 +81,23 @@ lower-body policy. Our 50-trial unseen split and the S0 metrics follow them.
 
 Start every run from its committed YAML: `--config configs/eval/<scenario>_<split>.yaml` names the
 file and the evaluator records its path and SHA256 in `run.config_path` and `run.config_sha256`
-(#52; AGENTS.md section 6: a run without a committed config did not happen).
+(#52; AGENTS.md section 6: a run without a committed config did not happen). Without
+`--num_envs` the run takes the YAML's `num_envs`, the trial count of step 2 for that scenario and
+split; `--num_envs` overrides it, a run with neither uses 50, and `run.num_envs` records the value
+used (#78). `num_envs` is the only key the evaluator reads from the file.
 
 ```
 python scripts/evaluate.py --scenario S4 --split unseen --seeds 1000-1049 --num_envs 50 --headless
+```
+
+The fixed-pelvis runs of S2 and S3 (section 1, and the first comparison of section 6) start from
+`configs/eval/s2_seen_fixed.yaml`, `s2_unseen_fixed.yaml`, `s3_seen_fixed.yaml` or
+`s3_unseen_fixed.yaml`, the default-base file of the same scenario and split with `base: fixed`
+(same seeds, ranges and `num_envs`). The evaluator does not read `base` from the file, so the run
+passes `--base fixed` too (#78):
+
+```
+python scripts/evaluate.py --scenario S2 --split unseen --base fixed --config configs/eval/s2_unseen_fixed.yaml --headless
 ```
 
 From the repository root. `--seeds` takes a count, a list or ranges (`50`, `0,5,10-12`, `1000-1049`)

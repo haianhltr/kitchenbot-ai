@@ -3,7 +3,7 @@
 Given a seed, a split and a scenario, every episode's plate pose, plate diameter, rack slot, pelvis
 noise, friction and push schedule is one deterministic draw, :func:`sample_episode`. The Isaac Lab
 event terms of #13 wrap this module (they read :class:`EpisodeSpec`; they do not re-implement the
-draws), the ten ``configs/eval/*.yaml`` files are generated from :class:`RandomizationRanges` by
+draws), the ``configs/eval/*.yaml`` files are generated from :class:`RandomizationRanges` by
 ``scripts/make_eval_configs.py``, and the seen and unseen splits cannot drift apart because both
 come from :meth:`RandomizationRanges.for_split`. numpy and the standard library only: nothing
 here imports Isaac Sim, Isaac Lab or torch.
