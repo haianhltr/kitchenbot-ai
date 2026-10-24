@@ -63,6 +63,8 @@ The overlay has four rows. The row names are fixed; the values come from this ta
 
 The names follow [architecture.md](architecture.md) sections 5 and 8. The attach baseline always carries its suffix because it is not a grasp (decision D007). When `base` is fixed the policy field is ignored and the row says that no policy is active.
 
+No row shows the waist lean of D012. The lean is commanded only in `pre_grasp`, `grasp` and `lift`, which the STATE row already names, and the `wide` camera shows it. If the angle should be on screen, it would be a fifth row read from the live waist joint, and `tests/test_docs_skeletons.py` and issue #25 would have to name it; that is left to the director.
+
 ## Shot details
 
 Each block is the exact text drawn in the top-left panel while the shot starts. The STATE value changes as described under the block.
@@ -195,6 +197,9 @@ STATE       idle
 
 What happens: the whole task from a random plate pose to the released plate, in real time; the slot is as long as the evaluator's trial limit, so the trial always fits. STATE steps through `idle`, `pre_grasp`, `grasp`, `lift`, `transport`, `align`, `insert`, `release` and `done`. Camera `wide`.
 
+The scene is the compact dishwasher raised on its low cabinet to the robot's right (D013), and the robot stands 0.30 m from the counter (D012). By design the planner commands a forward waist lean of up to 29.8 degrees during `pre_grasp`, `grasp` and `lift` and an upright waist again from the counter-edge waypoint of `transport` on, and the balance policy carries it out. The shot shows this lean and needs no overlay for it. If the recorded clip shows a different lean, the clip is still used by rule 3 and the difference is written into the limitations of the report.
+
+<!-- TODO(#21): confirm on the clip of this shot that the lean starts in pre_grasp and ends at the counter-edge waypoint, and that the planner commands it; correct this paragraph to what the result file shows -->
 <!-- TODO(#22): result file, seed and commit of the first successful S4 trial in ascending seed order -->
 
 ### Shot 10: S4, second success
@@ -297,7 +302,7 @@ What happens: plain text on the card background; no motion. The commit is the fi
 
 | Camera | Frames | Moves |
 | --- | --- | --- |
-| `wide` | The robot, the counter and the open dishwasher in one view from the front at three quarters | Fixed in the world |
+| `wide` | The robot, the counter and the open compact dishwasher raised on its low cabinet (D013) in one view from the front at three quarters, wide enough to show the forward waist lean | Fixed in the world |
 | `split-wide` | Two `wide` views side by side, one per controller | Fixed in the world |
 | `medium-right` | The torso, the right arm and the reach target from the front right at hand height | Fixed in the world |
 | `hand-close` | The right palm and the plate at a short distance | Follows the right palm |
