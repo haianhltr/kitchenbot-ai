@@ -54,7 +54,7 @@ SCENARIO_NAMES: tuple[str, ...] = (*REAL_SCENARIOS, *SYNTHETIC_SCENARIOS)
 SUCCESS_DEFINITIONS: dict[str, str] = {
     "S0": "no fall until the timeout (section 5: 60 s without a fall)",
     "S1": "final hand error under 3 cm and no fall",
-    "S2": "grasp success: plate lifted 15 cm and held for 2 s",
+    "S2": "grasp success: plate lifted 15 cm and held for 2 s without contact with the counter",
     "S3": "placement success: plate in the slot volume, within 15 deg of vertical, stable 2 s",
     "S4": "task success: grasp and placement both succeed, no fall, within the 30 s timeout",
     "fake": "synthetic: no failure cause drawn for the seed (mirrors S4)",

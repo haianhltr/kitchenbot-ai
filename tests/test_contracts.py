@@ -204,6 +204,20 @@ def test_failure_tags_agree_in_the_code_the_schema_and_section_7():
     assert re.findall(r"`([a-z_]+)`", listed) == list(FAILURE_TAG_VALUES)
 
 
+def test_success_definitions_carry_the_section_3_numbers():
+    defs = metrics.SUCCESS_DEFINITIONS
+    grasp = (
+        f"lifted {_cm(judges.GRASP_LIFT_HEIGHT_M)} cm and held for {judges.GRASP_HOLD_S:g} s "
+        "without contact with the counter"
+    )
+    assert grasp in defs["S2"] and grasp in EVAL_3_FLAT
+    assert f"within {judges.PLACEMENT_VERTICAL_TOL_DEG:g} deg of vertical" in defs["S3"]
+    assert f"stable {judges.PLACEMENT_STABLE_S:g} s" in defs["S3"]
+    budget = f"within the {CFG.total_budget_s:g} s timeout"
+    assert budget in defs["S4"] and budget in EVAL_3_FLAT
+    assert f"under {metrics.HAND_TARGET_THRESHOLD_CM:g} cm" in defs["S1"]
+
+
 def test_fake_scenario_timeout_is_the_task_budget():
     assert fake.TIMEOUT_S == CFG.total_budget_s
 
