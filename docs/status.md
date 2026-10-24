@@ -2,11 +2,11 @@
 
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
-**As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56 to #60, #66 to #71 and #78 merged, D012 (amended) and D013 decided, #77 open, Isaac Sim
-not yet installed. Actuals: those twenty issues
-(55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
-reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
+**As of:** 2026-10-24, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
+#56 to #60, #66 to #71, #77 and #78 merged, D012 (amended) and D013 decided, Isaac Sim not yet
+installed. Actuals: those twenty-eight issues (71 estimated hours) were finished in about twelve
+hours of wall-clock over two days by parallel worker sessions, reviewed and merged by the
+director. 1,503 unit tests run in about 90 s without a simulator.
 CI is green on `main`.
 
 ## What exists
@@ -94,7 +94,7 @@ CI is green on `main`.
   the URDF origins (`robots/kinematics.py`) and two 2 cm voxel reachability envelopes of the
   D012 finger-base point (regenerated in #66; `ReachabilityEnvelope.load("waist0" | "waist")`):
   `right_arm_envelope.npz` with the waist at zero (#48) and `right_arm_envelope_waist.npz` with
-  the waist sampled (pitch 0 to 29.8 deg forward, yaw ±20 deg; #56). #14 builds the IK on the
+  the waist sampled (pitch 0 to 26.8 deg forward since #77, the capped lean; yaw ±20 deg; #56). #14 builds the IK on the
   pipeline, #16 validates both envelopes against the real IK and decides which gates when.
 - Reach-gap analysis `docs/reach_gap_analysis.md` with `scripts/reach_gap_analysis.py` (#56): the
   planner's waypoints for every committed seed of the ten (scenario, split) pairs against both
@@ -105,7 +105,7 @@ CI is green on `main`.
   judges → result JSON → figures), marked synthetic so it can never enter `docs/experiments.md`.
   With the reachability gate on (finger-base envelopes, `--extra gate_envelope=waist0|waist`,
   0.30 m stand-off, the #59 rack pose and the top-rim grasp frame since #67) 13 / 43 of 50 seeds
-  (seen / unseen) reach `done` with the waist-zero envelope and 50 / 50 with the waist envelope,
+  (seen / unseen) reach `done` with the waist-zero envelope and 48 / 50 with the capped waist envelope (#77),
   the rest `ik_infeasible` in `pre_grasp` or `grasp` (position only, synthetic); with
   `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by construction. It is the template of a `ScenarioBackend` for #21 and #22 (note on #22).
 - Stand environment drafts for #5: `locomotion/stand_env_cfg.py`, `commands.py`,
@@ -122,7 +122,7 @@ CI is green on `main`.
   drafts against the 15-item checklist in PR #53; if the waist lean below is adopted, the
   upper-body command must also sample a waist pitch target before #6 trains (notes on #5, #6).
 - Waist lean command in the stand environment drafts (#68, D012): `WaistLeanCommand` with its
-  numpy rules in `locomotion/waist_lean_targets.py` (targets in [0, 0.52] rad, exactly zero for
+  numpy rules in `locomotion/waist_lean_targets.py` (targets in [0, 0.468] rad since #77, exactly zero for
   half of the draws, a new target every 1 to 3 s, the observed command ramped at 1 rad/s), the
   observation term at index 9 of each frame, and `waist_tracking_l1` in place of the zero-waist
   reward. #5 runs it; the deployed lean command (#21) must not jump faster than 1 rad/s.
@@ -159,7 +159,7 @@ CI is green on `main`.
 From the #56 analysis (`docs/reach_gap_analysis.md`: forward kinematics only, no collision, no
 palm orientation, so an upper bound) the operator chose the lower-risk row:
 
-| stand-off | waist at zero | commanded lean up to 29.8 deg |
+| stand-off | waist at zero | commanded lean up to 29.8 deg (as computed; the 26.8 deg cap costs 1 to 4 points, #77) |
 | --- | --- | --- |
 | 0.45 m (before) | S2 0 / 0 | S2 0 / 30 |
 | **0.30 m (now)** | S2 2 / 30 | S2 73 / 96, **98 / 100 with the IK point at the finger bases** |
@@ -177,17 +177,16 @@ dishwasher stays raised on its 0.55 m plinth beside the counter (D013); #10 dres
 a low cabinet with a door front in the counter's colour, and `DISHWASHER_POSE_KITCHEN` holds at
 either stand-off (the lateral clearance to the right leg does not depend on it). The committed
 envelopes sample the finger-base point since #66, the dry run can gate on the waist envelope, and
-since #67 (top-rim grasp frame, #59 rack pose in the fakes) the gate-on dry run at 0.30 m passes
-13 / 43 of 50 episodes (seen / unseen) with the waist-zero envelope and 50 / 50 with the waist
-envelope, position only and synthetic; #77 regenerates that envelope with the capped lean.
+since #67 (top-rim grasp frame, #59 rack pose in the fakes) and #77 (waist envelope regenerated
+with the capped lean) the gate-on dry run at 0.30 m passes 13 / 43 of 50 episodes (seen / unseen)
+with the waist-zero envelope and 48 / 50 with the waist envelope, position only and synthetic.
 Recorded on #5, #6, #10, #11, #14, #16, #21.
 
 ## What is running
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
-D013, all six are merged (#66 to #71), as is #78 (evaluator contract fixes). One follow-up from
-the #69 audit is in progress: #77 (lean capped at the soft limit and the waist envelope
-regenerated, kb-controls). Every other open issue needs Isaac Sim. The director is
+D013, all six are merged (#66 to #71), as are the two follow-ups of the #69 audit (#77, #78).
+Nothing is in progress: every remaining open issue needs Isaac Sim. The director is
 pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
@@ -210,4 +209,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #77 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). Nothing that does not need Isaac Sim is left; the next move is the operator's.
