@@ -191,6 +191,41 @@ per physics step `apply_action` (:217), then terminations (:231), rewards (:234)
 The follow action reads the command once per env step in `process_actions`, i.e. the target the
 policy observed on the previous step.
 
+### 4.1 Waist lean command (#68, D012)
+
+`WaistLeanCommand` (`locomotion/commands.py`) is a scalar command, one value per environment,
+resampled every 1 to 3 s, exactly zero half of the time, with the observed value ramping toward
+each target. The pattern is `UniformVelocityCommand` (scalar command, standing share, metrics);
+the sampling math is `locomotion/waist_lean_targets.py` (numpy, tested). References, all v3.0.0:
+
+| Symbol | Where (v3.0.0) | What the draft relies on |
+| --- | --- | --- |
+| `UniformVelocityCommand._resample_command` | `source/isaaclab/isaaclab/envs/mdp/commands/velocity_command.py:158-174` | The scalar-command pattern: `env_ids` may be a slice, so the size is `len(range(num_envs)[env_ids])` (:160); the standing share is a per-resample uniform draw (:174). The draft draws its zero share in numpy instead, so the statistics are testable |
+| `UniformVelocityCommand._update_metrics` / `reset` | same, :123-131 / :133-156 | Metrics as per-episode means: per-step errors are summed (:129-131), the mean is written into `self.metrics[...]` in `reset()` **before** `super().reset()` (:140-148), and the sums are zeroed after it (:153-155). The draft's `pitch_error` does the same |
+| `CommandTerm.reset` metric logging | `source/isaaclab/isaaclab/managers/command_manager.py:131-137` | Logs `torch.mean(metrics[name][env_ids])` and then zeroes it. **Consequence for the #46 draft:** `UpperBodyCommand._update_metrics` overwrites `target_error` every step, so what `reset` logs is the last step's value, not an episode mean. Not changed here; #5 may want the sums pattern |
+| `index_fill_` | `source/isaaclab/isaaclab/utils/array.py:47-76` | Accepts a slice, integer indices or a boolean mask; used for the sums in `reset` |
+| `CommandTermCfg.cmd_kind` / `element_names` | `source/isaaclab/isaaclab/managers/manager_term_cfg.py:125-128`; set by `UniformVelocityCommand.__init__`, `velocity_command.py:96-97` | Deployment-export hints for Isaac Lab's LEAPP exporter. Not set: our export is TorchScript plus a JSON manifest written from `obs_layout.as_rows()` (#6) |
+| `CommandManager.get_command` | `command_manager.py:370-379` | Returns `term.command` unchanged, so `(num_envs, 1)` for this term; `mdp.generated_commands` (`envs/mdp/observations.py:909`) hands the same tensor to the observation group, one column per frame. The reward reads `[:, 0]` |
+| `_reset_idx` order | `source/isaaclab/isaaclab/envs/manager_based_rl_env.py:379-411` | Scene reset, reset events (:392; `reset_joints_by_scale` with `(1.0, 1.0)` puts the waist at its default, `events.py:1407`), observation manager (:399), then `command_manager.reset` (:411). So when the command is reset the waist is at its default, and `G1_29DOF_CFG` leaves the waist at zero (only hip pitch, knee and ankle pitch are set, `unitree.py:439-443`). The command starts every episode at 0.0 |
+| `SceneEntityCfg` joint ids | `source/isaaclab/isaaclab/managers/scene_entity_cfg.py:198` | `joint_ids` come from `entity.find_joints(joint_names, preserve_order=...)`; with `preserve_order=True` they follow the list, so the reward's three columns are yaw, roll, pitch as in `joint_maps.WAIST`. (With every joint selected the ids collapse to `slice(None)`, :201-202; three of 43 is not that case) |
+| `RewardManager.compute` | `source/isaaclab/isaaclab/managers/reward_manager.py:151` (note at :36-40) | The weighted sum is multiplied by `dt` (0.02 s here), so `weight=-0.1` on a 0.5 rad error costs 0.001 per step |
+| `ManagerBasedEnv.step_dt` | `manager_based_env.py:268` | Already in section 1; the ramp advances by `max_rate_rad_s * step_dt` per `_update_command` |
+
+**Step target versus ramp.** The draft ramps at 1 rad/s (`max_rate_rad_s`, `None` gives the step).
+Reasons: the planner's arm target pipeline slews at 1 rad/s (`controllers/target_filter.py`) and
+#21 is to slew the lean command the same way, so a deployed lean does not jump; and the G1 waist actuator (`unitree.py:506-531`) has
+stiffness 5000 N·m/rad against an effort limit of 50 N·m (and 35 N·m in the URDF fixture), so a
+0.52 rad step demands 2,600 N·m and saturates the actuator for the whole transient. At 1 rad/s a
+full lean takes 0.52 s, inside the 1 s minimum between targets.
+
+**Limits.** `G1_29DOF_CFG` sets `soft_joint_pos_limit_factor=0.9` (`unitree.py:446`), so the
+waist pitch soft limit is 0.468 rad, below the 0.52 rad command maximum (the URDF limit, D012).
+Nothing in the draft clips the command or the policy's targets to the soft limits
+(`JointAction.process_actions` clips only when `cfg.clip` is set,
+`source/isaaclab/isaaclab/envs/mdp/actions/joint_actions.py:169-178`), so a command of 0.52 rad
+is a target at the hard stop; the joint cannot overshoot it. `reset_joints_by_scale` would clamp to the
+soft limits (`events.py:1436-1437`) but its range is `(1.0, 1.0)` times a default of zero.
+
 ## 5. Observations
 
 | Symbol | Where (v3.0.0) | What the drafts rely on |
@@ -209,8 +244,9 @@ policy observed on the previous step.
 | `SceneEntityCfg` | `source/isaaclab/isaaclab/managers/scene_entity_cfg.py:23` | `joint_names` (:43), `body_names` (:77), `preserve_order: bool = False` (:110) |
 
 The drafts set `history_length=5`, `history_order="time"` on the policy group so the exported
-layout is "five frames of the 138-value frame, oldest first" (`locomotion/obs_layout.py`). Joint
-order inside each term follows `preserve_order=True` and `joint_maps`.
+layout is "five frames of the 139-value frame, oldest first" (`locomotion/obs_layout.py`; 138
+before the waist lean command of #68, section 4.1). Joint order inside each term follows
+`preserve_order=True` and `joint_maps`.
 
 ## 6. Rewards, terminations, events, curriculum
 

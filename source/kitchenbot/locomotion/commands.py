@@ -1,7 +1,8 @@
-# UNTESTED DRAFT (#46): written against Isaac Lab v3.0.0 source without a simulator; #5 runs and fixes it.  # noqa: E501
-"""``UpperBodyCommand``: random arm and hand targets while the balance policy trains.
+# UNTESTED DRAFT (#46 and #68): written against Isaac Lab v3.0.0 source without a simulator; #5 runs and fixes it.  # noqa: E501
+"""Command terms of the balance-policy training: ``UpperBodyCommand`` and ``WaistLeanCommand``.
 
-A ``CommandTerm`` (v3.0.0 ``managers/command_manager.py:26``) over the 28 arm and hand joints. The
+``UpperBodyCommand`` gives random arm and hand targets while the balance policy trains. It is a
+``CommandTerm`` (v3.0.0 ``managers/command_manager.py:26``) over the 28 arm and hand joints. The
 sampling rules live in ``upper_body_targets`` (numpy, tested on CI); this term converts tensors at
 the boundary. Isaac Lab references are in docs/isaaclab_3_api_notes.md section 4.
 
@@ -16,6 +17,15 @@ ignore later resamples; the interpolation fraction clips at 1, so the arm then h
 Limits are the articulation's soft joint limits (``ArticulationCfg.soft_joint_pos_limit_factor``,
 0.9 for the G1), the default pose is ``default_joint_pos``; both are read from environment 0.
 ``range_factor`` is set by the curriculum term in ``curriculums.py``.
+
+``WaistLeanCommand`` (#68, D012) is the forward waist pitch the planner will ask for during
+pre-grasp, grasp and lift: one value in radians per environment, observed by the policy and tracked
+by ``rewards.waist_tracking_l1``. The rules (targets in ``[0, 0.52]`` rad, exactly zero half of the
+time, a new target every 1 to 3 s, a 1 rad/s ramp instead of a step) and the reason for each are in
+``waist_lean_targets`` (numpy, tested on CI); this term converts tensors at the boundary. The
+metric follows ``UniformVelocityCommand`` (v3.0.0 ``commands/velocity_command.py:123-156``):
+per-step errors are summed and the episode mean is written in ``reset`` before the base class logs
+and zeroes the metrics.
 """
 
 from __future__ import annotations
@@ -26,9 +36,10 @@ from dataclasses import MISSING
 import numpy as np
 import torch
 from isaaclab.managers import CommandTerm, CommandTermCfg
-from isaaclab.utils import configclass
+from isaaclab.utils import configclass, index_fill_
 
 from kitchenbot.locomotion import upper_body_targets as ubt
+from kitchenbot.locomotion import waist_lean_targets as wlt
 
 
 class UpperBodyCommand(CommandTerm):
@@ -140,6 +151,101 @@ class UpperBodyCommandCfg(CommandTermCfg):
 
     reach_duration_range_s: tuple[float, float] = ubt.REACH_DURATION_RANGE_S
     """Seconds the reach takes to arrive."""
+
+    seed: int | None = None
+    """Seed of the numpy generator; ``None`` uses the environment's seed."""
+
+
+class WaistLeanCommand(CommandTerm):
+    """Forward waist pitch command in rad, shape ``(num_envs, 1)``."""
+
+    cfg: WaistLeanCommandCfg
+
+    def __init__(self, cfg: WaistLeanCommandCfg, env):
+        super().__init__(cfg, env)
+        self.robot = env.scene[cfg.asset_name]
+        joint_ids, joint_names = self.robot.find_joints(
+            [cfg.joint_name], preserve_order=True, as_proxy=True
+        )
+        if len(joint_names) != 1:
+            raise ValueError(f"resolved {joint_names}, expected [{cfg.joint_name!r}]")
+        self.joint_ids = joint_ids.torch
+        seed = env.cfg.seed if cfg.seed is None else cfg.seed
+        self._rng = np.random.default_rng(None if seed is None else [seed, wlt.RNG_STREAM])
+
+        self._command = torch.zeros(self.num_envs, 1, device=self.device)
+        self._target = torch.zeros(self.num_envs, 1, device=self.device)
+        # -- metrics: finalized per-episode means, written at reset() (see the module docstring)
+        self.metrics["pitch_error"] = torch.zeros(self.num_envs, device=self.device)
+        self._error_sum = torch.zeros(self.num_envs, device=self.device)
+        self._step_count = torch.zeros(self.num_envs, device=self.device)
+
+    @property
+    def command(self) -> torch.Tensor:
+        return self._command
+
+    def reset(self, env_ids: Sequence[int] | None = None) -> dict[str, torch.Tensor]:
+        if env_ids is None:
+            env_ids = slice(None)
+        self.metrics["pitch_error"][env_ids] = self._error_sum[env_ids] / self._step_count[
+            env_ids
+        ].clamp_min(1.0)
+        extras = super().reset(env_ids)
+        index_fill_(self._error_sum, env_ids, 0.0)
+        index_fill_(self._step_count, env_ids, 0.0)
+        return extras
+
+    def _resample_command(self, env_ids: Sequence[int] | slice):
+        ids = torch.arange(self.num_envs, device=self.device)[env_ids]
+        if ids.numel() == 0:
+            return
+        # reset() zeroes the counter before resampling: the episode starts upright, as the reset
+        # puts the waist at its default pose
+        starting = ids[self.command_counter[ids] == 0]
+        self._command[starting] = 0.0
+        targets = wlt.sample_lean_targets(
+            self._rng, int(ids.numel()), self.cfg.max_lean_rad, self.cfg.zero_share
+        )
+        self._target[ids] = torch.as_tensor(targets, dtype=torch.float, device=self.device)[:, None]
+        if self.cfg.max_rate_rad_s is None:
+            self._command[ids] = self._target[ids]
+
+    def _update_command(self):
+        if self.cfg.max_rate_rad_s is None:
+            self._command[:] = self._target
+        else:
+            step = self.cfg.max_rate_rad_s * self._env.step_dt
+            self._command[:] = wlt.slew_toward(self._command, self._target, step)
+
+    def _update_metrics(self):
+        pitch = self.robot.data.joint_pos.torch[:, self.joint_ids]
+        self._error_sum += (pitch - self._command).abs()[:, 0]
+        self._step_count += 1.0
+
+
+@configclass
+class WaistLeanCommandCfg(CommandTermCfg):
+    """Configuration of ``WaistLeanCommand``."""
+
+    class_type: type = WaistLeanCommand
+
+    asset_name: str = MISSING
+    """Scene name of the robot articulation."""
+
+    joint_name: str = wlt.WAIST_PITCH_JOINT
+    """The joint whose position the metric compares with the command."""
+
+    resampling_time_range: tuple[float, float] = wlt.RESAMPLE_TIME_RANGE_S
+    """Seconds between targets."""
+
+    max_lean_rad: float = wlt.MAX_LEAN_RAD
+    """Largest target, rad; targets are uniform in ``[0, max_lean_rad]``."""
+
+    zero_share: float = wlt.ZERO_SHARE
+    """Probability that a resampled target is exactly zero."""
+
+    max_rate_rad_s: float | None = wlt.MAX_RATE_RAD_S
+    """Rate at which the command moves toward its target; ``None`` makes it a step."""
 
     seed: int | None = None
     """Seed of the numpy generator; ``None`` uses the environment's seed."""

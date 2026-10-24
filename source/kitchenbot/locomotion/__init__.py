@@ -9,7 +9,10 @@ Simulator-free and tested on CI (#46):
 - ``upper_body_targets.py``: the math of the upper-body command (numpy): target sampling inside the
   joint limits scaled by a range factor, 1 to 3 s resample times, linear interpolation, the
   20 percent slow right-arm reach, and the range-factor curriculum rule.
-- ``obs_layout.py``: the policy observation layout as data (138 values per frame, 5 frames,
+- ``waist_lean_targets.py``: the math of the waist-lean command (D012, #68): targets in
+  ``[0, 0.52]`` rad, exactly zero half of the time, a new target every 1 to 3 s, a 1 rad/s ramp,
+  and the waist tracking error the reward uses.
+- ``obs_layout.py``: the policy observation layout as data (139 values per frame, 5 frames,
   time-major); #6 writes it into the export manifest.
 
 Untested drafts written against the Isaac Lab v3.0.0 source without a simulator (#46); P05 runs
@@ -17,10 +20,12 @@ and fixes them. Each starts with an ``UNTESTED DRAFT`` header line, CI only pars
 Isaac Lab symbol they use is in docs/isaaclab_3_api_notes.md:
 
 - ``stand_env_cfg.py``: ``StandEnvCfg`` for ``KitchenBot-Stand-G1-Dex3`` and ``StandEnvCfg_PLAY``.
-- ``commands.py``: ``UpperBodyCommand``, the command term that samples arm and hand targets.
+- ``commands.py``: ``UpperBodyCommand``, the command term that samples arm and hand targets, and
+  ``WaistLeanCommand``, the forward waist pitch command (#68).
 - ``upper_body_action.py``: ``UpperBodyFollowAction``, an action term with agent action dimension
   zero that writes joint targets from a source object.
-- ``rewards.py``: reward terms specific to standing with a moving upper body.
+- ``rewards.py``: reward terms specific to standing with a moving upper body, among them the
+  waist tracking term (#68).
 - ``curriculums.py``: the curriculum term that widens the upper-body range as falls become rare.
 - ``agents/rsl_rl_ppo_cfg.py``: the RSL-RL PPO config.
 
