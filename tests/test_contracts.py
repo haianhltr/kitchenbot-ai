@@ -40,7 +40,6 @@ from kitchenbot.planning import fakes
 from kitchenbot.planning.plate_to_rack import (
     ARCH_9,
     EVAL_3,
-    PROVISIONAL,
     PlannerConfig,
     PlannerState,
     plan_waypoints,
@@ -148,9 +147,10 @@ def test_planner_config_sources_quote_the_documents_they_cite():
     cited = {
         f.name: f.metadata["source"]
         for f in dataclasses.fields(PlannerConfig)
-        if f.metadata["source"] != PROVISIONAL
+        if f.metadata["source"] in cites
     }
-    assert set(cited) == set(phrases), "a field that cites a document needs its phrase here"
+    assert set(cited) == set(phrases), "a field citing arch s9 or eval s3 needs its phrase here"
+    assert all(f.metadata["source"] for f in dataclasses.fields(PlannerConfig))
     for name, (text, phrase) in phrases.items():
         assert cites[cited[name]] is text, f"{name} cites {cited[name]}"
         assert phrase in text, f"{name}: {phrase!r} not in {cited[name]}"
