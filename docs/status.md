@@ -3,8 +3,8 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56 to #60, #66, #68 to #71 merged, D012 (amended) and D013 decided, #67, #77 and #78 open,
-Isaac Sim not yet installed. Actuals: those twenty issues
+#56 to #60 and #66 to #71 merged, D012 (amended) and D013 decided, #77 and #78 open, Isaac Sim
+not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
 CI is green on `main`.
@@ -77,9 +77,11 @@ CI is green on `main`.
   failed), observation in, palm pose target and hand verb out, every number sourced or marked
   provisional, failure tags from the evaluator's taxonomy (#43). The lift waypoint is aimed one
   position tolerance above the 15 cm so the exit height meets the judges (#60 found it leaving at
-  14.9 cm). The fakes it is tested against live in `planning/fakes.py` (#60). #21 wires it to the
-  simulation and must fix which rim point the grasp frame is (the #58 tests and the dry run hold the
-  bottom rim, the reach analysis the top rim; the top rim is the physical one).
+  14.9 cm). The fakes it is tested against live in `planning/fakes.py` (#60). #67 fixed the grasp frame
+  as the top rim point nearest the robot (`planning/geometry.py`, the one place the rule is
+  written; the slot entry is derived from it) and added the per-state waist pitch target
+  (`PlannerCommand.waist_pitch_rad`: 0.468 rad in `pre_grasp`, `grasp` and `lift`, zero elsewhere;
+  the deployment layer slews it at 1 rad/s). #21 wires it to the simulation.
 - Arm target pipeline `controllers/target_filter.py` (world target → pelvis frame → reachability
   gate → slew at 0.3 m/s and 1 rad/s, returning the planner's `arm_infeasible`), shared pose and
   quaternion helpers in `kitchenbot/geometry.py`, numpy forward kinematics of the right arm from
@@ -96,10 +98,10 @@ CI is green on `main`.
   simulator (eval YAML → sampler → planner against the fakes behind the arm target pipeline →
   judges → result JSON → figures), marked synthetic so it can never enter `docs/experiments.md`.
   With the reachability gate on (finger-base envelopes, `--extra gate_envelope=waist0|waist`,
-  0.30 m stand-off) every episode still ends `ik_infeasible`: #66 traced the refusals to the
-  fakes (old rim point, counter-edge waypoint above the slot, floor-standing rack frame), which
-  #67 moves; with `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by
-  construction. It is the template of a `ScenarioBackend` for #21 and #22 (note on #22).
+  0.30 m stand-off, the #59 rack pose and the top-rim grasp frame since #67) 13 / 43 of 50 seeds
+  (seen / unseen) reach `done` with the waist-zero envelope and 50 / 50 with the waist envelope,
+  the rest `ik_infeasible` in `pre_grasp` or `grasp` (position only, synthetic); with
+  `--extra reach_gate=false` the chain reaches `done` on 50 of 50 seeds by construction. It is the template of a `ScenarioBackend` for #21 and #22 (note on #22).
 - Stand environment drafts for #5: `locomotion/stand_env_cfg.py`, `commands.py`,
   `upper_body_action.py`, `rewards.py`, `curriculums.py`, `agents/rsl_rl_ppo_cfg.py`,
   `robots/g1_dex3.py`, `tasks/registry.py` and `configs/train/stand_g1_dex3.yaml`, every file
@@ -168,18 +170,18 @@ counter-edge waypoint on (#21); #14 puts the IK `body_offset` at the finger base
 dishwasher stays raised on its 0.55 m plinth beside the counter (D013); #10 dresses the plinth as
 a low cabinet with a door front in the counter's colour, and `DISHWASHER_POSE_KITCHEN` holds at
 either stand-off (the lateral clearance to the right leg does not depend on it). The committed
-envelopes sample the finger-base point since #66 and the dry run can gate on the waist envelope;
-it still fails every episode as `ik_infeasible` at 0.30 m because of the fakes' geometry, which
-#67 moves to the decided rim point and the #59 rack pose.
+envelopes sample the finger-base point since #66, the dry run can gate on the waist envelope, and
+since #67 (top-rim grasp frame, #59 rack pose in the fakes) the gate-on dry run at 0.30 m passes
+13 / 43 of 50 episodes (seen / unseen) with the waist-zero envelope and 50 / 50 with the waist
+envelope, position only and synthetic; #77 regenerates that envelope with the capped lean.
 Recorded on #5, #6, #10, #11, #14, #16, #21.
 
 ## What is running
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
-D013, #66, #68, #69, #70 and #71 are merged; #67 (planner waist-lean command, the top-rim grasp
-frame, the dry-run rack pose, kb-manip) is in progress. Two follow-ups from the #69 audit are open:
-#78 (evaluator contract fixes, kb-eval, running) and #77 (lean capped at the soft limit and the
-waist envelope regenerated, kb-controls, after #67). Every other open issue needs Isaac Sim. The
+D013, all six are merged (#66 to #71). Two follow-ups from the #69 audit are in progress, one
+worker each: #77 (lean capped at the soft limit and the waist envelope regenerated, kb-controls)
+and #78 (evaluator contract fixes, kb-eval). Every other open issue needs Isaac Sim. The
 director is pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
@@ -202,4 +204,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #67, #77 and #78 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #77 and #78 nothing that does not need Isaac Sim is left; the next move is the operator's.

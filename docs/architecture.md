@@ -235,10 +235,18 @@ computed from the rack slot pose in the scene config; there is no motion planner
 with the rack is avoided geometrically by a corridor above the slot, and measured, not assumed.
 
 The core exists since #43, tested against a fake arm (0.3 m/s, 1 rad/s slew) and hand; #21 wires it
-to the simulation. `step(obs, dt)` returns a palm pose target and a hand verb (`open`, `pre_grasp`,
-`close`, the `HandController` method names); it never calls the arm or the hand. `plate_pose` in
-the observation is the plate's grasp frame on the rim and `slot_pose` is that frame's pose at the
-slot entry, so the plate diameter is folded in by the environment layer, not the planner. Each
+to the simulation. `step(obs, dt)` returns a palm pose target, a hand verb (`open`, `pre_grasp`,
+`close`, the `HandController` method names) and a waist pitch target (D012): 0.468 rad, the soft
+limit `robots.joint_limits.WAIST_LEAN_MAX_RAD`, in `pre_grasp`, `grasp` and `lift`, and 0 from
+`transport` on (its first waypoint is the counter edge) and in `idle`, `failed` and `done`. The
+planner never calls the arm, the hand or the balance policy; the deployment layer slews the waist
+target at no more than 1 rad/s, the ramp the policy is trained on (#68). `plate_pose` in the
+observation is the plate's grasp frame: the top rim point nearest the robot, `(+D/2, 0, 0.020)` m
+in the plate body frame turned so that its `+x` faces the robot, with `z` the plate normal and `x`
+pointing back at the plate centre (#67, `planning/geometry.py`), so the quarter turn to vertical
+puts the grasp point at the top of the plate. `slot_pose` is that frame's pose at the slot entry,
+one plate diameter above the tine tops and half a plate thickness across the gap from the slot
+centre, so the plate diameter is folded in by the environment layer, not the planner. Each
 step checks the current state's failure conditions first, then its exit; the first cause observed
 moves the planner to `failed`, which holds the palm where it is and never changes again. Causes seen
 in the same step resolve by the section 7 precedence. A 30 s budget (`timeout`) applies in every
