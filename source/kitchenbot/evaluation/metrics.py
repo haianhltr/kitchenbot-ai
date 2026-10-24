@@ -17,8 +17,8 @@ Per-episode ``metrics`` keys
 - ``standing_duration_s`` (number, S0): seconds until termination.
 - ``torso_orientation_error_deg`` (number, S0, S1, S4): RMS of torso roll and pitch.
 - ``hand_target_error_cm`` (number, S1): final hand-to-target distance.
-- ``grasp_success`` (bool, S2, S4): plate lifted 15 cm and held for 2 s.
-- ``placement_success`` (bool, S3, S4): plate in the slot volume, stable for 2 s.
+- ``grasp_success`` (bool, S2, S4): plate lifted 15 cm and held for 2 s without counter contact.
+- ``placement_success`` (bool, S3, S4): in the slot volume, within 15 deg of vertical, stable 2 s.
 - ``rack_collision`` (bool, S3, S4): contact force above 20 N before release.
 - ``completion_time_s`` (number, S4): seconds to stable placement, ``None`` unless the trial
   succeeded.
@@ -54,7 +54,7 @@ SCENARIO_NAMES: tuple[str, ...] = (*REAL_SCENARIOS, *SYNTHETIC_SCENARIOS)
 SUCCESS_DEFINITIONS: dict[str, str] = {
     "S0": "no fall until the timeout (section 5: 60 s without a fall)",
     "S1": "final hand error under 3 cm and no fall",
-    "S2": "grasp success: plate lifted 15 cm and held for 2 s",
+    "S2": "grasp success: plate lifted 15 cm and held for 2 s without contact with the counter",
     "S3": "placement success: plate in the slot volume, within 15 deg of vertical, stable 2 s",
     "S4": "task success: grasp and placement both succeed, no fall, within the 30 s timeout",
     "fake": "synthetic: no failure cause drawn for the seed (mirrors S4)",
