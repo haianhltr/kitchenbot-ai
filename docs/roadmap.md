@@ -44,7 +44,7 @@ dependencies, mirrored as "Blocked by" in each issue.
 | P46 | M1 | kb-controls | Stand environment drafts and the Isaac Lab 3.0 API notes, written against the v3.0.0 source; no simulation | 4 | — | |
 | P68 | M1 | kb-controls | Waist pitch command term, observation and tracking reward in the stand environment drafts (D012); no simulation | 2 | P46 | |
 | P09 | M2 | kb-sim | Plate asset: drop test of the P30 meshes, `plate_cfg.py` factory, YCB check | 2 | P03, P30 | |
-| P10 | M2 | kb-sim | Run and fix the P59 scene config draft: P47 counter and floor layers with the robot at the D012 stand-off; plinth dressed as a low cabinet (D013) | 2 | P03, P47, P59, P70 | |
+| P10 | M2 | kb-sim | Run and fix the P59 scene config draft: P47 counter and floor layers with the robot at the D012 stand-off and the P70 cabinet spawned by `cabinet_cfg()` | 2 | P03, P47, P59, P70 | |
 | P11 | M2 | kb-sim | Articulated dishwasher: run and fix the P59 ArticulationCfg and overrides layer on the ArtVIP twin, else author USD; door and rack joints, attach the P47 tines to the rack link, door open and rack out by default | 5 | P10, P29, P47, P59 | |
 | P12 | M2 | kb-sim | Articulated cabinets from ArtVIP or MolmoSpaces as scene dressing; full kitchen composition; load time and FPS check | 5 | P11 | |
 | P13 | M2 | kb-sim | Scene randomization event terms wrapping the P52 sampler | 2 | P09, P11, P52 | |

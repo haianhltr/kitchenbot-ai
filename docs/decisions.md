@@ -130,5 +130,7 @@ Decision: the raised compact unit stays, pose `DISHWASHER_POSE_KITCHEN`, plinth 
 which holds at either stand-off. #10 dresses the plinth as a low cabinet: a static box with a door
 front in the counter's colour, nothing articulated (D009's cabinets-as-dressing rule). A full-size
 unit loaded through its upper rack is not pursued.
-Consequences: no change to the frame math or the slot poses; #10 gains a small dressing task; the
-demo video script (#49) presents the scene as a raised dishwasher.
+Consequences: no change to the frame math or the slot poses; the dressing was done by #70 as
+`dishwasher_cabinet.usda` (the door panel stops 20 mm under the carcass top because the open
+dishwasher door's underside is 3.5 mm under it); #10 spawns it; the demo video script (#71)
+presents the scene as a raised dishwasher on a low base cabinet.

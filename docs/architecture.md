@@ -288,9 +288,13 @@ length, the pitch included) and checks the slot poses against simulation to 1 cm
 stays upright on the flat base is not measured yet.
 
 The compact dishwasher stands on a 0.55 m plinth to the robot's right
-(`kitchen_dims.DISHWASHER_POSE_KITCHEN`, #59), dressed as a low cabinet (D013, #70): on paper every
+(`kitchen_dims.DISHWASHER_POSE_KITCHEN`, #59), dressed as a low cabinet (D013): on paper every
 slot is reachable at stand-offs up to 0.40 m without a lean (#56, #59); #11 checks the pose
-against the loaded asset.
+against the loaded asset. The cabinet is `dishwasher_cabinet.usda` from
+`scripts/make_cabinet_usd.py` (#70): six static boxes on the plinth footprint (carcass, toe kick,
+18 mm door front on the face the dishwasher front looks at, bar handle), whose `--check` and tests
+compute two clearances from `dishwasher_frames.footprints_kitchen()`: 16.5 mm under the open
+dishwasher door and 370 mm to the right leg, against minimums of 10 and 30 mm.
 
 ### 10a. Asset sources
 

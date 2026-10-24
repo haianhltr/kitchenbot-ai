@@ -3,7 +3,7 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56 to #60, #68 and #71 merged, D012 and D013 decided, #66, #67, #69 and #70 open and in
+#56 to #60, #68, #70 and #71 merged, D012 and D013 decided, #66, #67 and #69 open and in
 progress, Isaac Sim not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
@@ -115,6 +115,13 @@ CI is green on `main`.
   half of the draws, a new target every 1 to 3 s, the observed command ramped at 1 rad/s), the
   observation term at index 9 of each frame, and `waist_tracking_l1` in place of the zero-waist
   reward. #5 runs it; the deployed lean command (#21) must not jump faster than 1 rad/s.
+- Dishwasher cabinet (#70, D013): `scripts/make_cabinet_usd.py` writes
+  `scene/assets/kitchen/dishwasher_cabinet.usda`, the plinth as a low cabinet (carcass with a toe
+  kick on the plinth footprint, 18 mm door front in the counter's body colour on the face the
+  dishwasher front looks at, steel-grey bar handle; six static colliders, one friction material),
+  with a strict `--check`; the clearances come from `footprints_kitchen()`: 16.5 mm under the
+  open dishwasher door, 370 mm to the right leg. `kitchen_scene_cfg.cabinet_cfg()` spawns it;
+  the `CABINET_*` constants and `PLINTH_GAP_M` live in `kitchen_dims`, all provisional.
 - Report and video skeletons: `docs/report.md` with every empty slot an HTML comment naming the
   issue that fills it, and `docs/demo_video_script.md` (16 shots, 163 s, selection rules fixed
   before any result exists, overlay specification for `record_demo.py`); `tests/test_docs_skeletons.py`
@@ -159,10 +166,9 @@ Recorded on #5, #6, #10, #11, #14, #16, #21.
 ## What is running
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
-D013, #68 and #71 are merged and four are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
+D013, #68, #70 and #71 are merged and three are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
 kb-controls), #67 (planner waist-lean command and the top-rim grasp frame, kb-manip), #69 (contract audit with
-`tests/test_contracts.py`, kb-eval), #70 (plinth as a low cabinet, kb-sim). Every other open
-issue needs Isaac Sim. The director is pre-downloading the
+`tests/test_contracts.py`, kb-eval). Every other open issue needs Isaac Sim. The director is pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 `C:\User_Storage\code\Projects\_ref\wheels\isaaclab-3.0.0-cu130` so #1 can install offline.
 
@@ -184,4 +190,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #66, #67, #69 and #70 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #66, #67 and #69 nothing that does not need Isaac Sim is left; the next move is the operator's.
