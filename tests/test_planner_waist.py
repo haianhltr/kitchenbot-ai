@@ -14,6 +14,7 @@ from planner_helpers import FakeHand, Fakes, run_episode
 from kitchenbot.controllers.reachability import ReachabilityEnvelope
 from kitchenbot.evaluation.dry_run import simulate_episode
 from kitchenbot.evaluation.failure_tags import FailureTag
+from kitchenbot.locomotion import waist_lean_targets as wlt
 from kitchenbot.planning.plate_to_rack import (
     LEANING_STATES,
     PlannerConfig,
@@ -48,6 +49,10 @@ def test_the_lean_is_sourced_to_d012_and_inside_the_waist_limit():
     field = {f.name: f for f in dataclasses.fields(PlannerConfig)}["waist_lean_rad"]
     assert field.metadata["source"] == "docs/decisions.md D012"
     assert cfg.waist_lean_rad <= WAIST_LIMITS["waist_pitch_joint"].upper  # 0.52 rad, the URDF
+    # inside the range the balance policy is trained on (#68), which ramps at the 1 rad/s the
+    # deployment layer has to slew the planner's target at
+    assert cfg.waist_lean_rad <= wlt.MAX_LEAN_RAD
+    assert wlt.MAX_RATE_RAD_S == 1.0
     assert LEANING_STATES == {S.PRE_GRASP, S.GRASP, S.LIFT}
     assert set(EXPECTED_LEAN) == set(PlannerState)
 
