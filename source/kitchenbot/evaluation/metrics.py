@@ -18,7 +18,7 @@ Per-episode ``metrics`` keys
 - ``torso_orientation_error_deg`` (number, S0, S1, S4): RMS of torso roll and pitch.
 - ``hand_target_error_cm`` (number, S1): final hand-to-target distance.
 - ``grasp_success`` (bool, S2, S4): plate lifted 15 cm and held for 2 s.
-- ``placement_success`` (bool, S3, S4): plate in the slot volume, stable for 2 s.
+- ``placement_success`` (bool, S3, S4): in the slot volume, within 15 deg of vertical, stable 2 s.
 - ``rack_collision`` (bool, S3, S4): contact force above 20 N before release.
 - ``completion_time_s`` (number, S4): seconds to stable placement, ``None`` unless the trial
   succeeded.
