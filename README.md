@@ -4,9 +4,9 @@ A simulated Unitree G1 humanoid that stands on a reinforcement-learning balance 
 plate from a kitchen counter with a Dex3-1 hand and places it into an articulated dishwasher rack.
 Built on Isaac Lab 3.0 and Isaac Sim 6.2 with PhysX. Real physics, a real controller, no keyframes.
 
-**Status: planning complete, no code yet.** Nothing in this repository has been measured. Every
-number in `docs/evaluation.md` is a target, not a result. Results will appear in
-`docs/experiments.md` with date, commit, seeds and the exact command that produced them.
+**Status: code and unit tests run on CI, no simulation run yet.** Nothing in this repository has
+been measured. Every number in `docs/evaluation.md` is a target, not a result. Results will appear
+in `docs/experiments.md` with date, commit, seeds and the exact command that produced them.
 
 ## What the MVP does
 
@@ -38,6 +38,19 @@ fight over a joint:
 
 The full design, including the training environment, rewards, observation layout, scene assets and
 sim-to-real seams, is in [docs/architecture.md](docs/architecture.md).
+
+## What has been checked without a simulator
+
+Isaac Sim is not installed yet, so none of this is a measured result. Two checks ran without it.
+- **Reach gap, computed on paper.** Arm forward kinematics against the planner's plate waypoints
+  (700 episodes, [analysis](docs/reach_gap_analysis.md); no collision, no palm orientation, so an
+  upper bound): standing 0.45 m from the counter, no S1, S2 or S4 episode was reachable with the
+  waist upright. D012: stand 0.30 m away, lean the waist forward, aim the IK at the finger bases:
+  98 percent of seen and 100 of unseen S2 episodes. D013: the dishwasher sits on a 0.55 m plinth.
+- **CI dry run.** Sampler, planner, judges and result writer run as one chain against fakes. It
+  found a 1 mm mismatch (plate lifted 14.9 cm, judges ask 15) that each part's own tests passed.
+
+![Reach envelopes, plate targets and S2 against stand-off, computed on paper](docs/figures/reach_gap.png)
 
 ## Reused versus developed
 
