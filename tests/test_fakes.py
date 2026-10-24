@@ -25,6 +25,7 @@ from kitchenbot.geometry import (
     yaw_from_quat,
 )
 from kitchenbot.planning import fakes
+from kitchenbot.planning import geometry as planning_geometry
 from kitchenbot.planning.fakes import (
     DRY_RUN_RACK_FRAME,
     PALM_START,
@@ -125,23 +126,29 @@ def test_the_legacy_reach_radius_path_counts_its_refusals():
 # ----------------------------------------------------------------------------- frames
 
 
+def test_the_fakes_use_the_one_grasp_convention_of_planning_geometry():
+    # #67: the rule is written once, in planning.geometry; the fakes re-export it, not restate it
+    assert body_pose_from_grasp is planning_geometry.body_pose_from_grasp
+    assert grasp_pose_from_body is planning_geometry.grasp_pose_from_body
+    assert {"body_pose_from_grasp", "grasp_pose_from_body"} <= set(fakes.__all__)
+
+
 @pytest.mark.parametrize("diameter", [0.22, 0.25, 0.27])
-def test_grasp_frame_and_body_pose_convert_both_ways_by_a_radius_along_local_x(diameter):
+def test_grasp_frame_and_body_pose_convert_both_ways(diameter):
     body = Pose((0.2, 0.3, 0.9), quat_from_yaw(math.radians(25.0)))
     grasp = grasp_pose_from_body(body, diameter)
-    assert position_distance(grasp.position, body.position) == pytest.approx(diameter / 2.0)
-    expected = body.position + (diameter / 2.0) * np.array(
-        [math.cos(math.radians(25.0)), math.sin(math.radians(25.0)), 0.0]
-    )
-    assert np.allclose(grasp.position, expected)
-    assert quat_angle(grasp.quat_wxyz, body.quat_wxyz) == pytest.approx(0.0, abs=1e-12)
     back = body_pose_from_grasp(grasp, diameter)
-    assert np.allclose(back.position, body.position) and quat_angle(
-        back.quat_wxyz, body.quat_wxyz
-    ) == pytest.approx(0.0, abs=1e-12)
-    # the convention of #58's tests: the plate centre in the grasp frame is (-D/2, 0, 0)
+    # the same plate: same origin and normal; the yaw about the normal is the convention's
+    assert np.allclose(back.position, body.position)
+    assert np.allclose(quat_apply(back.quat_wxyz, (0, 0, 1)), quat_apply(body.quat_wxyz, (0, 0, 1)))
+    again = grasp_pose_from_body(back, diameter)
+    assert np.allclose(again.position, grasp.position)
+    assert quat_angle(again.quat_wxyz, grasp.quat_wxyz) == pytest.approx(0.0, abs=1e-9)
+    # the top rim point on the robot's side (kitchen -y) of the plate centre
+    expected = body.position + np.array([0.0, -diameter / 2.0, kd.PLATE_HEIGHT_M])
+    assert np.allclose(grasp.position, expected)
     centre_in_grasp = to_frame(body, grasp)
-    assert np.allclose(centre_in_grasp.position, (-diameter / 2.0, 0.0, 0.0))
+    assert np.allclose(centre_in_grasp.position, (diameter / 2.0, 0.0, -kd.PLATE_HEIGHT_M))
 
 
 def test_the_nominal_pelvis_stands_at_the_standoff_facing_plus_y():
@@ -164,12 +171,19 @@ def test_the_plate_is_built_from_the_spec_in_the_kitchen_frame(spec):
     body = plate.body_pose()
     assert np.allclose(body.position, spec.plate_position_m)
     assert body.position[2] == pytest.approx(kd.COUNTER_HEIGHT_M)
-    assert math.degrees(yaw_from_quat(body.quat_wxyz)) == pytest.approx(spec.plate_yaw_deg)
     assert np.allclose(quat_apply(body.quat_wxyz, (0.0, 0.0, 1.0)), (0.0, 0.0, 1.0))  # flat
+    # the body comes back in the convention's turned frame, +x toward the robot (kitchen -y)
+    assert math.degrees(yaw_from_quat(body.quat_wxyz)) == pytest.approx(-90.0)
     assert plate.diameter_m == spec.plate_diameter_m
-    # the grasp frame the planner observes is on the rim of the plate
+    # the grasp frame the planner observes is the top rim point nearest the robot, whatever the
+    # sampled yaw (the plate is a solid of revolution)
+    sampled = Pose(spec.plate_position_m, quat_from_yaw(math.radians(spec.plate_yaw_deg)))
+    assert plate.pose == grasp_pose_from_body(sampled, spec.plate_diameter_m)
+    x, y, z = spec.plate_position_m
+    rim = (x, y - spec.plate_diameter_m / 2.0, z + kd.PLATE_HEIGHT_M)
+    assert np.allclose(plate.pose.position, rim)
     assert position_distance(plate.pose.position, body.position) == pytest.approx(
-        spec.plate_diameter_m / 2.0
+        math.hypot(spec.plate_diameter_m / 2.0, kd.PLATE_HEIGHT_M)
     )
 
 
@@ -181,14 +195,18 @@ def test_a_plate_without_a_diameter_has_no_body_pose():
 # ----------------------------------------------------------------------------- the rack
 
 
+@pytest.mark.parametrize("diameter", kd.PLATE_DIAMETERS_M)
 @pytest.mark.parametrize("slot", range(1, kd.RACK_SLOTS + 1))
-def test_the_rack_is_built_from_the_layout_and_the_slot(slot):
+def test_the_rack_is_built_from_the_layout_and_the_slot(slot, diameter):
     frame = Pose((0.45, -0.20, 0.51))
-    rack = FakeRack.from_layout(LAYOUT, slot, frame)
+    rack = FakeRack.from_layout(LAYOUT, slot, frame, diameter_m=diameter)
     sx, sy, sz, _ = LAYOUT.slot_pose(slot)
     thickness = kd.PLATE_HEIGHT_M
+    # the grasp frame holds the top of the vertical plate: a diameter above the tine tops, half a
+    # thickness along the slot x (#67, planning.geometry.slot_entry_grasp_pose)
     assert np.allclose(
-        rack.slot_entry.position, (0.45 + sx - thickness / 2.0, -0.20 + sy, 0.51 + sz)
+        rack.slot_entry.position,
+        (0.45 + sx + thickness / 2.0, -0.20 + sy, 0.51 + sz + diameter),
     )
     assert yaw_from_quat(rack.slot_entry.quat_wxyz) == pytest.approx(0.0)
     assert rack.frame is frame and rack.slot_index == slot and rack.layout is LAYOUT
@@ -204,16 +222,31 @@ def test_the_rack_is_built_from_the_layout_and_the_slot(slot):
 
 def test_a_rotated_rack_frame_rotates_the_slot_entry():
     frame = Pose((1.0, 0.5, 0.4), quat_from_yaw(math.pi / 2.0))
-    rack = FakeRack.from_layout(LAYOUT, 4, frame)
+    rack = FakeRack.from_layout(LAYOUT, 4, frame, diameter_m=0.25)
     sx, sy, sz, _ = LAYOUT.slot_pose(4)
-    local = Pose((sx - kd.PLATE_HEIGHT_M / 2.0, sy, sz))
+    local = Pose((sx + kd.PLATE_HEIGHT_M / 2.0, sy, sz + 0.25))
     assert np.allclose(rack.slot_entry.position, pose_compose(frame, local).position)
     assert yaw_from_quat(rack.slot_entry.quat_wxyz) == pytest.approx(math.pi / 2.0)
 
 
 def test_the_slot_index_is_validated_by_the_layout():
     with pytest.raises(ValueError, match="slot index"):
-        FakeRack.from_layout(LAYOUT, 6, DRY_RUN_RACK_FRAME)
+        FakeRack.from_layout(LAYOUT, 6, DRY_RUN_RACK_FRAME, diameter_m=0.25)
+
+
+def test_the_rack_needs_the_plate_diameter():
+    # the slot entry of the grasp frame depends on it, so it has no default
+    with pytest.raises(TypeError):
+        FakeRack.from_layout(LAYOUT, 3, DRY_RUN_RACK_FRAME)  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("spec", [SEEN[0], UNSEEN[0]], ids=lambda s: f"{s.split}-{s.seed}")
+def test_from_episode_builds_the_slot_entry_for_the_episode_plate(spec):
+    fk = Fakes.from_episode(spec, LAYOUT, gate=False)
+    expected = FakeRack.from_layout(
+        LAYOUT, spec.rack_slot, DRY_RUN_RACK_FRAME, diameter_m=spec.plate_diameter_m
+    )
+    assert fk.rack.slot_entry == expected.slot_entry
 
 
 # ----------------------------------------------------------------------------- from_episode

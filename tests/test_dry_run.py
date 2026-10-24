@@ -561,6 +561,6 @@ def test_the_module_imports_no_simulator():
 
 
 def test_the_module_surface():
-    assert dry_run.GENERATOR_VERSION == "dry-v1" and dry_run.CONTROL_HZ == 50.0
+    assert dry_run.GENERATOR_VERSION == "dry-v2" and dry_run.CONTROL_HZ == 50.0  # v2: #67
     assert set(dry_run.MIRRORABLE_SCENARIOS) == {"S2", "S3", "S4"}
     assert dry_run.EXTRA_KEYS == ("reach_gate", "gate_envelope")

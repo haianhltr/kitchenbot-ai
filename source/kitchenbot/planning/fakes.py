@@ -26,22 +26,27 @@ Frames (used by :meth:`Fakes.from_episode`; the hand-built defaults below are in
   ``dishwasher_2`` to the robot's right with its front flush with the counter's front edge and the
   lower rack pulled out, yaw 0. #59 adds the dishwasher pose to ``kitchen_dims`` and #11 checks it;
   then this constant goes.
-- **Plate poses.** ``FakePlate.pose`` is the plate's **grasp frame** on the rim, what the planner
-  observes (docs/architecture.md section 9). The judges (:mod:`kitchenbot.evaluation.judges`) take
-  the plate **body** pose, origin at the centre of the underside. The conversion is
-  :func:`body_pose_from_grasp` / :func:`grasp_pose_from_body`: the grasp frame sits a radius along
-  the body's local ``+x``, same orientation. **That is the convention of #58's tests**
-  (``tests/test_planner_kinematic_follow.py``, ``CENTRE_IN_GRASP``), not a measured rule: it puts
-  the grasp frame on the underside plane of the rim, and #21's environment layer decides the real
-  rim point. Two consequences to reconcile there: the planner's quarter turn to vertical
-  (``plate_vertical_quat``) sends the local ``+x`` rim point to the *bottom* of the plate, so with
-  this convention the slot pose is at the tine tops; and ``docs/reach_gap_analysis.md`` (#56)
-  assumes another one, the rim point nearest the robot, 2 cm up, with the slot pose a diameter
-  above the tine tops (the hand on the top rim).
-- **Slot entry.** :meth:`FakeRack.from_layout` puts the grasp frame at the slot entry shifted by
-  half a plate thickness against the slot's ``x`` so that the plate stands centred in the gap once
-  the planner has turned it vertical (its normal then points along ``+x``; the judge's mid-plane is
-  half a thickness along the normal from the body origin).
+- **Plate poses.** ``FakePlate.pose`` is the plate's **grasp frame**, what the planner observes
+  (docs/architecture.md section 9). The judges (:mod:`kitchenbot.evaluation.judges`) take the
+  plate **body** pose, origin at the centre of the underside. The rule between the two was decided
+  in #67 and lives in :mod:`kitchenbot.planning.geometry`, which this module calls and does not
+  restate. The grasp frame is the **top rim point nearest the robot**: ``(+D/2, 0,
+  PLATE_HEIGHT_M)`` in the body frame turned so that its ``+x`` faces the robot (kitchen ``-y``,
+  :data:`~kitchenbot.planning.geometry.TOWARD_ROBOT_KITCHEN`), with ``z`` the plate normal and
+  ``x`` pointing back at the plate centre. So the planner's quarter turn to vertical puts the
+  grasp point at the *top* of the plate, as on the real hand. It is the point #56's reach analysis
+  assumed. :meth:`FakePlate.body_pose` returns the body in that turned frame. The plate is a solid
+  of revolution, so the sampled ``plate_yaw_deg`` changes neither the grasp frame nor any judge.
+- **Slot entry.** :meth:`FakeRack.from_layout` puts the grasp frame at
+  :func:`~kitchenbot.planning.geometry.slot_entry_grasp_pose`: one plate diameter above the tine
+  tops and half a plate thickness along the slot's ``x`` from the gap centre. There the vertical
+  plate's lowest point is at the tine tops, centred in the gap. The box the fake rack tests
+  (``in_slot``, ``contact_force``) is the grasp frame's displacement from that entry, which for a
+  vertical plate is the lowest point's displacement from the tine tops.
+- **Waist.** The planner's ``waist_pitch_rad`` (D012) is recorded, not modelled:
+  :attr:`Fakes.waist_trace` keeps ``(state, waist_pitch_rad)`` for every command applied. That is
+  the planner's target as sent, without the 1 rad/s slew the deployment layer applies before the
+  balance policy (#68). The fake arm, its pelvis and its reachability gate ignore the lean.
 """
 
 from __future__ import annotations
@@ -65,6 +70,12 @@ from kitchenbot.geometry import (
     quat_multiply,
     quat_slerp,
     to_frame,
+)
+from kitchenbot.planning.geometry import (
+    TOWARD_ROBOT_KITCHEN,
+    body_pose_from_grasp,
+    grasp_pose_from_body,
+    slot_entry_grasp_pose,
 )
 from kitchenbot.planning.plate_to_rack import (
     PlannerCommand,
@@ -128,20 +139,6 @@ PALM_START_IN_PELVIS = Pose((0.25, -0.20, 0.25), quat_from_yaw(-math.pi / 2.0))
 #: provisional pose of ``PROVISIONAL_RACK_POSE`` in ``scripts/reach_gap_analysis.py`` (#56). Not a
 #: measurement; see the module docstring.
 DRY_RUN_RACK_FRAME = Pose((0.55, 0.0, 0.09))
-
-
-def body_pose_from_grasp(grasp: Pose, diameter_m: float) -> Pose:
-    """The plate body pose (origin at the underside centre) from its rim grasp frame.
-
-    The body origin lies a radius against the grasp frame's local ``x``; same orientation. This is
-    the convention of #58's tests, see the module docstring.
-    """
-    return pose_compose(grasp, Pose((-diameter_m / 2.0, 0.0, 0.0)))
-
-
-def grasp_pose_from_body(body: Pose, diameter_m: float) -> Pose:
-    """Inverse of :func:`body_pose_from_grasp`: the rim grasp frame of a plate body pose."""
-    return pose_compose(body, Pose((diameter_m / 2.0, 0.0, 0.0)))
 
 
 def pelvis_pose(
@@ -286,17 +283,20 @@ class FakeRack:
     layout: kd.RackSlotLayout | None = None
 
     @classmethod
-    def from_layout(cls, layout: kd.RackSlotLayout, slot_index: int, frame: Pose) -> FakeRack:
+    def from_layout(
+        cls, layout: kd.RackSlotLayout, slot_index: int, frame: Pose, *, diameter_m: float
+    ) -> FakeRack:
         """The fake rack of slot ``slot_index`` (1-based) of ``layout`` placed at ``frame``.
 
-        ``slot_entry`` is the planner's slot pose (module docstring, "Slot entry"); the box is the
-        gap between two tines, narrowed to the clearance a plate leaves on each side
-        (``(gap_width - thickness) / 2``, 12 mm for the default layout), as deep as the tines are
-        tall; the footprint is the rack's larger half dimension. Nothing here models a lean.
+        ``slot_entry`` is the planner's slot pose for a plate of ``diameter_m``,
+        :func:`~kitchenbot.planning.geometry.slot_entry_grasp_pose` (module docstring, "Slot
+        entry"); the box is the gap between two tines, narrowed to the clearance a plate leaves on
+        each side (``(gap_width - thickness) / 2``, 12 mm for the default layout), as deep as the
+        tines are tall; the footprint is the rack's larger half dimension. Nothing here models a
+        lean.
         """
-        sx, sy, sz, yaw = layout.slot_pose(slot_index)  # validates the index
+        entry = slot_entry_grasp_pose(layout, slot_index, diameter_m, frame)  # validates the index
         thickness = kd.PLATE_HEIGHT_M
-        entry = pose_compose(frame, Pose((sx - thickness / 2.0, sy, sz), quat_from_yaw(yaw)))
         return cls(
             slot_entry=entry,
             half_width_m=(layout.gap_width - thickness) / 2.0,
@@ -338,19 +338,26 @@ class FakePlate:
     diameter_m: float | None = None
 
     @classmethod
-    def from_spec(cls, spec: EpisodeSpec) -> FakePlate:
+    def from_spec(cls, spec: EpisodeSpec, toward_robot=TOWARD_ROBOT_KITCHEN) -> FakePlate:
         """The plate of an episode: lying flat on the counter at the sampled pose.
 
         ``spec.plate_position_m`` (kitchen frame, ``z`` the counter-top face) is the body origin,
-        the yaw turns it about ``z``; the grasp frame is derived from them.
+        the yaw turns it about ``z``; the grasp frame is derived from them with
+        :func:`~kitchenbot.planning.geometry.grasp_pose_from_body` (the top rim point on the
+        ``toward_robot`` side, whatever the yaw).
         """
         body = Pose(spec.plate_position_m, quat_from_yaw(math.radians(spec.plate_yaw_deg)))
         return cls(
-            pose=grasp_pose_from_body(body, spec.plate_diameter_m), diameter_m=spec.plate_diameter_m
+            pose=grasp_pose_from_body(body, spec.plate_diameter_m, toward_robot),
+            diameter_m=spec.plate_diameter_m,
         )
 
     def body_pose(self) -> Pose:
-        """The plate body pose for the judges (module docstring); needs ``diameter_m``."""
+        """The plate body pose for the judges (module docstring); needs ``diameter_m``.
+
+        In the turned body frame of the grasp convention (``+x`` toward the robot), so its yaw is
+        not the sampled one; nothing the judges compute depends on it.
+        """
         if self.diameter_m is None:
             raise ValueError("the body pose needs diameter_m (build the plate with from_spec)")
         return body_pose_from_grasp(self.pose, self.diameter_m)
@@ -381,6 +388,8 @@ class Fakes:
     ``plate_in_reach`` from the palm-to-plate distance each step; off keeps the hand's own.
     ``plate_follows_palm`` lets ``FakePlate`` carry the plate with the palm while the hand holds;
     turn it off for a hand that writes the plate pose itself (the #58 ``KinematicFollowHand``).
+    ``waist_trace`` records ``(state, waist_pitch_rad)`` of every command :meth:`apply` sends: the
+    D012 lean goes to the balance policy, which the fakes do not model.
     """
 
     arm: FakeArm = field(default_factory=lambda: FakeArm(PALM_START))
@@ -392,6 +401,7 @@ class Fakes:
     plate_observation_offset: tuple[float, float, float] = (0.0, 0.0, 0.0)
     slot_observation_offset: tuple[float, float, float] = (0.0, 0.0, 0.0)
     plate_follows_palm: bool = True
+    waist_trace: list[tuple[PlannerState, float]] = field(default_factory=list)
 
     @classmethod
     def from_episode(
@@ -424,7 +434,9 @@ class Fakes:
             if gate
             else None
         )
-        rack = FakeRack.from_layout(layout, spec.rack_slot, rack_frame)
+        rack = FakeRack.from_layout(
+            layout, spec.rack_slot, rack_frame, diameter_m=spec.plate_diameter_m
+        )
         edge = Pose((float(rack.slot_entry.position[0]), 0.0, kd.COUNTER_HEIGHT_M))
         return cls(
             arm=FakeArm(palm, pipeline=pipeline, pelvis=pelvis),
@@ -455,6 +467,7 @@ class Fakes:
 
     def apply(self, command: PlannerCommand, dt: float) -> None:
         """Send the command the way the composite environment will, then advance the fakes."""
+        self.waist_trace.append((command.state, float(command.waist_pitch_rad)))
         self.arm.step(command.arm_target, dt)
         getattr(self.hand, command.hand.value)()  # HandAction values are method names
         if self.hand_reach_from_geometry:
