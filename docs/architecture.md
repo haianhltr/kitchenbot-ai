@@ -132,8 +132,8 @@ with these changes:
 | Terrain | flat plane (kitchen floor), no height scan |
 | Action | legs and waist, 15 position targets, scale 0.25 around the default pose |
 | Upper body during training | `UpperBodyCommand`, a `CommandTerm` with `resampling_time_range` 1 to 3 s, samples arm and hand targets inside joint limits and interpolates linearly; a `CurriculumTerm` scales the sampling range from 0.2 to 1.0 of the joint range as the fall rate drops; 20 percent of episodes instead command a slow reach of the right arm into the front workspace. `UpperBodyFollowAction` applies the targets |
-| Observations | base angular velocity (3), projected gravity (3), velocity command (3), leg and waist joint positions and velocities relative to default (30), last action (15), arm and hand joint positions and velocities (56), arm and hand target positions (28); 5-frame history |
-| Commands | planar velocity in [-0.3, 0.3] m/s and yaw rate in [-0.3, 0.3] rad/s, with 60 percent of episodes at exactly zero (standing); forward waist pitch in [0, 0.52] rad (D012: the planner's lean for pre-grasp, grasp and lift), resampled every 1 to 3 s and zero in half of the episodes |
+| Observations | base angular velocity (3), projected gravity (3), velocity command (3), waist lean command (1, #68), leg and waist joint positions and velocities relative to default (30), last action (15), arm and hand joint positions and velocities (56), arm and hand target positions (28); 5-frame history |
+| Commands | planar velocity in [-0.3, 0.3] m/s and yaw rate in [-0.3, 0.3] rad/s, with 60 percent of episodes at exactly zero (standing); forward waist pitch in [0, 0.52] rad (D012: the planner's lean for pre-grasp, grasp and lift), a new target every 1 to 3 s, exactly zero for half of the targets, the observed command ramped toward the target at 1 rad/s (#68; so the deployed lean command must not jump faster than that) |
 | Rewards | tracking of linear and angular velocity, base height around 0.75 m, flat orientation, waist deviation from its command (zero unless commanded, D012), penalties on joint torques, joint accelerations, action rate, feet slip, undesired contacts of knees and torso; standing-specific bonus for feet staying planted when the command is zero |
 | Terminations | torso or pelvis contact with the ground, tilt over 60 degrees, timeout at 20 s |
 | Domain randomization | friction 0.6 to 1.0, added base mass -1 to +3 kg, random pushes 10 to 30 N every 3 s, actuator gain scale 0.9 to 1.1 |
@@ -155,7 +155,7 @@ Every Isaac Lab symbol it uses is pinned to a file and line in `docs/isaaclab_3_
 including where the source differs from this section (no 10 N floor for pushes, a `play_mode()`
 method instead of a `_PLAY` class, the knee limits already correct upstream). The sampling and
 curriculum math (`locomotion/upper_body_targets.py`) and the observation layout
-(`locomotion/obs_layout.py`: 138 values per frame, 690 over five frames, time-major) are tested on
+(`locomotion/obs_layout.py`: 139 values per frame, 695 over five frames, time-major) are tested on
 CI. #5 runs the draft and fixes it.
 
 ## 7. Arm controller (M3, reused with configuration)

@@ -3,8 +3,8 @@
 Rewritten by kb-director after every merge. Newest state only; history is in git.
 
 **As of:** 2026-10-23, #2, #23, #24, #28, #29, #30, #35, #40, #42, #43, #46, #47, #48, #49, #52,
-#56, #57, #58, #59, #60 and #71 merged, D012 and D013 decided, #66 to #70 open and in progress,
-Isaac Sim not yet installed. Actuals: those twenty issues
+#56 to #60, #68 and #71 merged, D012 and D013 decided, #66, #67, #69 and #70 open and in
+progress, Isaac Sim not yet installed. Actuals: those twenty issues
 (55 estimated hours) were finished in about nine hours of wall-clock by parallel worker sessions,
 reviewed and merged by the director. 1,226 unit tests run in under a minute without a simulator.
 CI is green on `main`.
@@ -102,7 +102,7 @@ CI is green on `main`.
   `robots/g1_dex3.py`, `tasks/registry.py` and `configs/train/stand_g1_dex3.yaml`, every file
   headed UNTESTED DRAFT and only parsed on CI; the tested parts are the upper-body sampling and
   curriculum math (`locomotion/upper_body_targets.py`) and the observation layout
-  (`locomotion/obs_layout.py`, 138 per frame, 690 over five frames). `docs/isaaclab_3_api_notes.md`
+  (`locomotion/obs_layout.py`, 139 per frame, 695 over five frames). `docs/isaaclab_3_api_notes.md`
   pins every Isaac Lab symbol used to a v3.0.0 file and line (commit e3f7d9f, read-only clone at
   `C:\User_Storage\code\Projects\_ref\IsaacLab`) and lists eight places where the source differs
   from the architecture text, among them: Isaac Lab 3.0 quaternions are (x, y, z, w) while this
@@ -110,6 +110,11 @@ CI is green on `main`.
   field, un-actuated joint targets go through `set_position_index` (#46). #5 runs and fixes the
   drafts against the 15-item checklist in PR #53; if the waist lean below is adopted, the
   upper-body command must also sample a waist pitch target before #6 trains (notes on #5, #6).
+- Waist lean command in the stand environment drafts (#68, D012): `WaistLeanCommand` with its
+  numpy rules in `locomotion/waist_lean_targets.py` (targets in [0, 0.52] rad, exactly zero for
+  half of the draws, a new target every 1 to 3 s, the observed command ramped at 1 rad/s), the
+  observation term at index 9 of each frame, and `waist_tracking_l1` in place of the zero-waist
+  reward. #5 runs it; the deployed lean command (#21) must not jump faster than 1 rad/s.
 - Report and video skeletons: `docs/report.md` with every empty slot an HTML comment naming the
   issue that fills it, and `docs/demo_video_script.md` (16 shots, 163 s, selection rules fixed
   before any result exists, overlay specification for `record_demo.py`); `tests/test_docs_skeletons.py`
@@ -154,9 +159,8 @@ Recorded on #5, #6, #10, #11, #14, #16, #21.
 ## What is running
 
 No training run has started. Of the six no-simulation issues opened on 2026-10-24 after D012 and
-D013, #71 is merged and five are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
-kb-controls), #67 (planner waist-lean command and the top-rim grasp frame, kb-manip), #68
-(waist pitch command in the stand environment drafts, kb-controls), #69 (contract audit with
+D013, #68 and #71 are merged and four are in progress, one worker each: #66 (finger-base envelopes and a selectable gate envelope,
+kb-controls), #67 (planner waist-lean command and the top-rim grasp frame, kb-manip), #69 (contract audit with
 `tests/test_contracts.py`, kb-eval), #70 (plinth as a low cabinet, kb-sim). Every other open
 issue needs Isaac Sim. The director is pre-downloading the
 Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
@@ -180,4 +184,4 @@ Isaac Lab, Isaac Sim and PyTorch wheels with `pip download` (no install) into
 
 #1: install Isaac Lab 3.0.0 + Isaac Sim 6.2 on Windows and pass smoke steps 1 to 4. Then #3
 (now a diff against the #28 map, the #46 asset draft and the #48 kinematic chain) and #4 (the
-Windows gate). After #66 to #70 nothing that does not need Isaac Sim is left; the next move is the operator's.
+Windows gate). After #66, #67, #69 and #70 nothing that does not need Isaac Sim is left; the next move is the operator's.
