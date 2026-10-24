@@ -22,6 +22,10 @@ Files (docs/architecture.md section 10):
   - ``plates/plate_22.usda``, ``plate_25.usda``, ``plate_27.usda`` by ``scripts/make_plate_usd.py``
     (#30);
   - ``kitchen/counter.usda`` and ``kitchen/floor.usda`` by ``scripts/make_counter_usd.py`` (#47);
+  - ``kitchen/dishwasher_cabinet.usda`` by ``scripts/make_cabinet_usd.py`` (#70): the dishwasher's
+    plinth as a static low cabinet (carcass, toe kick, door front in the counter's colour, bar
+    handle) in the kitchen frame, checked against ``dishwasher_frames.plinth_box_kitchen`` and the
+    open dishwasher door and the right leg;
   - ``dishwasher/rack_tines.usda`` by ``scripts/make_rack_tines_usd.py`` (#47); #11 attaches it to
     the rack link of the ArtVIP dishwasher;
   - ``dishwasher/dishwasher_2_overrides.usda`` by ``scripts/make_dishwasher_overrides.py`` (#59):
@@ -29,7 +33,8 @@ Files (docs/architecture.md section 10):
     targets and root-link offset; ``--check`` composes it with usd-core.
 - ``dishwasher_frames.py``: the dishwasher's frames as numbers, standard library only (#59): slot
   poses in the kitchen frame, the slot row from the pelvis, the tine attachment scale, footprints
-  and the plinth. Every number is a ``kitchen_dims`` constant (``DISHWASHER_*``).
+  and the plinth box (dressed as a cabinet by #70). Every number is a ``kitchen_dims`` constant
+  (``DISHWASHER_*``).
 - ``dishwasher_cfg.py`` and ``kitchen_scene_cfg.py``: UNTESTED DRAFTS written against the Isaac Lab
   v3.0.0 source (#59), parsed on CI and never imported there. The ``ArticulationCfg`` of the
   dishwasher with its tines and a slot-pose helper, and the ``InteractiveSceneCfg`` with selectable
